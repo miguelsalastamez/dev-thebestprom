@@ -254,7 +254,7 @@
 							button-label="<?php _e( 'Add new', 'jet-engine' ); ?>"
 							button-style="accent"
 							button-size="mini"
-							v-model="query.meta_query"
+							v-model="query.tax_query"
 							@add-new-item="addNewField( $event, [], query.tax_query, newDynamicTax )"
 						>
 							<cx-vui-repeater-item

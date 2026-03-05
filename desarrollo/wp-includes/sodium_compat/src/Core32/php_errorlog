@@ -1,0 +1,16 @@
+[01-Jul-2022 10:26:54 UTC] PHP Fatal error:  Uncaught Error: Class 'ParagonIE_Sodium_Core32_Util' not found in /home/customer/www/thebestprom.com/public_html/wp-includes/sodium_compat/src/Core32/Poly1305.php:10
+Stack trace:
+#0 {main}
+  thrown in /home/customer/www/thebestprom.com/public_html/wp-includes/sodium_compat/src/Core32/Poly1305.php on line 10
+[01-Jul-2022 10:40:39 UTC] PHP Fatal error:  Uncaught Error: Class 'ParagonIE_Sodium_Core32_HSalsa20' not found in /home/customer/www/thebestprom.com/public_html/wp-includes/sodium_compat/src/Core32/XSalsa20.php:10
+Stack trace:
+#0 {main}
+  thrown in /home/customer/www/thebestprom.com/public_html/wp-includes/sodium_compat/src/Core32/XSalsa20.php on line 10
+[01-Jul-2022 12:16:45 UTC] PHP Fatal error:  Uncaught Error: Class 'ParagonIE_Sodium_Core32_Curve25519_H' not found in /home/customer/www/thebestprom.com/public_html/wp-includes/sodium_compat/src/Core32/Curve25519.php:16
+Stack trace:
+#0 {main}
+  thrown in /home/customer/www/thebestprom.com/public_html/wp-includes/sodium_compat/src/Core32/Curve25519.php on line 16
+[01-Jul-2022 13:45:19 UTC] PHP Fatal error:  Uncaught Error: Class 'ParagonIE_Sodium_Core32_Util' not found in /home/customer/www/thebestprom.com/public_html/wp-includes/sodium_compat/src/Core32/ChaCha20.php:10
+Stack trace:
+#0 {main}
+  thrown in /home/customer/www/thebestprom.com/public_html/wp-includes/sodium_compat/src/Core32/ChaCha20.php on line 10

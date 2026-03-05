@@ -4,7 +4,7 @@
  * Plugin URI: https://clearfy.pro/disable-admin-notices
  * Description: Disable admin notices plugin gives you the option to hide updates warnings and inline notices in the admin panel.
  * Author: Themeisle
- * Version: 1.4.1
+ * Version: 1.4.3
  * Text Domain: disable-admin-notices
  * Domain Path: /languages/
  * Author URI: https://themeisle.com
@@ -51,7 +51,7 @@ require_once( dirname( __FILE__ ) . '/libs/factory/core/includes/class-factory-r
 $wdan_plugin_info = [
 	'prefix'               => 'wbcr_dan_',
 	'plugin_name'          => 'wbcr_dan',
-	'plugin_title'         => 'Webcraftic disable admin notices',
+	'plugin_title'         => 'Disable admin notices',
 
 	// PLUGIN SUPPORT
 	'support_details'      => [
@@ -60,22 +60,6 @@ $wdan_plugin_info = [
 			'support' => 'support', // {site}/support
 			'docs'    => 'docs',     // {site}/docs,
 			'pricing' => 'disable-admin-notices'
-		]
-	],
-	// PLUGIN PREMIUM SETTINGS
-	'has_premium'          => true,
-	'license_settings'     => [
-		'provider'         => 'freemius',
-		'slug'             => 'disable-admin-notices-premium',
-		'plugin_id'        => '6456',
-		'public_key'       => 'pk_0570ec3c1b4100b9c9a0cbfe80f9f',
-		'price'            => 29,
-		'has_updates'      => true,
-		'updates_settings' => [
-			'maybe_rollback'    => true,
-			'rollback_settings' => [
-				'prev_stable_version' => '0.0.0'
-			]
 		]
 	],
 
@@ -97,7 +81,6 @@ $wdan_plugin_info = [
 		[ 'libs/factory/forms', 'factory_forms_480', 'admin' ],
 		[ 'libs/factory/pages', 'factory_pages_480', 'admin' ],
 		[ 'libs/factory/templates', 'factory_templates_134', 'all' ],
-		[ 'libs/factory/freemius', 'factory_freemius_170', 'all' ],
 		[ 'libs/factory/adverts', 'factory_adverts_159', 'admin' ],
 		//array('libs/factory/logger', 'factory_logger_149', 'all')
 	]
@@ -148,12 +131,37 @@ require_once( WDN_PLUGIN_DIR . '/libs/factory/core/boot.php' );
 require_once( WDN_PLUGIN_DIR . '/includes/functions.php' );
 require_once( WDN_PLUGIN_DIR . '/includes/class-plugin.php' );
 
+/**
+ * Deactivate PRO plugin.
+ *
+ * @param WDN_Plugin $disable_admin_notice_obj
+ */
+function deactivate_pro_plugin( $disable_admin_notice_obj ) {
+	$pro_slug = 'disable-admin-notices-premium-premium/disable-admin-notices-premium.php';
+
+	// If plugin isn't active, we stop immediately.
+	if ( ! is_plugin_active( $pro_slug ) ) {
+		return;
+	}
+
+	// Delete premium option
+	$disable_admin_notice_obj->deletePopulateOption( 'premium_package' );
+
+	// Remove pro plugin action. 
+	remove_action( 'plugins_loaded', 'wdan_premium_load', 20 );
+
+	// As register_deactivation_hook called, deactivate the pro plugin silently.
+	deactivate_plugins( $pro_slug, true );
+}
+
 try {
 	require_once WDN_PLUGIN_DIR . '/vendor/autoload.php';
-	new WDN_Plugin( __FILE__, array_merge( $wdan_plugin_info, [
+	$disable_admin_notice = new WDN_Plugin( __FILE__, array_merge( $wdan_plugin_info, [
 		'plugin_version'     => WDN_PLUGIN_VERSION,
 		'plugin_text_domain' => $wdan_compatibility->get_text_domain(),
 	] ) );
+
+	deactivate_pro_plugin( $disable_admin_notice );
 } catch ( Exception $e ) {
 	// Plugin wasn't initialized due to an error
 	define( 'WDN_PLUGIN_THROW_ERROR', true );

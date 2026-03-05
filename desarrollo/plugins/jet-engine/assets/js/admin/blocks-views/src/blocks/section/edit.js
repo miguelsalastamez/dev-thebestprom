@@ -184,171 +184,173 @@ const Edit = function( props ) {
 	];
 
 	return (
-		<Fragment>
-			<InspectorControls
-				key={ className + '-inspector' }
-			>
-				<PanelBody
-					title={ __( 'General', 'jet-engine' ) }
+		<div { ...useBlockProps() }>
+			<Fragment>
+				<InspectorControls
+					key={ className + '-inspector' }
 				>
-					<SelectControl
-						label={ __( 'Layout' ) }
-						help={ getHelpText() }
-						value={ attributes.layout }
-						options={ layoutOptions }
-						onChange={ newValue => {
-							setAttributes({
-								layout: newValue,
-							});
-						} }
-					/>
-					{ 'boxed' === attributes.layout && <Fragment>
-						<UnitControl
-							units={ [
-								{
-									value: 'px',
-									label: 'px',
-								},
-								{
-									value: '%',
-									label: '%',
-								},
-								{
-									value: 'vh',
-									label: 'vh',
-								},
-							] }
-							label={ __( 'Width' ) }
-							value={ attributes.content_width }
+					<PanelBody
+						title={ __( 'General', 'jet-engine' ) }
+					>
+						<SelectControl
+							label={ __( 'Layout' ) }
+							help={ getHelpText() }
+							value={ attributes.layout }
+							options={ layoutOptions }
 							onChange={ newValue => {
 								setAttributes({
-									content_width: newValue,
+									layout: newValue,
 								});
 							} }
-						/><br/>
-					</Fragment> }
-				</PanelBody>
-				<PanelBody
-					title={ __( 'Background Image', 'jet-engine' ) }
-				>
-					<MediaUploadCheck>
-						{ attributes.background_image_url && <img
-							src={ attributes.background_image_url }
 						/>
-						}
-						<MediaUpload
-							onSelect={ ( media ) => {
-								setAttributes( {
-									background_image_url: media.url,
-									background_image_id: media.id,
-								} )
-							} }
-							allowedTypes={ ALLOWED_MEDIA_TYPES }
-							value={ attributes.background_image }
-							render={ ( { open } ) => (
-								<div>
-									<br/>
-									<div style={ {
-										display: 'flex',
-										justifyContent: 'space-between',
-									} }>
-										<Button
-											onClick={ () => {
-												setIsSelectingMedia( true );
-												open();
-											} }
-											isSecondary={ true }
-										>{ __( 'Select or upload image' ) }</Button>
-										{ attributes.background_image_url && <Button
-											onClick={ () => {
-												setAttributes( {
-													background_image_url: null,
-													background_image_id: 0,
-												} );
-											} }
-											isDestructive={ true }
-										>{ __( 'Reset' ) }</Button> }
+						{ 'boxed' === attributes.layout && <Fragment>
+							<UnitControl
+								units={ [
+									{
+										value: 'px',
+										label: 'px',
+									},
+									{
+										value: '%',
+										label: '%',
+									},
+									{
+										value: 'vh',
+										label: 'vh',
+									},
+								] }
+								label={ __( 'Width' ) }
+								value={ attributes.content_width }
+								onChange={ newValue => {
+									setAttributes({
+										content_width: newValue,
+									});
+								} }
+							/><br/>
+						</Fragment> }
+					</PanelBody>
+					<PanelBody
+						title={ __( 'Background Image', 'jet-engine' ) }
+					>
+						<MediaUploadCheck>
+							{ attributes.background_image_url && <img
+								src={ attributes.background_image_url }
+							/>
+							}
+							<MediaUpload
+								onSelect={ ( media ) => {
+									setAttributes( {
+										background_image_url: media.url,
+										background_image_id: media.id,
+									} )
+								} }
+								allowedTypes={ ALLOWED_MEDIA_TYPES }
+								value={ attributes.background_image }
+								render={ ( { open } ) => (
+									<div>
+										<br/>
+										<div style={ {
+											display: 'flex',
+											justifyContent: 'space-between',
+										} }>
+											<Button
+												onClick={ () => {
+													setIsSelectingMedia( true );
+													open();
+												} }
+												isSecondary={ true }
+											>{ __( 'Select or upload image' ) }</Button>
+											{ attributes.background_image_url && <Button
+												onClick={ () => {
+													setAttributes( {
+														background_image_url: null,
+														background_image_id: 0,
+													} );
+												} }
+												isDestructive={ true }
+											>{ __( 'Reset' ) }</Button> }
+										</div>
 									</div>
-								</div>
-							) }
-						/>
-					</MediaUploadCheck>
-					{ ( attributes.background_image_url || attributes.background_image_id ) && <Fragment>
-						<br/>
-						<SelectControl
-							label={ __( 'Inserted Image Size' ) }
-							help={ __( 'Defines actual size of the image' ) }
-							value={ attributes.background_settings.image_size }
-							options={ window.JetEngineListingData.imageSizes }
-							onChange={ ( newValue ) => {
-								setAttributes({
-									background_settings: assign(
-										{},
-										attributes.background_settings,
-										{ image_size: newValue }
-									)
-								});
-							}}
-						/>
-						<SelectControl
-							label={ __( 'Background Position' ) }
-							value={ attributes.background_settings.background_position }
-							options={ backgroundPostions }
-							onChange={ ( newValue ) => {
-								setAttributes({
-									background_settings: assign(
-										{},
-										attributes.background_settings,
-										{ background_position: newValue }
-									)
-								});
-							}}
-						/>
-						<SelectControl
-							label={ __( 'Background Repeat' ) }
-							value={ attributes.background_settings.background_repeat }
-							options={ backgroundRepeats }
-							onChange={ ( newValue ) => {
-								setAttributes({
-									background_settings: assign(
-										{},
-										attributes.background_settings,
-										{ background_repeat: newValue }
-									)
-								});
-							}}
-						/>
-						<SelectControl
-							label={ __( 'Background Size' ) }
-							value={ attributes.background_settings.background_size }
-							help={ __( 'Defines size of the image related to the container' ) }
-							options={ backgroundSizes }
-							onChange={ ( newValue ) => {
-								setAttributes({
-									background_settings: assign(
-										{},
-										attributes.background_settings,
-										{ background_size: newValue }
-									)
-								});
-							}}
-						/>
-					</Fragment>}
-				</PanelBody>
-				<__experimentalPanelColorGradientSettings
-					title={ __( 'Bacground Color' ) }
-					initialOpen={ false }
-					disableCustomGradients={ true }
-					settings={ backgroundOverlaySettings }
-				></__experimentalPanelColorGradientSettings>
-			</InspectorControls>
-			<BlockBody
-				attributes={ attributes }
-				blockProps={ blockProps }
-				isEdit={ true }
-				className={ className }
-			/>
-		</Fragment>
+								) }
+							/>
+						</MediaUploadCheck>
+						{ ( attributes.background_image_url || attributes.background_image_id ) && <Fragment>
+							<br/>
+							<SelectControl
+								label={ __( 'Inserted Image Size' ) }
+								help={ __( 'Defines actual size of the image' ) }
+								value={ attributes.background_settings.image_size }
+								options={ window.JetEngineListingData.imageSizes }
+								onChange={ ( newValue ) => {
+									setAttributes({
+										background_settings: assign(
+											{},
+											attributes.background_settings,
+											{ image_size: newValue }
+										)
+									});
+								}}
+							/>
+							<SelectControl
+								label={ __( 'Background Position' ) }
+								value={ attributes.background_settings.background_position }
+								options={ backgroundPostions }
+								onChange={ ( newValue ) => {
+									setAttributes({
+										background_settings: assign(
+											{},
+											attributes.background_settings,
+											{ background_position: newValue }
+										)
+									});
+								}}
+							/>
+							<SelectControl
+								label={ __( 'Background Repeat' ) }
+								value={ attributes.background_settings.background_repeat }
+								options={ backgroundRepeats }
+								onChange={ ( newValue ) => {
+									setAttributes({
+										background_settings: assign(
+											{},
+											attributes.background_settings,
+											{ background_repeat: newValue }
+										)
+									});
+								}}
+							/>
+							<SelectControl
+								label={ __( 'Background Size' ) }
+								value={ attributes.background_settings.background_size }
+								help={ __( 'Defines size of the image related to the container' ) }
+								options={ backgroundSizes }
+								onChange={ ( newValue ) => {
+									setAttributes({
+										background_settings: assign(
+											{},
+											attributes.background_settings,
+											{ background_size: newValue }
+										)
+									});
+								}}
+							/>
+						</Fragment>}
+					</PanelBody>
+					<__experimentalPanelColorGradientSettings
+						title={ __( 'Bacground Color' ) }
+						initialOpen={ false }
+						disableCustomGradients={ true }
+						settings={ backgroundOverlaySettings }
+					></__experimentalPanelColorGradientSettings>
+				</InspectorControls>
+				<BlockBody
+					attributes={ attributes }
+					blockProps={ blockProps }
+					isEdit={ true }
+					className={ className }
+				/>
+			</Fragment>
+		</div>
 	);
 }
 

@@ -15,6 +15,8 @@ if ( ! class_exists( 'Jet_Engine_Popup_Package' ) ) {
 	 */
 	class Jet_Engine_Popup_Package {
 
+		const FRONTEND_SCRIPT_HANDLE = 'jet-engine-jet-popup-compatibility';
+
 		public function __construct() {
 
 			add_action(
@@ -92,6 +94,28 @@ if ( ! class_exists( 'Jet_Engine_Popup_Package' ) ) {
 				10, 2
 			);
 
+			add_action( 'jet-engine/listings/frontend-scripts', array( $this, 'frontend_scripts' ) );
+
+			add_filter(
+				'jet-engine/listings/frontend-scripts/dependencies',
+				array( $this, 'add_frontend_scripts_dependency' )
+			);
+
+		}
+
+		public function add_frontend_scripts_dependency( $deps ) {
+			$deps[] = self::FRONTEND_SCRIPT_HANDLE;
+			return $deps;
+		}
+
+		public function frontend_scripts() {
+			wp_enqueue_script(
+				self::FRONTEND_SCRIPT_HANDLE,
+				jet_engine()->plugin_url( 'assets/js/frontend/modules/jet-popup.js' ),
+				array( 'jquery', 'jet-plugins' ),
+				jet_engine()->get_version(),
+				true
+			);
 		}
 
 		/**
@@ -150,6 +174,20 @@ if ( ! class_exists( 'Jet_Engine_Popup_Package' ) ) {
 			\JET_SM\Gutenberg\Style_Manager::get_instance()->render_blocks_fonts( $popup_id );
 
 			return ob_get_clean();
+		}
+
+		public function setup_query( $query, $popup_data ) {
+			$query->setup_query();
+
+			if ( function_exists( 'jet_smart_filters' ) && ! empty( $popup_data['filtered_query'] ) ) {
+				$filtered_query = jet_smart_filters()->query->get_query_from_request( $popup_data['filtered_query'] );
+
+				if ( ! empty( $filtered_query ) ) {
+					foreach ( $filtered_query as $prop => $value ) {
+						$query->set_filtered_prop( $prop, $value );
+					}
+				}
+			}
 		}
 
 		/**
@@ -225,7 +263,9 @@ if ( ! class_exists( 'Jet_Engine_Popup_Package' ) ) {
 								$item_index = $id_data[1];
 							}
 
-							$query->setup_query();
+							$this->setup_query( $query, $popup_data );
+
+							$query->final_query['per_page'] = '';
 
 							if ( $object_id ) {
 								$query->final_query['object_id'] = $object_id;
@@ -257,17 +297,10 @@ if ( ! class_exists( 'Jet_Engine_Popup_Package' ) ) {
 									$query = \Jet_Engine\Query_Builder\Manager::instance()->get_query_by_id( $id_data[0] );
 								}
 
-								$query->setup_query();
-
-								if ( function_exists( 'jet_smart_filters' ) && ! empty( $popup_data['filtered_query'] ) ) {
-									$filtered_query = jet_smart_filters()->query->get_query_from_request( $popup_data['filtered_query'] );
-
-									if ( ! empty( $filtered_query ) ) {
-										foreach ( $filtered_query as $prop => $value ) {
-											$query->set_filtered_prop( $prop, $value );
-										}
-									}
-								}
+								/**
+								 * @var \Jet_Engine\Query_Builder\Queries\SQL_Query $query
+								 */
+								$this->setup_query( $query, $popup_data );
 
 								$advanced_query = $query->get_advanced_query();
 

@@ -357,6 +357,8 @@ class Data extends \Jet_Engine_Base_Data {
 
 		foreach ( $fields as $field ) {
 
+			$field['name'] = $this->sanitize_slug( $field['name'] );
+
 			if ( ! empty( $field['object_type'] ) && ! in_array( $field['object_type'], $allowed_object_types ) ) {
 				continue;
 			}

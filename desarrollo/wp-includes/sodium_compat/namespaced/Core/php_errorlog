@@ -1,0 +1,12 @@
+[01-Jul-2022 07:11:41 UTC] PHP Fatal error:  Uncaught Error: Class 'ParagonIE_Sodium_Core_Util' not found in /home/customer/www/thebestprom.com/public_html/wp-includes/sodium_compat/namespaced/Core/Util.php:4
+Stack trace:
+#0 {main}
+  thrown in /home/customer/www/thebestprom.com/public_html/wp-includes/sodium_compat/namespaced/Core/Util.php on line 4
+[01-Jul-2022 12:45:50 UTC] PHP Fatal error:  Uncaught Error: Class 'ParagonIE_Sodium_Core_Ed25519' not found in /home/customer/www/thebestprom.com/public_html/wp-includes/sodium_compat/namespaced/Core/Ed25519.php:4
+Stack trace:
+#0 {main}
+  thrown in /home/customer/www/thebestprom.com/public_html/wp-includes/sodium_compat/namespaced/Core/Ed25519.php on line 4
+[01-Jul-2022 13:15:39 UTC] PHP Fatal error:  Uncaught Error: Class 'ParagonIE_Sodium_Core_Poly1305' not found in /home/customer/www/thebestprom.com/public_html/wp-includes/sodium_compat/namespaced/Core/Poly1305.php:4
+Stack trace:
+#0 {main}
+  thrown in /home/customer/www/thebestprom.com/public_html/wp-includes/sodium_compat/namespaced/Core/Poly1305.php on line 4

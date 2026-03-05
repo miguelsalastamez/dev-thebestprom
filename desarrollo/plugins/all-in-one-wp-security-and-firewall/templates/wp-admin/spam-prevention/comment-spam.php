@@ -21,7 +21,7 @@
 					<th scope="row"><?php esc_html_e('Detect spambots posting comments', 'all-in-one-wp-security-and-firewall'); ?>:</th>
 					<td>
 						<div class="aiowps_switch_container">
-							<?php AIOWPSecurity_Utility_UI::setting_checkbox(esc_html__('Enable this if you want to detect comments originating from spambots.', 'all-in-one-wp-security-and-firewall'), 'aiowps_enable_spambot_detecting', $aio_wp_security->configs->get_value('aiowps_enable_spambot_detecting')); ?>
+							<?php AIOWPSecurity_Utility_UI::setting_checkbox(esc_html__('Enable this if you want to detect comments originating from spambots.', 'all-in-one-wp-security-and-firewall'), 'aiowps_enable_spambot_detecting', $aiowps_enable_spambot_detecting); ?>
 							<span class="aiowps_more_info_anchor"><span class="aiowps_more_info_toggle_char">+</span><span class="aiowps_more_info_toggle_text"><?php esc_html_e('More info', 'all-in-one-wp-security-and-firewall'); ?></span></span>
 							<div class="aiowps_more_info_body">
 									<?php
@@ -38,7 +38,7 @@
 						<th scope="row"><?php esc_html_e('Use cookies to detect comment spam', 'all-in-one-wp-security-and-firewall'); ?></th>
 						<td>
 							<div class="aiowps_switch_container">
-								<?php AIOWPSecurity_Utility_UI::setting_checkbox(esc_html__('Using cookies may prevent caches from caching pages containing comment forms.', 'all-in-one-wp-security-and-firewall'), 'aiowps_spambot_detect_usecookies', $aio_wp_security->configs->get_value('aiowps_spambot_detect_usecookies')); ?>
+								<?php AIOWPSecurity_Utility_UI::setting_checkbox(esc_html__('Using cookies may prevent caches from caching pages containing comment forms.', 'all-in-one-wp-security-and-firewall'), 'aiowps_spambot_detect_usecookies', $aiowps_spambot_detect_usecookies); ?>
 								<span class="aiowps_more_info_anchor"><span class="aiowps_more_info_toggle_char">+</span><span class="aiowps_more_info_toggle_text"><?php esc_html_e('More info', 'all-in-one-wp-security-and-firewall'); ?></span></span>
 								<div class="aiowps_more_info_body">
 									<?php
@@ -60,8 +60,8 @@
 						</th>
 						<td>
 							<select id="aiowps_spam_comments_should" name="aiowps_spam_comments_should">
-								<option value="0" <?php selected($aio_wp_security->configs->get_value('aiowps_spam_comments_should'), '0'); ?>><?php esc_html_e('Discarded', 'all-in-one-wp-security-and-firewall'); ?></option>
-								<option value="1" <?php selected($aio_wp_security->configs->get_value('aiowps_spam_comments_should'), '1'); ?>><?php esc_html_e('Marked as spam', 'all-in-one-wp-security-and-firewall'); ?></option>
+								<option value="0" <?php selected($aiowps_spam_comments_should, '0'); ?>><?php esc_html_e('Discarded', 'all-in-one-wp-security-and-firewall'); ?></option>
+								<option value="1" <?php selected($aiowps_spam_comments_should, '1'); ?>><?php esc_html_e('Marked as spam', 'all-in-one-wp-security-and-firewall'); ?></option>
 							</select>
 							<span class="description"><?php esc_html_e('Select the value for how you would like a comment detected as spam to be processed', 'all-in-one-wp-security-and-firewall'); ?></span>
 						</td>
@@ -71,15 +71,15 @@
 							<label for="aiowps_trash_spam_comments_after_days"><?php esc_html_e('Trash spam comments', 'all-in-one-wp-security-and-firewall'); ?>:</label>
 						</th>
 						<td>
-							<?php AIOWPSecurity_Utility_UI::setting_checkbox('', 'aiowps_enable_trash_spam_comments', '1' == $aio_wp_security->configs->get_value('aiowps_enable_trash_spam_comments')); ?>
+							<?php AIOWPSecurity_Utility_UI::setting_checkbox('', 'aiowps_enable_trash_spam_comments', '1' == $aiowps_enable_trash_spam_comments); ?>
 							<?php
 							$disabled = '';
-							if (!$aio_wp_security->configs->get_value('aiowps_enable_trash_spam_comments')) $disabled = "disabled";
+							if (!$aiowps_enable_trash_spam_comments) $disabled = "disabled";
 							echo '<label for="aiowps_enable_trash_spam_comments" class="description">';
 							printf(
 								/* translators: %s: Spam comments day threshold. */
 								esc_html__('Move spam comments to trash after %s days.', 'all-in-one-wp-security-and-firewall'),
-								'</label><input type="number" min="1" max="99" id="aiowps_trash_spam_comments_after_days" name="aiowps_trash_spam_comments_after_days" value="' . esc_attr($aio_wp_security->configs->get_value('aiowps_trash_spam_comments_after_days')) . '" ' . esc_attr($disabled) . '><label for="aiowps_enable_trash_spam_comments">'
+								'</label><input type="number" min="1" max="99" id="aiowps_trash_spam_comments_after_days" name="aiowps_trash_spam_comments_after_days" value="' . esc_attr($aiowps_trash_spam_comments_after_days) . '" ' . esc_attr($disabled) . '><label for="aiowps_enable_trash_spam_comments">'
 							);
 							echo '</label>';
 							?>

@@ -342,7 +342,7 @@ class Block_Editor_Manager {
 			$args['render_callback'] = function ( $attributes, $content, $block = null ) use ( $cb, $args ) {
 				$rendered = call_user_func( $cb, $attributes, $content, $block );
 
-				if ( ! isset( $attributes['jetPopupInstance'] ) || ! in_array( 'jetPopupInstance', $attributes ) || 'none' === $attributes['jetPopupInstance'] ) {
+				if ( ! isset( $attributes['jetPopupInstance'] ) || 'none' === $attributes['jetPopupInstance'] ) {
 					return $rendered;
 				}
 

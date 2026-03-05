@@ -81,9 +81,25 @@ if ( ! class_exists( 'Jet_Listing_Render_Calendar' ) ) {
 			wp_cache_delete( 'jet_engine_calendar_requested_dates' );
 		}
 
+		/**
+		 * 
+		 * @param \Jet_Engine\Query_Builder\Queries\Base_Query $query
+		 */
 		public function add_date_args_to_custom_query( $query ) {
 			$this->query_instance = $query;
-			$query->final_query = $this->add_calendar_query( $query->final_query );
+
+			/**
+			 * Blocks editor renders the block multiple times on saving the post.
+			 * This leads to excess meta clauses added to meta query, which sometimes results in too complex SQL queries made.
+			 * Flag is added to $query->final_query to adjust for this quirk.
+			 * (Also, this may happen when Calendar widget is used with exact same settings multiple times on a page)
+			 * 
+			 * @see https://github.com/Crocoblock/issues-tracker/issues/18948
+			 */
+			if ( empty( $query->final_query['_calendar_query_processed'] ) ) {
+				$query->final_query['_calendar_query_processed'] = true;
+				$query->final_query = $this->add_calendar_query( $query->final_query );
+			}
 
 			// Reset query if it was stored before.
 			$query->reset_query();
@@ -238,14 +254,17 @@ if ( ! class_exists( 'Jet_Listing_Render_Calendar' ) ) {
 									continue;
 								}
 
-								/*
-								 * $days = absint( $end_date ) - absint( $key );
-								 * This code changed on the following code to correctly get the days value
-								 * if dates contain time value.
-								 * Ex: 01.01.2023 15:00 and 04.01.2023 11:00.
-								 */
-								$days = absint( strtotime( date( 'Y-m-d', $end_date ) ) ) - absint( strtotime( date( 'Y-m-d', $key ) ) );
-								$days = $days / ( 24 * 60 * 60 );
+								// Normalize dates to midnight in WP timezone to correctly calculate day span
+								// when dates contain time values (e.g. 01.01.2023 15:00 → 04.01.2023 11:00).
+								$start_day_ts = jet_engine_datetime()->to_time(
+									jet_engine_datetime()->date( 'Y-m-d', $key )
+								);
+
+								$end_day_ts = jet_engine_datetime()->to_time(
+									jet_engine_datetime()->date( 'Y-m-d', $end_date )
+								);
+
+								$days = absint( $end_day_ts - $start_day_ts ) / DAY_IN_SECONDS;
 
 								// if event starts before calendar period,
 								// adjust days count to process it by multiday envents logic
@@ -255,25 +274,28 @@ if ( ! class_exists( 'Jet_Listing_Render_Calendar' ) ) {
 									$start_from = 0;
 								}
 
-								for ( $i = $start_from; $i <= $days; $i++ ) {
+								$base_day_ts = jet_engine_datetime()->to_time(
+									jet_engine_datetime()->date( 'Y-m-d', $key )
+								);
 
-									$day = strtotime( date( 'Y-m-d', $key ) . '+ ' . $i . ' days' );
+								for ( $i = $start_from; $i <= $days; $i++ ) {
+									$day = $base_day_ts + ( $i * DAY_IN_SECONDS );
 
 									// Skip day if out of calendar period
 									if ( $day > $calendar_period['end'] ) {
 										continue;
 									}
 
-									$j = absint( date( 'j', $day ) );
+									$day_of_month = absint( jet_engine_datetime()->date( 'j', $day ) );
 
 									if ( $day < $month['start'] ) {
 
-										if ( empty( $this->prev_month_posts[ $j ] ) ) {
-											$this->prev_month_posts[ $j ] = array( $post );
+										if ( empty( $this->prev_month_posts[ $day_of_month ] ) ) {
+											$this->prev_month_posts[ $day_of_month ] = array( $post );
 										} elseif ( ! in_array(
-											$post, $this->prev_month_posts[ $j ], true
+											$post, $this->prev_month_posts[ $day_of_month ], true
 										) ) {
-											$this->prev_month_posts[ $j ][] = $post;
+											$this->prev_month_posts[ $day_of_month ][] = $post;
 										}
 
 										continue;
@@ -281,23 +303,23 @@ if ( ! class_exists( 'Jet_Listing_Render_Calendar' ) ) {
 
 									if ( $day > $month['end'] ) {
 
-										if ( empty( $this->next_month_posts[ $j ] ) ) {
-											$this->next_month_posts[ $j ] = array( $post );
+										if ( empty( $this->next_month_posts[ $day_of_month ] ) ) {
+											$this->next_month_posts[ $day_of_month ] = array( $post );
 										} elseif ( ! in_array(
-											$post, $this->next_month_posts[ $j ], true
+											$post, $this->next_month_posts[ $day_of_month ], true
 										) ) {
-											$this->next_month_posts[ $j ][] = $post;
+											$this->next_month_posts[ $day_of_month ][] = $post;
 										}
 
 										continue;
 									}
 
-									if ( empty( $this->multiday_events[ $j ] ) ) {
-										$this->multiday_events[ $j ] = array( $post );
+									if ( empty( $this->multiday_events[ $day_of_month ] ) ) {
+										$this->multiday_events[ $day_of_month ] = array( $post );
 									} elseif ( ! in_array(
-										$post, $this->multiday_events[ $j ], true
+										$post, $this->multiday_events[ $day_of_month ], true
 									) ) {
-										$this->multiday_events[ $j ][] = $post;
+										$this->multiday_events[ $day_of_month ][] = $post;
 									}
 
 									$this->posts_cache[ jet_engine()->listings->data->get_current_object_id( $post ) ] = false;
@@ -339,7 +361,7 @@ if ( ! class_exists( 'Jet_Listing_Render_Calendar' ) ) {
 
 					if ( is_numeric( $key ) ) {
 
-						$key     = date( 'j-n', $key );
+						$key     = jet_engine_datetime()->date( 'j-n', $key );
 						$item_id = jet_engine()->listings->data->get_current_object_id( $post );
 
 						if ( isset( $prepared_posts[ $key ] ) ) {

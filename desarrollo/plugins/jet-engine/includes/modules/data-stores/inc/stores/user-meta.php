@@ -111,4 +111,34 @@ class User_Meta_Store extends Base_Store {
 		return apply_filters( 'jet-engine/data-stores/store/data', $store, $store_id );
 	}
 
+	/**
+	 * Clear store.
+	 *
+	 * @param $store_id
+	 */
+	public function clear_store( $store_id = null ) {
+
+		global $wpdb;
+
+		$meta_key = $this->prefix . $store_id;
+
+		$wpdb->delete(
+			$wpdb->usermeta,
+			array(
+				'meta_key' => $meta_key,
+			),
+			array(
+				'%s',
+			)
+		);
+
+		return true;
+	}
+
+	/**
+	 * Whether store supports clearing records
+	 */
+	public function supports_clearing() {
+		return true;
+	}
 }

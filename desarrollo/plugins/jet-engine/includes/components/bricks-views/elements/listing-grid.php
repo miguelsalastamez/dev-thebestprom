@@ -213,25 +213,17 @@ class Listing_Grid extends Base {
 		$this->register_jet_control(
 			'columns',
 			[
-				'tab'     => 'content',
-				'label'   => esc_html__( 'Columns', 'jet-engine' ),
-				'type'    => 'select',
-				'inline'  => true,
-				'default' => 3,
-				'options' => array(
-					1  => 1,
-					2  => 2,
-					3  => 3,
-					4  => 4,
-					5  => 5,
-					6  => 6,
-					7  => 7,
-					8  => 8,
-					9  => 9,
-					10 => 10,
-					'auto' => __( 'Auto', 'jet-engine' ),
-				),
-				'css'     => [
+				'tab'          => 'content',
+				'label'        => esc_html__( 'Columns', 'jet-engine' ),
+				'description'  => esc_html__( 'Use "auto" to enable automatic column calculation.', 'jet-engine' ),
+				'type'         => 'number',
+				'units'        => false,
+				'inline'       => true,
+				'hasVariables' => false,
+				'default'      => 3,
+				'min'          => 1,
+				'max'          => 12,
+				'css'          => [
 					[
 						'property' => '--columns',
 						'selector' => $css_scheme['items'],

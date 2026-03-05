@@ -21,13 +21,13 @@
 					<th scope="row"><?php esc_html_e('Enable force user logout', 'all-in-one-wp-security-and-firewall'); ?>:</th>
 					<td>
 						<div class="aiowps_switch_container">
-							<?php AIOWPSecurity_Utility_UI::setting_checkbox(esc_html__('Enable this if you want to force a user to be logged out after a configured amount of time', 'all-in-one-wp-security-and-firewall'), 'aiowps_enable_forced_logout', '1' == $aio_wp_security->configs->get_value('aiowps_enable_forced_logout')); ?>
+							<?php AIOWPSecurity_Utility_UI::setting_checkbox(esc_html__('Enable this if you want to force a user to be logged out after a configured amount of time', 'all-in-one-wp-security-and-firewall'), 'aiowps_enable_forced_logout', '1' == $aiowps_enable_forced_logout); ?>
 						</div>
 					</td>
 				</tr>
 				<tr valign="top">
 					<th scope="row"><label for="aiowps_logout_time_period"><?php esc_html_e('Logout the user after X minutes', 'all-in-one-wp-security-and-firewall'); ?></label>:</th>
-					<td><input id="aiowps_logout_time_period" type="text" size="5" name="aiowps_logout_time_period" value="<?php echo esc_attr($aio_wp_security->configs->get_value('aiowps_logout_time_period')); ?>" />
+					<td><input id="aiowps_logout_time_period" type="text" size="5" name="aiowps_logout_time_period" value="<?php echo esc_attr($aiowps_logout_time_period); ?>" />
 					<span class="description"><?php esc_html_e('(Minutes) The user will be forced to log back in after this time period has elapased.', 'all-in-one-wp-security-and-firewall'); ?></span>
 					</td> 
 				</tr>

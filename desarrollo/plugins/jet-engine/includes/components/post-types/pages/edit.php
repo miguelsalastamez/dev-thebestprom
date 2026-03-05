@@ -253,6 +253,28 @@ if ( ! class_exists( 'Jet_Engine_CPT_Page_Edit' ) ) {
 						),
 					),
 				),
+				'jet_engine_custom_cb_number' => array(
+					'description' => __( 'Format number', 'jet-engine' ),
+					'args'        => array(
+						'field' => array(
+							'label'       => __( 'Set field', 'jet-engine' ),
+							'description' => __( 'Meta field to get date from', 'jet-engine' ),
+							'value'       => '',
+						),
+						'decimal_places' => array(
+							'label'       => __( 'Decimal Places Number', 'jet-engine' ),
+							'value'       => '2',
+						),
+						'decimals_separator' => array(
+							'label'       => __( 'Decimals Separator', 'jet-engine' ),
+							'value'       => '.',
+						),
+						'thousands_separator' => array(
+							'label'       => __( 'Thousands Separator', 'jet-engine' ),
+							'value'       => '',
+						),
+					),
+				),
 				'jet_engine_custom_cb_pretty_post_link' => array(
 					'description' => __( 'Get linked post title by post ID', 'jet-engine' ),
 					'args'        => array(

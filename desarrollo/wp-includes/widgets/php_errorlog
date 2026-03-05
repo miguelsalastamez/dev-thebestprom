@@ -1,0 +1,24 @@
+[07-Jun-2022 09:51:09 UTC] PHP Fatal error:  Uncaught Error: Class 'WP_Widget' not found in /home/customer/www/thebestprom.com/public_html/wp-includes/widgets/class-wp-widget-search.php:17
+Stack trace:
+#0 {main}
+  thrown in /home/customer/www/thebestprom.com/public_html/wp-includes/widgets/class-wp-widget-search.php on line 17
+[07-Jun-2022 12:05:08 UTC] PHP Fatal error:  Uncaught Error: Class 'WP_Widget_Media' not found in /home/customer/www/thebestprom.com/public_html/wp-includes/widgets/class-wp-widget-media-video.php:18
+Stack trace:
+#0 {main}
+  thrown in /home/customer/www/thebestprom.com/public_html/wp-includes/widgets/class-wp-widget-media-video.php on line 18
+[01-Jul-2022 12:44:51 UTC] PHP Fatal error:  Uncaught Error: Class 'WP_Widget_Media' not found in /home/customer/www/thebestprom.com/public_html/wp-includes/widgets/class-wp-widget-media-audio.php:18
+Stack trace:
+#0 {main}
+  thrown in /home/customer/www/thebestprom.com/public_html/wp-includes/widgets/class-wp-widget-media-audio.php on line 18
+[01-Jul-2022 14:11:12 UTC] PHP Fatal error:  Uncaught Error: Class 'WP_Widget' not found in /home/customer/www/thebestprom.com/public_html/wp-includes/widgets/class-wp-widget-block.php:17
+Stack trace:
+#0 {main}
+  thrown in /home/customer/www/thebestprom.com/public_html/wp-includes/widgets/class-wp-widget-block.php on line 17
+[01-Jul-2022 14:43:47 UTC] PHP Fatal error:  Uncaught Error: Class 'WP_Widget' not found in /home/customer/www/thebestprom.com/public_html/wp-includes/widgets/class-wp-widget-media.php:17
+Stack trace:
+#0 {main}
+  thrown in /home/customer/www/thebestprom.com/public_html/wp-includes/widgets/class-wp-widget-media.php on line 17
+[28-Nov-2022 22:49:37 UTC] PHP Fatal error:  Uncaught Error: Class 'WP_Widget' not found in /home/customer/www/thebestprom.com/public_html/wp-includes/widgets/class-wp-widget-tag-cloud.php:17
+Stack trace:
+#0 {main}
+  thrown in /home/customer/www/thebestprom.com/public_html/wp-includes/widgets/class-wp-widget-tag-cloud.php on line 17

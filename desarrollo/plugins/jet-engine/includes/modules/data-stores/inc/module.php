@@ -3,6 +3,8 @@ namespace Jet_Engine\Modules\Data_Stores;
 
 class Module {
 
+	const FRONTEND_SCRIPT_HANDLE = 'jet-engine-data-stores';
+
 	/**
 	 * A reference to an instance of this class.
 	 *
@@ -74,6 +76,28 @@ class Module {
 		/** Integration with JetFormBuilder */
 		new Forms\Action_Manager();
 
+		add_action( 'jet-engine/listings/frontend-scripts', array( $this, 'frontend_scripts' ) );
+
+		add_filter(
+			'jet-engine/listings/frontend-scripts/dependencies',
+			array( $this, 'add_frontend_scripts_dependency' )
+		);
+
+	}
+
+	public function add_frontend_scripts_dependency( $deps ) {
+		$deps[] = self::FRONTEND_SCRIPT_HANDLE;
+		return $deps;
+	}
+
+	public function frontend_scripts() {
+		wp_enqueue_script(
+			self::FRONTEND_SCRIPT_HANDLE,
+			jet_engine()->plugin_url( 'assets/js/frontend/modules/data-stores.js' ),
+			array( 'jquery', 'jet-plugins' ),
+			jet_engine()->get_version(),
+			true
+		);
 	}
 
 	/**

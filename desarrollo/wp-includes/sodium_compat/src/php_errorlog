@@ -1,0 +1,4 @@
+[01-Jul-2022 07:12:31 UTC] PHP Fatal error:  Uncaught Error: Class 'ParagonIE_Sodium_Core_Util' not found in /home/customer/www/thebestprom.com/public_html/wp-includes/sodium_compat/src/File.php:9
+Stack trace:
+#0 {main}
+  thrown in /home/customer/www/thebestprom.com/public_html/wp-includes/sodium_compat/src/File.php on line 9

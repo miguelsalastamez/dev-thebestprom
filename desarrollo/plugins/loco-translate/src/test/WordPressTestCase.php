@@ -1,38 +1,31 @@
 <?php
 /**
- * Test case extending the WordPress base
+ * Test case extending the WordPress base.
+ * The IDE isn't picking up assertion methods, because of the way this inheritance chain is working.
+ * @mixin PHPUnit\Framework\TestCase
  */
 abstract class Loco_test_WordPressTestCase extends WP_UnitTestCase {
 
-    /**
-     * @var string
-     */
-    private $locale = 'en_US';
+    private string $locale = 'en_US';
 
     /**
-     * @var array [ location, status ]
+     * @var null|array [ location, status ]
      */
-    private $redirect;
+    private ?array $redirect = null;
 
-    /**
-     * @var string
-     */
-    private $fs_method;
+    private ?string $fs_method = null;
 
     /**
      * @var bool
      */
-    private $fs_allow = true;
+    private bool $fs_allow = true;
 
     /**
      * @var Loco_data_Cookie[]
      */
-    private $cookies_set;
+    private ?array $cookies_set = null;
 
-    /**
-     * @var Loco_output_Buffer
-     */
-    private $buffer;
+    private ?Loco_output_Buffer $buffer = null;
     
     
     /**
@@ -211,7 +204,7 @@ abstract class Loco_test_WordPressTestCase extends WP_UnitTestCase {
         $router = new Loco_mvc_AdminRouter;
         $router->on_admin_menu();
         $screen = get_current_screen();
-        $action = isset($_GET['action']) ? $_GET['action'] : null;
+        $action = $_GET['action'] ?? '';
         $router->initPage( $screen, $action );
         $html = get_echo( [$router,'renderPage'] );
         // ensure further hooks fired as WordPress continues to render admin footer

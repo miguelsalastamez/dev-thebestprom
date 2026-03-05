@@ -38,13 +38,13 @@ $aio_wp_security->include_template('wp-admin/brute-force/partials/rename-login-n
 					<th scope="row"><?php esc_html_e('Enable rename login page feature', 'all-in-one-wp-security-and-firewall'); ?>:</th>
 					<td>
 						<div class="aiowps_switch_container">
-							<?php AIOWPSecurity_Utility_UI::setting_checkbox(esc_html__('Enable this if you want the rename login page feature', 'all-in-one-wp-security-and-firewall'), 'aiowps_enable_rename_login_page', '1' == $aio_wp_security->configs->get_value('aiowps_enable_rename_login_page')); ?>
+							<?php AIOWPSecurity_Utility_UI::setting_checkbox(esc_html__('Enable this if you want the rename login page feature', 'all-in-one-wp-security-and-firewall'), 'aiowps_enable_rename_login_page', '1' == $aiowps_enable_rename_login_page); ?>
 						</div>
 					</td>
 				</tr>
 				<tr valign="top">
 					<th scope="row"><label for="aiowps_login_page_slug"><?php esc_html_e('Login page URL', 'all-in-one-wp-security-and-firewall'); ?>:</label></th>
-					<td><code><?php echo esc_url($home_url); ?></code><input id="aiowps_login_page_slug" type="text" size="15" name="aiowps_login_page_slug" value="<?php echo esc_attr($aio_wp_security->configs->get_value('aiowps_login_page_slug')); ?>">
+					<td><code><?php echo esc_url($home_url); ?></code><input id="aiowps_login_page_slug" type="text" size="15" name="aiowps_login_page_slug" value="<?php echo esc_attr($aiowps_login_page_slug); ?>">
 					<span class="description"><?php echo esc_html__('Enter a string which will represent your secure login page slug.', 'all-in-one-wp-security-and-firewall') . ' ' . esc_html__('You are encouraged to choose something which is hard to guess and only you will remember.', 'all-in-one-wp-security-and-firewall'); ?></span>
 					</td>
 				</tr>

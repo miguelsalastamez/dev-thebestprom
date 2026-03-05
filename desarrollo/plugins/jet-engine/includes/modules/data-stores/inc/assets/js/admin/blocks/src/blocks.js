@@ -10,7 +10,8 @@ const {
 
 const {
 	InspectorControls,
-	MediaUpload
+	MediaUpload,
+	useBlockProps,
 } = wp.blockEditor;
 
 const {
@@ -28,6 +29,7 @@ const Icon = <SVG width="24" height="24" viewBox="0 0 64 34" fill="none" xmlns="
 
 registerBlockType( 'jet-engine/data-store-button', {
 	title: __( 'Data Store Button' ),
+	apiVersion: 3,
 	icon: Icon,
 	category: 'jet-engine',
 	attributes: window.JetEngineListingData.atts.dataStoreButton,
@@ -280,12 +282,14 @@ registerBlockType( 'jet-engine/data-store-button', {
 					</PanelBody>
 				</InspectorControls>
 			),
-			<Disabled key={ 'block_render' }>
-				<ServerSideRender
-					block="jet-engine/data-store-button"
-					attributes={ attributes }
-				/>
-			</Disabled>
+			<div { ...useBlockProps() }>
+				<Disabled key={ 'block_render' }>
+					<ServerSideRender
+						block="jet-engine/data-store-button"
+						attributes={ attributes }
+					/>
+				</Disabled>
+			</div>
 		];
 	},
 	save: props => {

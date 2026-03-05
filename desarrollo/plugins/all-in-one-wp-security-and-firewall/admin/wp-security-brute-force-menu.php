@@ -69,15 +69,12 @@ class AIOWPSecurity_Brute_Force_Menu extends AIOWPSecurity_Admin_Menu {
 	 * @global $aiowps_feature_mgr
 	 */
 	protected function render_rename_login() {
-		global $aio_wp_security, $aiowps_feature_mgr;
+		global $aio_wp_security;
 
-		if (get_option('permalink_structure')) {
-			$home_url = trailingslashit(home_url());
-		} else {
-			$home_url = trailingslashit(home_url()) . '?';
-		}
+		$aios_commands = new AIOWPSecurity_Commands();
+		$rename_login_page_settings = $aios_commands->get_rename_login_page_data();
 
-		$aio_wp_security->include_template('wp-admin/brute-force/rename-login.php', false, array('aiowps_feature_mgr' => $aiowps_feature_mgr, 'home_url' => $home_url));
+		$aio_wp_security->include_template('wp-admin/brute-force/rename-login.php', false, $rename_login_page_settings);
 	}
 
 	/**
@@ -90,9 +87,11 @@ class AIOWPSecurity_Brute_Force_Menu extends AIOWPSecurity_Admin_Menu {
 	 */
 	protected function render_cookie_based_brute_force_prevention() {
 		global $aio_wp_security;
-		global $aiowps_feature_mgr;
 
-		$aio_wp_security->include_template('wp-admin/brute-force/cookie-based-brute-force-prevention.php', false, array('aiowps_feature_mgr' => $aiowps_feature_mgr));
+		$aios_commands = new AIOWPSecurity_Commands();
+		$cookie_based_brute_force_prevention_data = $aios_commands->get_cookie_based_brute_force_data();
+
+		$aio_wp_security->include_template('wp-admin/brute-force/cookie-based-brute-force-prevention.php', false, $cookie_based_brute_force_prevention_data);
 	}
 
 	/**
@@ -104,24 +103,21 @@ class AIOWPSecurity_Brute_Force_Menu extends AIOWPSecurity_Admin_Menu {
 	 * @return void
 	 */
 	protected function render_captcha_settings() {
-		global $aio_wp_security, $aiowps_feature_mgr;
+		global $aio_wp_security;
 
-		$supported_captchas = $aio_wp_security->captcha_obj->get_supported_captchas();
-		$captcha_themes = $aio_wp_security->captcha_obj->get_captcha_themes();
+		$aios_commands = new AIOWPSecurity_Commands();
 
-		$captcha_theme = 'auto';
-		if ('cloudflare-turnstile' == $aio_wp_security->configs->get_value('aiowps_default_captcha')) $captcha_theme = $aio_wp_security->configs->get_value('aiowps_turnstile_theme');
+		$captcha_settings_data = $aios_commands->get_captcha_settings_data();
 
-		if ('cloudflare-turnstile' == $aio_wp_security->configs->get_value('aiowps_default_captcha') && false === $aio_wp_security->captcha_obj->cloudflare_turnstile_verify_configuration($aio_wp_security->configs->get_value('aiowps_turnstile_site_key'), $aio_wp_security->configs->get_value('aiowps_turnstile_secret_key'))) {
+		if ('cloudflare-turnstile' == $captcha_settings_data['aiowps_default_captcha'] && false === $captcha_settings_data['aios_google_recaptcha_invalid_configuration']) {
 			echo '<div class="notice notice-warning aio_red_box"><p>' . esc_html__('Your Cloudflare Turnstile configuration is invalid.', 'all-in-one-wp-security-and-firewall').' ' . esc_html__('Please enter the correct Cloudflare Turnstile keys below to use the Turnstile feature.', 'all-in-one-wp-security-and-firewall').'</p></div>';
 		}
 
-		if ('1' == $aio_wp_security->configs->get_value('aios_google_recaptcha_invalid_configuration')) {
+		if ('1' == $captcha_settings_data['aios_google_recaptcha_invalid_configuration']) {
 			echo '<div class="notice notice-warning aio_red_box"><p>' . esc_html__('Your Google reCAPTCHA configuration is invalid.', 'all-in-one-wp-security-and-firewall') . ' ' . esc_html__('Please enter the correct reCAPTCHA keys below to use the reCAPTCHA feature.', 'all-in-one-wp-security-and-firewall').'</p></div>';
 		}
 
-		$default_captcha = $aio_wp_security->configs->get_value('aiowps_default_captcha');
-		$aio_wp_security->include_template('wp-admin/brute-force/captcha-settings.php', false, array('aiowps_feature_mgr' => $aiowps_feature_mgr, 'supported_captchas' => $supported_captchas, 'default_captcha' => $default_captcha, 'captcha_themes' => $captcha_themes, 'captcha_theme' => $captcha_theme));
+		$aio_wp_security->include_template('wp-admin/brute-force/captcha-settings.php', false, compact('captcha_settings_data'));
 	}
 
 	/**
@@ -168,9 +164,11 @@ class AIOWPSecurity_Brute_Force_Menu extends AIOWPSecurity_Admin_Menu {
 	 * @return void
 	 */
 	protected function render_honeypot() {
-		global $aio_wp_security, $aiowps_feature_mgr;
+		global $aio_wp_security;
 
-		$aio_wp_security->include_template('wp-admin/brute-force/honeypot.php', false, array('aiowps_feature_mgr' => $aiowps_feature_mgr));
+		$aios_commands = new AIOWPSecurity_Commands();
+		$honeypot_data = $aios_commands->get_honeypot_data();
+
+		$aio_wp_security->include_template('wp-admin/brute-force/honeypot.php', false, $honeypot_data);
 	}
-
 }

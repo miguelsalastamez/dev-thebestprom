@@ -66,8 +66,6 @@ class Elementor {
 		add_action( 'jet_plugins/frontend/register_scripts', array( $this, 'frontend_register_scripts' ) );
 		add_action( 'jet-popup/render-manager/define-popups/after', [ $this, 'after_define_popups' ], 10, 3 );
 
-		add_action( 'elementor/core/files/clear_cache', [ $this, 'elementor_clear_cache' ] );
-		
 		//add_filter( 'jet-popup/settings/default-popup-settings', [ $this, 'modify_default_popup_settings' ], 10, 2 );
 		add_filter( 'jet-popup/assets/frontend-css-deps', [ $this, 'modify_frontend_css_deps' ], 10, 2 );
 		add_filter( 'jet-popup/post-type/content-type-options', array( $this, 'modify_content_type_options' ), 10, 2 );
@@ -79,35 +77,6 @@ class Elementor {
 		add_filter( 'jet-popup/popup-generator/is-define-popups', array( $this, 'maybe_popup_define_disabled' ) );
 		// add_filter( 'elementor/utils/is_post_support', array( $this, 'maybe_disable_post_support' ), 10, 5 );
 
-	}
-
-	/**
-	 * Elementor Clear Cache
-	 *
-	 * @return void
-	 */
-	public function elementor_clear_cache( $clear_cache = true ) {
-		if ( ! did_action( 'elementor/loaded' ) ) {
-			return;
-		}
-	
-		if ( $clear_cache ) {
-			\Elementor\Plugin::instance()->files_manager->clear_cache();
-		}
-
-		$limit = apply_filters( 'jet-popup/elementor/elementor_css_regen_limit', 50 );
-	
-		$popups = get_posts( [
-			'post_type'      => [ 'jet-popup', 'elementor_library' ],
-			'post_status'    => 'publish',
-			'posts_per_page' => $limit,
-		] );
-	
-		if ( class_exists( '\Elementor\Core\Files\CSS\Post' ) ) {
-			foreach ( $popups as $popup ) {
-				\Elementor\Core\Files\CSS\Post::create( $popup->ID )->update();
-			}
-		}
 	}
 
 	/**

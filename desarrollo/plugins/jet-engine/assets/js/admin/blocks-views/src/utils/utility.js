@@ -1,3 +1,5 @@
+import CustomControl from "components/custom-control.js";
+
 export function isObject(x) {
 	return typeof x === 'object' && x !== null;
 };
@@ -28,6 +30,32 @@ export function clone(o) {
 
 	return output;
 }
+
+export function getCustomControlsSection( section, props ) {
+
+				const providerControls = window.JetEngineListingData.mapsListingConfig.providerControls;
+				const attributes       = props.attributes;
+
+				if ( ! providerControls || ! providerControls[ section ] ) {
+					return;
+				}
+
+				return providerControls[ section ].map( ( data ) => {
+
+					const control = data.control;
+
+					control.name = data.key;
+
+					return <CustomControl
+						control={ control }
+						value={ attributes[ control.name ] }
+						onChange={ newValue => {
+							props.setAttributes( { [ control.name ]: newValue } );
+						} }
+					/>
+				} );
+
+			}
 
 export function arrayMove(arr, startIndex, endIndex) {
 	while (startIndex < 0) {

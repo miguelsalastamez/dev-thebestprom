@@ -214,6 +214,10 @@ class Module {
 				$post_id = $object->term_id;
 				break;
 
+			case 'Jet_Engine_Queried_Repeater_Item':
+				$post_id = $object->get_id();
+				break;
+
 			default:
 				$post_id = apply_filters( 'jet-engine/listing/custom-post-id', get_the_ID(), $object );
 		}

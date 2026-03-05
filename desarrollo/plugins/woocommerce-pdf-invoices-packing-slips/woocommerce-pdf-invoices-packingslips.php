@@ -4,14 +4,14 @@
  * Requires Plugins:     woocommerce
  * Plugin URI:           https://wpovernight.com/downloads/woocommerce-pdf-invoices-packing-slips-bundle/
  * Description:          Create, print & email PDF or Electronic Invoices & PDF Packing Slips for WooCommerce orders.
- * Version:              5.4.0
+ * Version:              5.8.2
  * Author:               WP Overnight
  * Author URI:           https://www.wpovernight.com
  * License:              GPLv2 or later
  * License URI:          https://opensource.org/licenses/gpl-license.php
  * Text Domain:          woocommerce-pdf-invoices-packing-slips
  * WC requires at least: 3.3
- * WC tested up to:      10.4
+ * WC tested up to:      10.6
  */
 
 if ( ! defined( 'ABSPATH' ) ) {
@@ -22,13 +22,14 @@ if ( ! class_exists( 'WPO_WCPDF' ) ) :
 
 class WPO_WCPDF {
 
-	public $version              = '5.4.0';
+	public $version              = '5.8.2';
 	public $version_php          = '7.4';
 	public $version_woo          = '3.3';
 	public $version_wp           = '4.4';
 	public $plugin_basename;
 	public $legacy_addons;
 	public $third_party_plugins;
+	public $vat_plugins;
 	public $order_util;
 	public $file_system;
 	public $settings;
@@ -163,6 +164,7 @@ class WPO_WCPDF {
 
 		// Compatibility classes
 		$this->third_party_plugins = \WPO\IPS\Compatibility\ThirdPartyPlugins::instance();
+		$this->vat_plugins         = \WPO\IPS\Compatibility\VatPlugins::instance();
 		$this->order_util          = \WPO\IPS\Compatibility\OrderUtil::instance();
 		$this->file_system         = \WPO\IPS\Compatibility\FileSystem::instance();
 
@@ -176,6 +178,9 @@ class WPO_WCPDF {
 		$this->frontend            = \WPO\IPS\Frontend::instance();
 		$this->install             = \WPO\IPS\Install::instance();
 		$this->font_synchronizer   = \WPO\IPS\FontSynchronizer::instance();
+
+		// EDI classes
+		\WPO\IPS\EDI\Peppol::instance();
 	}
 
 	/**

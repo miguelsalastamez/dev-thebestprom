@@ -115,7 +115,7 @@ class List_Table extends \WP_List_Table {
 			$value = $value . $data['suffix'];
 		}
 
-		return $value;
+		return wp_kses_post( $value );
 	}
 
 	public function convert_array( $value = null, $glue = false ) {

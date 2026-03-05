@@ -50,6 +50,8 @@ class WDN_Plugin extends Wbcr_Factory480_Plugin {
 		} );
 
 		add_filter( 'themeisle_sdk_products', [ __CLASS__, 'register_sdk' ] );
+
+		add_filter( 'themeisle_sdk_ran_promos', '__return_true' );
 	}
 	/**
 	 * Register product into SDK.
@@ -73,14 +75,9 @@ class WDN_Plugin extends Wbcr_Factory480_Plugin {
 	private function register_pages() {
 		//self::app()->registerPage( 'WDN_Log_Page', WDN_PLUGIN_DIR . '/admin/pages/class-pages-log.php' );
 		self::app()->registerPage( 'WDN_Settings_Page', WDN_PLUGIN_DIR . '/admin/pages/class-pages-settings.php' );
-
-		if ( ! ( $this->premium->is_activate() && $this->premium->is_install_package() ) ) {
-			self::app()->registerPage( 'WDAN_Notices', WDN_PLUGIN_DIR . '/admin/pages/class-pages-notices.php' );
-			self::app()->registerPage( 'WDAN_Block_Ad_Redirects', WDN_PLUGIN_DIR . '/admin/pages/class-pages-edit-redirects.php' );
-			self::app()->registerPage( 'WDAN_Edit_Admin_Bar', WDN_PLUGIN_DIR . '/admin/pages/class-pages-edit-admin-bar.php' );
-		}
-
-		self::app()->registerPage( 'WDN_LicensePage', WDN_PLUGIN_DIR . '/admin/pages/class-pages-license.php' );
+		self::app()->registerPage( 'WDAN_Notices', WDN_PLUGIN_DIR . '/admin/pages/class-pages-notices.php' );
+		self::app()->registerPage( 'WDAN_Block_Ad_Redirects', WDN_PLUGIN_DIR . '/admin/pages/class-pages-edit-redirects.php' );
+		self::app()->registerPage( 'WDAN_Edit_Admin_Bar', WDN_PLUGIN_DIR . '/admin/pages/class-pages-edit-admin-bar.php' );
 	}
 
 	private function admin_scripts() {
@@ -90,6 +87,7 @@ class WDN_Plugin extends Wbcr_Factory480_Plugin {
 		if ( defined( 'DOING_AJAX' ) && DOING_AJAX ) {
 			require_once( WDN_PLUGIN_DIR . '/admin/ajax/hide-notice.php' );
 			require_once( WDN_PLUGIN_DIR . '/admin/ajax/restore-notice.php' );
+			require_once( WDN_PLUGIN_DIR . '/admin/ajax/disable-adminbar-menus.php' );
 		}
 
 		require_once( WDN_PLUGIN_DIR . '/admin/boot.php' );
@@ -105,22 +103,5 @@ class WDN_Plugin extends Wbcr_Factory480_Plugin {
 	private function global_scripts() {
 		require_once( WDN_PLUGIN_DIR . '/includes/classes/class-configurate-notices.php' );
 		new WDN_ConfigHideNotices( self::$app );
-	}
-
-	/**
-	 * Метод проверяет активацию премиум плагина и наличие действующего лицензионнного ключа
-	 *
-	 * @return bool
-	 */
-	public function is_premium() {
-		if (
-			$this->premium->is_active() &&
-			$this->premium->is_activate()
-			&& $this->premium->is_install_package()
-		) {
-			return true;
-		} else {
-			return false;
-		}
 	}
 }

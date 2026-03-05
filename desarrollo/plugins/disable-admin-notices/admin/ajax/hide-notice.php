@@ -24,7 +24,7 @@ function wbcr_dan_ajax_hide_notices() {
 		//$notice_text = wp_kses( $notice_html, [] );
 
 		if ( empty( $notice_id ) ) {
-			wp_send_json_error( [ 'error_message' => __( 'Undefinded notice id.', 'disable-admin-notices' ) ] );
+			wp_send_json_error( [ 'error_message' => __( 'Unable to process request: notice ID is missing. Please try again.', 'disable-admin-notices' ) ] );
 		}
 
 		switch ( $hide_target ) {
@@ -35,7 +35,7 @@ function wbcr_dan_ajax_hide_notices() {
 					$get_hidden_notices = [];
 				}
 
-				$get_hidden_notices[ $notice_id ] = rtrim( trim( $notice_html ) );
+				$get_hidden_notices[ $notice_id ] = wp_kses_post( rtrim( trim( wp_unslash( $notice_html ) ) ) );
 
 				WDN_Plugin::app()->updatePopulateOption('hidden_notices', $get_hidden_notices );
 				break;
@@ -48,7 +48,7 @@ function wbcr_dan_ajax_hide_notices() {
 					$get_hidden_notices = [];
 				}
 
-				$get_hidden_notices[ $notice_id ] = rtrim( trim( $notice_html ) );
+				$get_hidden_notices[ $notice_id ] = wp_kses_post( rtrim( trim( $notice_html ) ) );
 
 				update_user_meta( $current_user_id, WDN_Plugin::app()->getOptionName( 'hidden_notices' ), $get_hidden_notices );
 				break;
@@ -56,7 +56,7 @@ function wbcr_dan_ajax_hide_notices() {
 
 		wp_send_json_success();
 	} else {
-		wp_send_json_error( [ 'error_message' => __( 'You don\'t have enough capability to edit this information.', 'disable-admin-notices' ) ] );
+		wp_send_json_error( [ 'error_message' => __( 'You don\'t have permission to perform this action. Please contact your administrator.', 'disable-admin-notices' ) ] );
 	}
 }
 

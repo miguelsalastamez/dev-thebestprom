@@ -21,7 +21,7 @@ function wbcr_dan_ajax_restore_notice() {
 		$notice_id = WDN_Plugin::app()->request->post( 'notice_id', null, true );
 
 		if ( empty( $notice_id ) ) {
-			wp_send_json_error( [ 'error_message' => __( 'Undefinded notice id.', 'disable-admin-notices' ) ] );
+			wp_send_json_error( [ 'error_message' => __( 'Unable to process request: notice ID is missing. Please try again.', 'disable-admin-notices' ) ] );
 		}
 
 		//Users notices
@@ -42,7 +42,7 @@ function wbcr_dan_ajax_restore_notice() {
 
 		wp_send_json_success();
 	} else {
-		wp_send_json_error( [ 'error_message' => __( 'You don\'t have enough capability to edit this information.', 'disable-admin-notices' ) ] );
+		wp_send_json_error( [ 'error_message' => __( 'You don\'t have permission to perform this action. Please contact your administrator.', 'disable-admin-notices' ) ] );
 	}
 }
 

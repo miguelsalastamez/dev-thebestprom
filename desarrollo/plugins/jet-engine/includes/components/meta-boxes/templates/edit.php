@@ -42,6 +42,58 @@
 					:wrapper-css="[ 'equalwidth' ]"
 					v-model="generalSettings.hide_field_names"
 				></cx-vui-switcher>
+				<cx-vui-select
+					:label="'<?php _e( 'Position', 'jet-engine' ); // phpcs:ignore ?>'"
+					:description="'<?php _e( 'Select where to display the meta box in the editor interface.', 'jet-engine' ); // phpcs:ignore ?>'"
+					:options-list="[
+						{
+							value: 'normal',
+							label: '<?php _e( 'Normal (after content)', 'jet-engine' ); // phpcs:ignore ?>',
+						},
+						{
+							value: 'side',
+							label: '<?php _e( 'Side', 'jet-engine' ); // phpcs:ignore ?>',
+						},
+					]"
+					:wrapper-css="[ 'equalwidth' ]"
+					:size="'fullwidth'"
+					:conditions="[
+						{
+							input: this.generalSettings.object_type,
+							compare: 'equal',
+							value: 'post',
+						}
+					]"
+					v-model="generalSettings.position"
+				></cx-vui-select>
+				<cx-vui-select
+					:label="'<?php _e( 'Priority', 'jet-engine' ); // phpcs:ignore ?>'"
+					:description="'<?php _e( 'Controls the order of this meta box within the selected area.', 'jet-engine' ); // phpcs:ignore ?>'"
+					:options-list="[
+						{
+							value: 'high',
+							label: '<?php _e( 'High', 'jet-engine' ); // phpcs:ignore ?>',
+						},
+						{
+							value: 'default',
+							label: '<?php _e( 'Default', 'jet-engine' ); // phpcs:ignore ?>',
+						},
+						{
+							value: 'low',
+							label: '<?php _e( 'Low', 'jet-engine' ); // phpcs:ignore ?>',
+						},
+					]"
+					:wrapper-css="[ 'equalwidth' ]"
+					:size="'fullwidth'"
+					:conditions="[
+						{
+							input: this.generalSettings.object_type,
+							compare: 'equal',
+							value: 'post',
+						}
+					]"
+					v-model="generalSettings.priority"
+				></cx-vui-select>
 			</div>
 		</cx-vui-collapse>
 		<cx-vui-collapse

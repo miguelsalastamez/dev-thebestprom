@@ -8,6 +8,7 @@
 			return {
 				dataStores: dataStoresConfig.items,
 				storeTypes: dataStoresConfig.types,
+				storeTypesCaps: dataStoresConfig.types_caps,
 				postTypes: dataStoresConfig.post_types,
 				canCount: dataStoresConfig.can_posts_counts,
 				nonce: dataStoresConfig._nonce,
@@ -127,6 +128,51 @@
 					self.saving = false;
 
 				} );
+			},
+			clearData: function( storeId ) {
+				const self = this;
+
+				if ( ! storeId ) {
+					return;
+				}
+
+				jQuery.ajax({
+					url: window.ajaxurl,
+					type: 'POST',
+					dataType: 'json',
+					data: {
+						action: 'jet_engine_data_store_clear',
+						nonce: self.nonce,
+						store_id: storeId,
+					},
+				}).done( function( response ) {
+
+					if ( response.success ) {
+						self.$CXNotice.add( {
+							message: response.data.message,
+							type: 'success',
+							duration: 7000,
+						} );
+					} else {
+						self.$CXNotice.add( {
+							message: response.data.message,
+							type: 'error',
+							duration: 15000,
+						} );
+					}
+
+				} ).fail( function( jqXHR, textStatus, errorThrown ) {
+
+					self.$CXNotice.add( {
+						message: errorThrown,
+						type: 'error',
+						duration: 15000,
+					} );
+
+				} );
+			},
+			storeSupportsClearing( type ) {
+				return this.storeTypesCaps?.[ type ]?.supports_clearing || false;
 			}
 		}
 	} );

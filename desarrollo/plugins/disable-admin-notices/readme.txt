@@ -1,73 +1,106 @@
-=== Disable Admin Notices individually  ===
-Tags: notices, notification, notifications, disable, upgrade, nag
+=== Disable Admin Notices - Hide Dashboard Notifications  ===
+Tags: nnotifications, hide admin notices, hide admin notifications, admin notices, update notifications
 Contributors: themeisle
 Requires at least: 5.6
 Tested up to: 6.9
 Requires PHP: 7.4
-Stable tag: 1.4.1
+Stable tag: 1.4.3
 License: GPLv2
 
-Disable admin notices plugin gives you the option to hide updates warnings and inline notices in the admin panel.
+Disable admin notices and hide dashboard notifications from plugins, themes and core. Hide all notices, selected ones, or show them in a single line.
 
 == Description ==
 
-Do you know the situation, when some plugin offers you to update to premium, to collect technical data and shows many annoying notices? You are close these notices every now and again but they newly appears and interfere your work with WordPress. Even worse, some plugin’s authors delete “close” button from notices and they shows in your admin panel forever.
+WordPress admin notices and dashboard notifications can quickly become overwhelming. Plugin alerts, theme warnings, update messages, and promotional notices often take up valuable space and disrupt your workflow. **Disable Admin Notices** gives you full control by letting you hide, remove, or disable admin notices across the entire dashboard.
 
-Our team was tired of this, and we developed a small plugin that solves problems with annoying notices. With this plugin, you can turn off notices forever individually for themes, plugins and the WordPress itself.
+You can hide all notifications, disable selected notices only, or move everything into a clean compact bar so messages no longer clutter your admin screen. The plugin also lets you **disable plugin and theme update notifications**, **disable WordPress core update alerts**, manage which items appear in the admin bar, and even block redirect URLs used by some plugins to show ads or promotional pages.
 
-The Hide admin notices plugin adds “Hide notification forever” link for each admin notice. Click this link and plugin will filter this notice and you will never see it. This method will help you to disable only annoying notices from plugins and themes, but important error notifications will continue to work.
+Whether you want a cleaner dashboard, fewer interruptions, or complete control over WordPress admin notifications, this plugin helps you keep your workspace organized and distraction-free.
 
-In addition, you can disable all notices globally simply change plugin options. In this case, the plugin hides all admin notices, except of updates notices in the list of installed plug-ins.
-<strong>[Premium]</strong> You can hide the notice for other users who have access to the admin panel, while displaying this notice for yourself. (Multisite only)
+### Key Features
 
-And still, that you could see which notices are shows, we made the special item in the top admin bar that will collect all notices in one place. It is disabled by default to freeing space in the admin menu but you can enable it in plugin options.
-<strong>[Premium]</strong> We have also added a Hidden Notices page so that the site administrator can view the entire list of hidden notes and restore some of them, if necessary.
+**Disable Admin Notices**
+- Disable admin notices globally or hide selected notifications only
+- Hide dashboard notices and show them in a single compact line
+- Option to display all admin notifications in the WordPress admin bar
+- Disable plugin update notifications
+- Disable WordPress core update notifications
+- Access all hidden notices anytime from the plugin dashboard
+- Reset or restore hidden notices at any time
 
-<strong>[Premium]</strong> Compact panel - Instead of notices in the admin panel (no matter how many) a compact panel is displayed, it takes up little space and will not interfere with you. By clicking on the compact panel, you will see all your notes, click again and all your notes are hidden again. This is an easy way to keep track of notes, you won't miss anything, all notes will be available in one click.
-<strong>[Premium]</strong> Block Ad Redirects - This feature will be useful to you to break advertising redirects. Some plugins, when updating or during installation, may redirect you to their page with advertisements or news. If plugins do this too often, it can be a headache for you. Break these redirects with our premium features.
-<strong>[Premium]</strong> Hide admin bar items (menu) - This function allows you to disable annoying menu items in the admin bar. Some plugins take up space in the admin bar to insert their ads. Just get rid of this ad with the premium features of our plugin.
-<strong>[Premium]</strong> Disable plugins updates nags
-<strong>[Premium]</strong> Disable core updates nags
+**Disable Admin Bar Items**
+- Choose which items appear in the WordPress admin bar
+- Hide or remove unnecessary plugin, theme, or tool menu items to reduce clutter
 
-We used some useful functions from plugins <strong>Clearfy – disable unused features</strong>, <strong>WP Hide Plugin Updates and Warnings</strong>, <strong>Hide All Notices</strong>, <strong>WP Nag Hide</strong>, <strong>WP Notification Center</strong>
+**Block Ad Redirects**
+- Block specific redirect URLs to prevent plugins from sending you to ads or promotional screens
+- Avoid unexpected admin redirects when activating or updating plugins
 
-#### Recommended separate modules ####
+### Support
 
-We invite you to check out a few other related free plugins that our team has also produced that you may find especially useful:
+We’re here to help. Feel free to open a new thread on the [Support Forum](https://wordpress.org/support/plugin/disable-admin-notices/).
 
-* [Clearfy – WordPress optimization plugin and disable ultimate tweaker](https://wordpress.org/plugins/clearfy/)
-* [Disable updates, Updates manager, Disable automatic updates](https://wordpress.org/plugins/gonzales/)
-* [Disable Comments for Any Post Types (Remove Comments)](https://wordpress.org/plugins/comments-plus/)
-* [Cyrlitera – transliteration of links and file names](https://wordpress.org/plugins/cyrlitera/)
-* [Disable updates, Disable automatic updates, Updates manager](https://wordpress.org/plugins/webcraftic-updates-manager/)
-* [Hide login page, Hide wp admin – stop attack on login page](https://wordpress.org/plugins/hide-login-page//)
+### Useful Resources
 
-== Translations ==
+- If you like this plugin, you’re sure to love [our other plugins](https://themeisle.com/wordpress-plugins/) as well.
+- Our blog is a great place to [learn more about WordPress](https://themeisle.com/blog/).
+- Get the most out of your website with our helpful [WordPress YouTube Tutorials](https://youtube.com/playlist?list=PLmRasCVwuvpSep2MOsIoE0ncO9JE3FcKP).
 
-* English - default, always included
-* Russian
+== Frequently Asked Questions ==
 
-If you want to help with the translation, please contact me through this site or through the contacts inside the plugin.
+= Will hiding admin notifications affect how plugins or themes work? =
+
+No. Hiding or disabling admin notices does not affect how plugins or themes function. It only removes or moves the visual notifications they display in the dashboard.
+
+=  A notice I hid is gone, but I need it back. How do I restore hidden notices? =
+
+You can restore any hidden notice at any time. Go to **Settings → Hide admin notices → Hidden Notices**, where you’ll find a list of all notices you have hidden. From there, you can restore individual notices.
+
+= Will disabling admin notices hide important error messages? =
+
+No. The plugin only affects standard admin notices and update notifications. Actual error messages and critical WordPress warnings are still shown as normal.
 
 == Installation ==
 
-1. Upload the plugin folder to the `/wp-content/plugins/` directory
-2. Activate the plugin through the 'Plugins' menu in WordPress
-3. The plugin settings can be accessed via the 'Settings' menu in the administration area (either your site administration for single-site installs).
+1. In your WordPress admin, go to **Plugins > Add New**
+2. In the Search field, type **"Disable Admin Notices"**
+3. Under "Disable Admin Notices" by Themeisle, click the **Install Now** link
+4. Once the process is complete, click the **Activate Plugin** link
+5. Go to **Settings → Hide admin notices** to configure the plugin.
 
 == Screenshots ==
-1. Shows an example of use
-2. Control panel
-3. Notifications panel (optional)
+1. Plugin settings
+2. Access hidden admin notices
+3. Group all admin notification in a compact panel
+4. Display notification in the admin bar
+5. Disable admin bar items
 
 == Changelog ==
 
-#####   Version 1.4.1 (2025-12-16)
+#####   Version 1.4.3 (2026-02-17)
 
 - Enhanced security
 
 
 
+
+#####   Version 1.4.2 (2026-01-13)
+
+- Improved UI and removed tooltip color
+- Removed support box and simplified review CTA
+- Improved setting page labels
+- Fixed broken notices
+- Removed all related notifications from appearing
+- Updated newsletter
+- Updated title, added explanation text, fixed errors with strings
+- Enhanced security
+
+
+
+
+#####   Version 1.4.1 (2025-12-16)
+
+- Enhanced security
 
 ####   Version 1.4.0 (2025-11-05)
 

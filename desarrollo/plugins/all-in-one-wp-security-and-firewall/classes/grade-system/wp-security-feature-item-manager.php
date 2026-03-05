@@ -797,4 +797,80 @@ class AIOWPSecurity_Feature_Item_Manager {
 			return false;
 		}
 	}
+
+	/**
+	 * Get the critical features.
+	 *
+	 * @return array
+	 */
+	public static function get_critical_features() {
+		$critical_features = array(
+			'user-accounts-change-admin-user' => array(
+				'name' => __('Admin username', 'all-in-one-wp-security-and-firewall'),
+				'url' => AIOWPSEC_USER_SECURITY_MENU_SLUG,
+			),
+			'user-login-login-lockdown' => array(
+				'name' => __('Login lockout', 'all-in-one-wp-security-and-firewall'),
+				'url' => AIOWPSEC_USER_SECURITY_MENU_SLUG . '&tab=login-lockout',
+			),
+			'filesystem-file-permissions' => array(
+				'name' => __('File permission', 'all-in-one-wp-security-and-firewall'),
+				'url' => AIOWPSEC_FILESYSTEM_MENU_SLUG,
+				'feature_callback' => 'is_main_site'
+			),
+			'firewall-basic-rules' => array(
+				'name' => __('Basic firewall', 'all-in-one-wp-security-and-firewall'),
+				'url' => AIOWPSEC_FIREWALL_MENU_SLUG . '&tab=htaccess-rules',
+				'feature_callback' => array('AIOWPSecurity_Utility', 'allow_to_write_to_htaccess')
+			),
+			'db-security-db-prefix' => array(
+				'name' => __('Database prefix', 'all-in-one-wp-security-and-firewall'),
+				'url' => AIOWPSEC_DB_SEC_MENU_SLUG,
+				'feature_callback' => 'is_main_site'
+			),
+			'filesystem-file-editing' => array(
+				'name' => __('PHP file editing', 'all-in-one-wp-security-and-firewall'),
+				'url' => AIOWPSEC_FILESYSTEM_MENU_SLUG . '&tab=file-protection',
+				'feature_callback' => array('AIOWPSecurity_Utility_Permissions', 'is_main_site_and_super_admin')
+			),
+			'bf-rename-login-page' => array(
+				'name' => __('Renamed login page', 'all-in-one-wp-security-and-firewall'),
+				'url' => AIOWPSEC_BRUTE_FORCE_MENU_SLUG,
+			),
+			'wp-generator-meta-tag' => array(
+				'name' => __('Hidden WP meta info', 'all-in-one-wp-security-and-firewall'),
+				'url' => AIOWPSEC_SETTINGS_MENU_SLUG . '&tab=wp-version-info',
+			),
+		);
+
+		$critical_features = apply_filters('aiowps_filter_critical_features_array', $critical_features);
+		$critical_features = array_filter($critical_features, array(self::class, 'should_add_feature'));
+
+		return $critical_features;
+	}
+
+	/**
+	 * Determines whether a security feature should be activated based on its callback.
+	 *
+	 * This method checks if a feature should be added by evaluating its callback function.
+	 * If no callback is set, the feature is added by default. If a callback is set,
+	 * it must be callable and return a boolean value.
+	 *
+	 * @param array $feature An array containing feature details with the following keys:
+	 *                       'name'             => (string) Name of the feature
+	 *                       'feature_callback' => (callable|null) Optional callback to determine if feature should be added
+	 *
+	 * @return bool True if the feature should be added, false otherwise
+	 */
+	public static function should_add_feature($feature) {
+		if (empty($feature['feature_callback'])) {
+			return true;
+		} elseif (is_callable($feature['feature_callback'])) {
+			return call_user_func($feature['feature_callback']);
+		} else {
+			// phpcs:ignore WordPress.PHP.DevelopmentFunctions.error_log_error_log -- Part of internal error reporting system.
+			error_log("Callback function set but not callable (coding error). Feature: " . $feature['name']);
+			return false;
+		}
+	}
 }

@@ -4,7 +4,8 @@ const {
 } = wp.blocks;
 
 const {
-	InspectorControls
+	InspectorControls,
+	useBlockProps,
 } = wp.blockEditor;
 
 const {
@@ -28,379 +29,374 @@ const blockAttributes = window.JetEngineListingData.atts.listingMultidayCalendar
 
 registerBlockType( 'jet-engine/listing-multiday-calendar', {
 	title: __( 'Multi-Day Calendar' ),
+	apiVersion: 3,
 	icon: GIcon,
 	category: 'jet-engine',
 	attributes: blockAttributes,
 	className: 'jet-multiday-listing-calendar',
-	edit: class extends wp.element.Component {
+	edit: ( props ) => {
 
-		constructor( props ) {
-			super( props );
-		}
+		const attributes       = props.attributes;
+		const listingOptions   = window.JetEngineListingData.listingOptions;
+		const hideOptions      = window.JetEngineListingData.hideOptions;
 
-		render() {
+		return [
+			props.isSelected && (
+				<InspectorControls
+					key={ 'inspector' }
+				>
+					<PanelBody title={ __( 'General' ) }>
+						<SelectControl
+							label={ __( 'Listing' ) }
+							value={ attributes.lisitng_id }
+							options={ listingOptions }
+							onChange={ newValue => {
+								props.setAttributes( { lisitng_id: newValue } );
+							} }
+						/>
+						<SelectControl
+							label={ __( 'Group posts by' ) }
+							value={ attributes.group_by }
+							options={ blockAttributes.group_by.options }
+							onChange={ newValue => {
+								props.setAttributes( { group_by: newValue } );
+							} }
+						/>
+						{ 'meta_date' === attributes.group_by && <>
+							<TextControl
+								type="text"
+								label={ __( 'Meta field name' ) }
+								help={ __( 'This field must contain date to group posts by. Works only if "Save as timestamp" option for meta field is active' ) }
+								value={ attributes.group_by_key }
+								onChange={ newValue => {
+									props.setAttributes( { group_by_key: newValue } );
+								} }
+							/>
+							<TextControl
+								type="text"
+								label={ __( 'End date field name' ) }
+								help={ __( 'This field must contain date when event ends. Works only if "Save as timestamp" option for meta field is active' ) }
+								value={ attributes.end_date_key }
+								onChange={ newValue => {
+									props.setAttributes( { end_date_key: newValue } );
+								} }
+							/>
+						</> }
+						<hr/>
+						<SelectControl
+							label={ __( 'Week days format' ) }
+							value={ attributes.week_days_format }
+							options={ [
+								{
+									value: 'full',
+									label: __( 'Full' ),
+								},
+								{
+									value: 'short',
+									label: __( 'Short' ),
+								},
+								{
+									value: 'initial',
+									label: __( 'Initial letter' ),
+								},
+							] }
+							onChange={ newValue => {
+								props.setAttributes( { week_days_format: newValue } );
+							} }
+						/>
+						<ToggleControl
+							label={ __( 'Start from custom month' ) }
+							checked={ attributes.custom_start_from }
+							onChange={ () => {
+								props.setAttributes( { custom_start_from: ! attributes.custom_start_from } );
+							} }
+						/>
+						{ attributes.custom_start_from &&
+							<SelectControl
+								label={ __( 'Start from month' ) }
+								value={ attributes.start_from_month }
+								options={ [
+									{
+										value: 'January',
+										label: __( 'January' ),
+									},
+									{
+										value: 'February',
+										label: __( 'February' ),
+									},
+									{
+										value: 'March',
+										label: __( 'March' ),
+									},
+									{
+										value: 'April',
+										label: __( 'April' ),
+									},
+									{
+										value: 'May',
+										label: __( 'May' ),
+									},
+									{
+										value: 'June',
+										label: __( 'June' ),
+									},
+									{
+										value: 'July',
+										label: __( 'July' ),
+									},
+									{
+										value: 'August',
+										label: __( 'August' ),
+									},
+									{
+										value: 'September',
+										label: __( 'September' ),
+									},
+									{
+										value: 'October',
+										label: __( 'October' ),
+									},
+									{
+										value: 'November',
+										label: __( 'November' ),
+									},
+									{
+										value: 'December',
+										label: __( 'December' ),
+									},
+								] }
+								onChange={ newValue => {
+									props.setAttributes( { start_from_month: newValue } );
+								} }
+							/>
+						}
+						{ attributes.custom_start_from &&
+							<TextControl
+								type="text"
+								label={ __( 'Start from year' ) }
+								value={ attributes.start_from_year }
+								onChange={ newValue => {
+									props.setAttributes( { start_from_year: newValue } );
+								} }
+							/>
+						}
+						<ToggleControl
+							label={ __( 'Show posts from the nearby months' ) }
+							checked={ attributes.show_posts_nearby_months }
+							onChange={ () => {
+								props.setAttributes( { show_posts_nearby_months: ! attributes.show_posts_nearby_months } );
+							} }
+						/>
+						<ToggleControl
+							label={ __( 'Hide past events' ) }
+							checked={ attributes.hide_past_events }
+							onChange={ () => {
+								props.setAttributes( { hide_past_events: ! attributes.hide_past_events } );
+							} }
+						/>
+						<ToggleControl
+							label={ __( 'Allow date select' ) }
+							checked={ attributes.allow_date_select }
+							onChange={ () => {
+								props.setAttributes( { allow_date_select: ! attributes.allow_date_select } );
+							} }
+						/>
+						{ attributes.allow_date_select && ! attributes.hide_past_events &&
+							<TextControl
+								type="text"
+								label={ __( 'Min select year' ) }
+								value={ attributes.start_year_select }
+								onChange={ newValue => {
+									props.setAttributes( { start_year_select: newValue } );
+								} }
+							/>
+						}
+						{ attributes.allow_date_select &&
+							<TextControl
+								type="text"
+								label={ __( 'Max select year' ) }
+								help={ __( 'You may use JetEngine macros in min/max select year. Also, you may use strings like \'+3years\', \'-1year\', \'this year\' to set year value relative to the curent year.' ) }
+								value={ attributes.end_year_select }
+								onChange={ newValue => {
+									props.setAttributes( { end_year_select: newValue } );
+								} }
+							/>
+						}
+						<ToggleControl
+							label={ __( 'Cache Calendar' ) }
+							checked={ attributes.cache_enabled }
+							onChange={ () => {
+								props.setAttributes( { cache_enabled: ! attributes.cache_enabled } );
+							} }
+						/>
+						{ attributes.cache_enabled &&
+						<TextControl
+							type="number"
+							label={ __( 'Cache Timeout' ) }
+							help={ __( 'Cache timeout in seconds. Set -1 for unlimited.' ) }
+							value={ attributes.cache_timeout }
+							min="-1"
+							max="86400"
+							onChange={ newValue => {
+								props.setAttributes( { cache_timeout: newValue } );
+							} }
+						/> }
+						{ attributes.cache_enabled &&
+						<TextControl
+							type="number"
+							label={ __( 'Maximum Cache Size' ) }
+							help={ __( 'Maximum cache size (months). If number of cached month exceeds this number - the oldest month will be deleted from cache.' ) }
+							value={ attributes.max_cache }
+							min="1"
+							max="120"
+							onChange={ newValue => {
+								props.setAttributes( { max_cache: newValue } );
+							} }
+						/> }
+						<SelectControl
+							label={ __( 'Caption Layout' ) }
+							value={ attributes.caption_layout }
+							options={ [
+								{
+									value: 'layout-1',
+									label: __( 'Layout 1' ),
+								},
+								{
+									value: 'layout-2',
+									label: __( 'Layout 2' ),
+								},
+								{
+									value: 'layout-3',
+									label: __( 'Layout 3' ),
+								},
+								{
+									value: 'layout-4',
+									label: __( 'Layout 4' ),
+								},
 
-			const props            = this.props;
-			const attributes       = props.attributes;
-			const listingOptions   = window.JetEngineListingData.listingOptions;
-			const hideOptions      = window.JetEngineListingData.hideOptions;
+							] }
+							onChange={ newValue => {
+								props.setAttributes( { caption_layout: newValue } );
+							} }
+						/>
+					</PanelBody>
 
-			return [
-				props.isSelected && (
-					<InspectorControls
-						key={ 'inspector' }
+					<PanelBody
+						title={ __( 'Event Badge Content' ) }
+						initialOpen={ false }
 					>
-						<PanelBody title={ __( 'General' ) }>
-							<SelectControl
-								label={ __( 'Listing' ) }
-								value={ attributes.lisitng_id }
-								options={ listingOptions }
-								onChange={ newValue => {
-									props.setAttributes( { lisitng_id: newValue } );
-								} }
-							/>
-							<SelectControl
-								label={ __( 'Group posts by' ) }
-								value={ attributes.group_by }
-								options={ blockAttributes.group_by.options }
-								onChange={ newValue => {
-									props.setAttributes( { group_by: newValue } );
-								} }
-							/>
-							{ 'meta_date' === attributes.group_by && <>
-								<TextControl
-									type="text"
-									label={ __( 'Meta field name' ) }
-									help={ __( 'This field must contain date to group posts by. Works only if "Save as timestamp" option for meta field is active' ) }
-									value={ attributes.group_by_key }
-									onChange={ newValue => {
-										props.setAttributes( { group_by_key: newValue } );
-									} }
-								/>
-								<TextControl
-									type="text"
-									label={ __( 'End date field name' ) }
-									help={ __( 'This field must contain date when event ends. Works only if "Save as timestamp" option for meta field is active' ) }
-									value={ attributes.end_date_key }
-									onChange={ newValue => {
-										props.setAttributes( { end_date_key: newValue } );
-									} }
-								/>
-							</> }
-							<hr/>
-							<SelectControl
-								label={ __( 'Week days format' ) }
-								value={ attributes.week_days_format }
-								options={ [
-									{
-										value: 'full',
-										label: __( 'Full' ),
-									},
-									{
-										value: 'short',
-										label: __( 'Short' ),
-									},
-									{
-										value: 'initial',
-										label: __( 'Initial letter' ),
-									},
-								] }
-								onChange={ newValue => {
-									props.setAttributes( { week_days_format: newValue } );
-								} }
-							/>
-							<ToggleControl
-								label={ __( 'Start from custom month' ) }
-								checked={ attributes.custom_start_from }
-								onChange={ () => {
-									props.setAttributes( { custom_start_from: ! attributes.custom_start_from } );
-								} }
-							/>
-							{ attributes.custom_start_from &&
-								<SelectControl
-									label={ __( 'Start from month' ) }
-									value={ attributes.start_from_month }
-									options={ [
-										{
-											value: 'January',
-											label: __( 'January' ),
-										},
-										{
-											value: 'February',
-											label: __( 'February' ),
-										},
-										{
-											value: 'March',
-											label: __( 'March' ),
-										},
-										{
-											value: 'April',
-											label: __( 'April' ),
-										},
-										{
-											value: 'May',
-											label: __( 'May' ),
-										},
-										{
-											value: 'June',
-											label: __( 'June' ),
-										},
-										{
-											value: 'July',
-											label: __( 'July' ),
-										},
-										{
-											value: 'August',
-											label: __( 'August' ),
-										},
-										{
-											value: 'September',
-											label: __( 'September' ),
-										},
-										{
-											value: 'October',
-											label: __( 'October' ),
-										},
-										{
-											value: 'November',
-											label: __( 'November' ),
-										},
-										{
-											value: 'December',
-											label: __( 'December' ),
-										},
-									] }
-									onChange={ newValue => {
-										props.setAttributes( { start_from_month: newValue } );
-									} }
-								/>
-							}
-							{ attributes.custom_start_from &&
-								<TextControl
-									type="text"
-									label={ __( 'Start from year' ) }
-									value={ attributes.start_from_year }
-									onChange={ newValue => {
-										props.setAttributes( { start_from_year: newValue } );
-									} }
-								/>
-							}
-							<ToggleControl
-								label={ __( 'Show posts from the nearby months' ) }
-								checked={ attributes.show_posts_nearby_months }
-								onChange={ () => {
-									props.setAttributes( { show_posts_nearby_months: ! attributes.show_posts_nearby_months } );
-								} }
-							/>
-							<ToggleControl
-								label={ __( 'Hide past events' ) }
-								checked={ attributes.hide_past_events }
-								onChange={ () => {
-									props.setAttributes( { hide_past_events: ! attributes.hide_past_events } );
-								} }
-							/>
-							<ToggleControl
-								label={ __( 'Allow date select' ) }
-								checked={ attributes.allow_date_select }
-								onChange={ () => {
-									props.setAttributes( { allow_date_select: ! attributes.allow_date_select } );
-								} }
-							/>
-							{ attributes.allow_date_select && ! attributes.hide_past_events &&
-								<TextControl
-									type="text"
-									label={ __( 'Min select year' ) }
-									value={ attributes.start_year_select }
-									onChange={ newValue => {
-										props.setAttributes( { start_year_select: newValue } );
-									} }
-								/>
-							}
-							{ attributes.allow_date_select &&
-								<TextControl
-									type="text"
-									label={ __( 'Max select year' ) }
-									help={ __( 'You may use JetEngine macros in min/max select year. Also, you may use strings like \'+3years\', \'-1year\', \'this year\' to set year value relative to the curent year.' ) }
-									value={ attributes.end_year_select }
-									onChange={ newValue => {
-										props.setAttributes( { end_year_select: newValue } );
-									} }
-								/>
-							}
-							<ToggleControl
-								label={ __( 'Cache Calendar' ) }
-								checked={ attributes.cache_enabled }
-								onChange={ () => {
-									props.setAttributes( { cache_enabled: ! attributes.cache_enabled } );
-								} }
-							/>
-							{ attributes.cache_enabled &&
+						<TextareaControl
+							label={ __( 'Badge Content' ) }
+							help={ __( 'Supports HTML tags, JetEngine macros and shortcodes.' ) }
+							value={ attributes.event_content }
+							onChange={ newValue => {
+								props.setAttributes( { event_content: newValue } );
+							} }
+						/>
+						<ToggleControl
+							label={ __( 'Badge Marker' ) }
+							checked={ attributes.event_marker }
+							help={ __( 'Show event badge dot marker for each event in the calendar' ) }
+							onChange={ () => {
+								props.setAttributes( { event_marker: ! attributes.event_marker } );
+							} }
+						/>
+						<ToggleControl
+							label={ __( 'Use Dynamic Styles' ) }
+							checked={ attributes.use_dynamic_styles }
+							help={ __( 'Allows setting badge color, background, border color and dot color based on the specific event data.' ) }
+							onChange={ () => {
+								props.setAttributes( { use_dynamic_styles: ! attributes.use_dynamic_styles } );
+							} }
+						/>
+						{ attributes.use_dynamic_styles && (
+							<p className="components-base-control__help">
+								{ __( 'Specific event badge styles could be set only by using JetEngine macros or shortcodes. Generated macro or shortcode must return a color value.' ) }
+							</p>
+						) }
+						{ attributes.use_dynamic_styles && (
 							<TextControl
-								type="number"
-								label={ __( 'Cache Timeout' ) }
-								help={ __( 'Cache timeout in seconds. Set -1 for unlimited.' ) }
-								value={ attributes.cache_timeout }
-								min="-1"
-								max="86400"
+								type="text"
+								label={ __( 'Badge Text Color' ) }
+								help={ __( 'Defines the text color for the event badge.' ) }
+								value={ attributes.dynamic_badge_color }
 								onChange={ newValue => {
-									props.setAttributes( { cache_timeout: newValue } );
+								props.setAttributes( { dynamic_badge_color: newValue } );
 								} }
-							/> }
-							{ attributes.cache_enabled &&
+							/>
+						) }
+						{ attributes.use_dynamic_styles && (
 							<TextControl
-								type="number"
-								label={ __( 'Maximum Cache Size' ) }
-								help={ __( 'Maximum cache size (months). If number of cached month exceeds this number - the oldest month will be deleted from cache.' ) }
-								value={ attributes.max_cache }
-								min="1"
-								max="120"
+								type="text"
+								label={ __( 'Badge Background Color' ) }
+								help={ __( 'Defines the background color for the event badge.' ) }
+								value={ attributes.dynamic_badge_bg_color }
 								onChange={ newValue => {
-									props.setAttributes( { max_cache: newValue } );
+								props.setAttributes( { dynamic_badge_bg_color: newValue } );
 								} }
-							/> }
-							<SelectControl
-								label={ __( 'Caption Layout' ) }
-								value={ attributes.caption_layout }
-								options={ [
-									{
-										value: 'layout-1',
-										label: __( 'Layout 1' ),
-									},
-									{
-										value: 'layout-2',
-										label: __( 'Layout 2' ),
-									},
-									{
-										value: 'layout-3',
-										label: __( 'Layout 3' ),
-									},
-									{
-										value: 'layout-4',
-										label: __( 'Layout 4' ),
-									},
+							/>
+						) }
+						{ attributes.use_dynamic_styles && (
+							<TextControl
+								type="text"
+								label={ __( 'Badge Border Color' ) }
+								help={ __( 'Defines the border color for the event badge.' ) }
+								value={ attributes.dynamic_badge_border_color }
+								onChange={ newValue => {
+								props.setAttributes( { dynamic_badge_border_color: newValue } );
+								} }
+							/>
+						) }
+						{ attributes.use_dynamic_styles && (
+							<TextControl
+								type="text"
+								label={ __( 'Badge Dot Color' ) }
+								help={ __( 'Defines the dot color for the event badge.' ) }
+								value={ attributes.dynamic_badge_dot_color }
+								onChange={ newValue => {
+								props.setAttributes( { dynamic_badge_dot_color: newValue } );
+								} }
+							/>
+						) }
+					</PanelBody>
 
-								] }
-								onChange={ newValue => {
-									props.setAttributes( { caption_layout: newValue } );
-								} }
-							/>
-						</PanelBody>
-
-						<PanelBody
-							title={ __( 'Event Badge Content' ) }
-							initialOpen={ false }
-						>
-							<TextareaControl
-								label={ __( 'Badge Content' ) }
-								help={ __( 'Supports HTML tags, JetEngine macros and shortcodes.' ) }
-								value={ attributes.event_content }
-								onChange={ newValue => {
-									props.setAttributes( { event_content: newValue } );
-								} }
-							/>
-							<ToggleControl
-								label={ __( 'Badge Marker' ) }
-								checked={ attributes.event_marker }
-								help={ __( 'Show event badge dot marker for each event in the calendar' ) }
-								onChange={ () => {
-									props.setAttributes( { event_marker: ! attributes.event_marker } );
-								} }
-							/>
-							<ToggleControl
-								label={ __( 'Use Dynamic Styles' ) }
-								checked={ attributes.use_dynamic_styles }
-								help={ __( 'Allows setting badge color, background, border color and dot color based on the specific event data.' ) }
-								onChange={ () => {
-									props.setAttributes( { use_dynamic_styles: ! attributes.use_dynamic_styles } );
-								} }
-							/>
-							{ attributes.use_dynamic_styles && (
-								<p className="components-base-control__help">
-									{ __( 'Specific event badge styles could be set only by using JetEngine macros or shortcodes. Generated macro or shortcode must return a color value.' ) }
-								</p>
-							) }
-							{ attributes.use_dynamic_styles && (
-								<TextControl
-									type="text"
-									label={ __( 'Badge Text Color' ) }
-									help={ __( 'Defines the text color for the event badge.' ) }
-									value={ attributes.dynamic_badge_color }
-									onChange={ newValue => {
-									props.setAttributes( { dynamic_badge_color: newValue } );
-									} }
-								/>
-							) }
-							{ attributes.use_dynamic_styles && (
-								<TextControl
-									type="text"
-									label={ __( 'Badge Background Color' ) }
-									help={ __( 'Defines the background color for the event badge.' ) }
-									value={ attributes.dynamic_badge_bg_color }
-									onChange={ newValue => {
-									props.setAttributes( { dynamic_badge_bg_color: newValue } );
-									} }
-								/>
-							) }
-							{ attributes.use_dynamic_styles && (
-								<TextControl
-									type="text"
-									label={ __( 'Badge Border Color' ) }
-									help={ __( 'Defines the border color for the event badge.' ) }
-									value={ attributes.dynamic_badge_border_color }
-									onChange={ newValue => {
-									props.setAttributes( { dynamic_badge_border_color: newValue } );
-									} }
-								/>
-							) }
-							{ attributes.use_dynamic_styles && (
-								<TextControl
-									type="text"
-									label={ __( 'Badge Dot Color' ) }
-									help={ __( 'Defines the dot color for the event badge.' ) }
-									value={ attributes.dynamic_badge_dot_color }
-									onChange={ newValue => {
-									props.setAttributes( { dynamic_badge_dot_color: newValue } );
-									} }
-								/>
-							) }
-						</PanelBody>
-
-						<PanelBody
-							title={ __( 'Custom Query' ) }
-							initialOpen={ false }
-						>
-							<ToggleControl
-								label={ __( 'Use Custom Query' ) }
-								checked={ attributes.custom_query }
-								onChange={ () => {
-									props.setAttributes({ custom_query: ! attributes.custom_query });
-								} }
-							/>
-							{ attributes.custom_query && <SelectControl
-								multiple={false}
-								label={ __( 'Custom Query' ) }
-								value={ attributes.custom_query_id }
-								options={ window.JetEngineListingData.queriesList }
-								onChange={ newValue => {
-									props.setAttributes( { custom_query_id: newValue } );
-								}}
-							/> }
-						</PanelBody>
-						<PanelBody
-							title={ __( 'Block Visibility' ) }
-							initialOpen={ false }
-						>
-							<SelectControl
-								label={ __( 'Hide block if' ) }
-								value={ attributes.hide_widget_if }
-								options={ hideOptions }
-								onChange={ newValue => {
-									props.setAttributes( { hide_widget_if: newValue } );
-								} }
-							/>
-						</PanelBody>
-					</InspectorControls>
-				),
+					<PanelBody
+						title={ __( 'Custom Query' ) }
+						initialOpen={ false }
+					>
+						<ToggleControl
+							label={ __( 'Use Custom Query' ) }
+							checked={ attributes.custom_query }
+							onChange={ () => {
+								props.setAttributes({ custom_query: ! attributes.custom_query });
+							} }
+						/>
+						{ attributes.custom_query && <SelectControl
+							multiple={false}
+							label={ __( 'Custom Query' ) }
+							value={ attributes.custom_query_id }
+							options={ window.JetEngineListingData.queriesList }
+							onChange={ newValue => {
+								props.setAttributes( { custom_query_id: newValue } );
+							}}
+						/> }
+					</PanelBody>
+					<PanelBody
+						title={ __( 'Block Visibility' ) }
+						initialOpen={ false }
+					>
+						<SelectControl
+							label={ __( 'Hide block if' ) }
+							value={ attributes.hide_widget_if }
+							options={ hideOptions }
+							onChange={ newValue => {
+								props.setAttributes( { hide_widget_if: newValue } );
+							} }
+						/>
+					</PanelBody>
+				</InspectorControls>
+			),
+			<div { ...useBlockProps() }>
 				<Disabled key={ 'block_render' }>
 					<ServerSideRender
 						block="jet-engine/listing-multiday-calendar"
@@ -408,8 +404,8 @@ registerBlockType( 'jet-engine/listing-multiday-calendar', {
 						httpMethod="POST"
 					/>
 				</Disabled>
-			];
-		}
+			</div>
+		];
 	},
 	save: props => {
 		return null;

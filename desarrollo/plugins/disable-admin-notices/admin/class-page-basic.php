@@ -38,6 +38,6 @@ class WDN_Page extends WBCR\Factory_Templates_134\Pages\PageBase {
 	}
 
 	public function getPluginTitle() {
-		return "<span class='wdan-plugin-header-logo'>&nbsp;</span>" . __( 'Webcraftic Disable Admin Notices', 'disable-admin-notices' );
+		return "<span class='wdan-plugin-header-logo'>&nbsp;</span>" . __( 'Disable Admin Notices', 'disable-admin-notices' );
 	}
 }

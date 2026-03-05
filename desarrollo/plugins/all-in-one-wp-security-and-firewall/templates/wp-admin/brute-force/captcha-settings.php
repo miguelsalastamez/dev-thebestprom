@@ -14,14 +14,15 @@
 			'display_condition_callback' => array('AIOWPSecurity_Utility', 'is_other_form_plugins_active'),
 		),
 	);
-	$aio_wp_security->include_template('wp-admin/brute-force/captcha-provider.php', false, array('default_captcha' => $default_captcha, 'supported_captchas' => $supported_captchas, 'captcha_themes' => $captcha_themes, 'captcha_theme' => $captcha_theme));
+
+	$aio_wp_security->include_template('wp-admin/brute-force/captcha-provider.php', false, $captcha_settings_data);
 
 	$templates = apply_filters('aiowps_modify_captcha_settings_template', $templates);
 
 	// phpcs:ignore WordPress.Security.NonceVerification.Recommended -- Nonce check occurred outside of template.
 	$subtab = isset($_GET['subtab']) ? sanitize_text_field(wp_unslash($_GET['subtab'])) : '';
 	?>
-	<div id="aios-captcha-options" <?php if ('none' === $default_captcha) echo 'class="aio_hidden"'; ?>>
+	<div id="aios-captcha-options" <?php if ('none' === $captcha_settings_data['aiowps_default_captcha']) echo 'class="aio_hidden"'; ?>>
 		<div class="aiowps-postbox-container">
 			<div class="aiowps-rules">
 				<h3 class="hndle"><?php esc_html_e('Settings', 'all-in-one-wp-security-and-firewall'); ?></h3>
@@ -52,7 +53,7 @@
 			<div class="aiowps-settings">
 				<?php
 				foreach ($templates as $key => $template) {
-					$aio_wp_security->include_template('wp-admin/brute-force/partials/' . esc_attr($key) . '.php');
+					$aio_wp_security->include_template('wp-admin/brute-force/partials/' . esc_attr($key) . '.php', false, $captcha_settings_data);
 				}
 				?>
 			</div>

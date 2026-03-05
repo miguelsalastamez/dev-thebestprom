@@ -125,7 +125,10 @@ class Proxy {
 			if ( is_array( $raw_default ) ) {
 				if ( ! empty( $raw_default['value'] ) ) {
 					if ( is_array( $raw_default['value'] ) ) {
-						$default = $raw_default['value']['value'];
+
+						if ( isset( $raw_default['value']['value'] ) ) {
+							$default = $raw_default['value']['value'];
+						}
 
 						if ( ! empty( $raw_default['value']['unit'] ) && null !== $default ) {
 							$default .= $raw_default['value']['unit'];

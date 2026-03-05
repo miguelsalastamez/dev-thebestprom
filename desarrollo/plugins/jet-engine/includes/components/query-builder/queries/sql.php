@@ -441,7 +441,13 @@ class SQL_Query extends Base_Query {
 
 		$select_query = "SELECT ";
 
-		$column_aliases = array();
+		$calc_column_aliases = array();
+
+		$custom_column_aliases = ! empty( $this->final_query['set_column_aliases'] ) ? array_column(
+			$this->final_query['column_aliases'] ?? array(),
+			'column_alias',
+			'column'
+		) : array();
 
 		if ( $is_count && ! $this->is_grouped() && empty( $this->final_query['limit'] ) ) {
 			$select_query .= " COUNT(*) ";
@@ -451,7 +457,13 @@ class SQL_Query extends Base_Query {
 
 			if ( ! empty( $this->final_query['include_columns'] ) ) {
 				foreach ( $this->final_query['include_columns'] as $col ) {
-					$implode[] = $col . " AS '" . $col . "'";
+					$col_alias = ! empty( $custom_column_aliases[ $col ] ) ? $custom_column_aliases[ $col ] : $col;
+					$implode[] = $col . " AS '" . $col_alias . "'";
+				}
+			} elseif ( ! empty( $custom_column_aliases ) ) {
+				foreach ( $this->final_query['columns_for_alias'] ?? array() as $col ) {
+					$col_alias = ! empty( $custom_column_aliases[ $col ] ) ? $custom_column_aliases[ $col ] : $col;
+					$implode[] = $col . " AS '" . $col_alias . "'";
 				}
 			}
 
@@ -477,7 +489,7 @@ class SQL_Query extends Base_Query {
 					}
 
 					if ( ! empty( $col['column_alias'] ) ) {
-						$column_aliases[ $prepared_col_as ] = $col['column_alias'];
+						$calc_column_aliases[ $prepared_col_as ] = $col['column_alias'];
 						$prepared_col_as = $col['column_alias'];
 					}
 
@@ -572,7 +584,7 @@ class SQL_Query extends Base_Query {
 					continue;
 				}
 
-				$row['column'] = ! empty( $column_aliases[ $row['orderby'] ] ) ? $column_aliases[ $row['orderby'] ] : $row['orderby'];
+				$row['column'] = ! empty( $calc_column_aliases[ $row['orderby'] ] ) ? $calc_column_aliases[ $row['orderby'] ] : $row['orderby'];
 				$orderby[] = $row;
 			}
 
@@ -1069,7 +1081,20 @@ class SQL_Query extends Base_Query {
 		}
 
 		if ( ! empty( $cols ) ) {
+			$custom_column_aliases = ! empty( $this->query['set_column_aliases'] ) ? array_column(
+				$this->query['column_aliases'] ?? array(),
+				'column_alias',
+				'column'
+			) : array();
+
+			if ( ! empty( $custom_column_aliases
+			     && ! empty( $this->query['columns_for_alias'] ) )
+				 && empty( $this->query['include_columns'] ) ) {
+				$cols = $this->query['columns_for_alias'];
+			}
+			
 			foreach ( $cols as $col ) {
+				$col = ! empty( $custom_column_aliases[ $col ] ) ? $custom_column_aliases[ $col ] : $col;
 				$result[ $col ] = $col;
 			}
 		}

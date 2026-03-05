@@ -102,6 +102,10 @@ if ( ! class_exists( 'Jet_Engine_CPT_Admin_Filters' ) ) {
 								$settings['is_checkbox'] = true;
 								$settings['is_array']    = ! empty( $field_data['is_array'] );
 							}
+
+							if ( $field_data['name'] === $field && 'select' === $field_data['type'] ) {
+								$settings['is_multiple'] = ! empty( $field_data['is_multiple'] );
+							}
 						}
 					}
 
@@ -153,9 +157,11 @@ if ( ! class_exists( 'Jet_Engine_CPT_Admin_Filters' ) ) {
 		 */
 		public function apply_meta_filter( $query, $meta_key, $value, $settings = array() ) {
 
-			// Prepare meta value for database by escaping special characters and removing slashes
-			// https://github.com/Crocoblock/issues-tracker/issues/14524
-			$value = is_string( $value ) ? htmlspecialchars( stripslashes( $value ), ENT_NOQUOTES ) : $value;
+			global $wpdb;
+
+			// TEMP WORKAROUND: keep htmlspecialchars() to match values saved with wp_kses_post().
+			// See issue: https://github.com/Crocoblock/issues-tracker/issues/18927
+			$value = is_string( $value ) ? htmlspecialchars( wp_unslash( $value ), ENT_NOQUOTES ) : $value;
 
 			if ( empty( $query->query_vars['meta_query'] ) ) {
 				$query->query_vars['meta_query'] = array();
@@ -166,15 +172,22 @@ if ( ! class_exists( 'Jet_Engine_CPT_Admin_Filters' ) ) {
 				'value' => $value,
 			);
 
+			// Escape for safe use in LIKE
+			$value_escaped = $wpdb->esc_like( $value );
+
 			if ( ! empty( $settings['is_checkbox'] ) ) {
 				if ( $settings['is_array'] ) {
-					$meta_row['value'] = '"' . $value . '";';
+					$meta_row['value'] = '"' . $value_escaped . '";';
 					$meta_row['compare'] = 'LIKE';
 				} else {
-					$meta_row['value'] = ':["]?' . $value . '["]?;s:4:"true";';
+					$meta_row['value'] = ':["]?' . $value_escaped . '["]?;s:4:"true";';
 					$meta_row['compare'] = 'RLIKE';
 				}
+			}
 
+			if ( ! empty( $settings['is_multiple'] ) ) {
+				$meta_row['value']   = '"' . $value_escaped . '"';
+				$meta_row['compare'] = 'LIKE';
 			}
 
 			$query->query_vars['meta_query'][ $meta_key ] = $meta_row;

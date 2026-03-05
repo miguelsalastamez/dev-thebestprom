@@ -25,96 +25,96 @@ if ( -1 !== window.JetEngineListingData.activeModules.indexOf( 'booking-forms' )
 	const blockAttributes = window.JetEngineListingData.atts.checkMark;
 
 	registerBlockType( 'jet-engine/check-mark', {
+		apiVersion: '3',
 		title: __( 'Check Mark' ),
 		icon: GIcon,
 		category: 'jet-engine',
 		attributes: blockAttributes,
 		className: 'jet-form__check-mark',
-		edit: class extends wp.element.Component {
-			render() {
+		edit: ( props ) => {
 
-				const props      = this.props;
-				const attributes = props.attributes;
+			const attributes = props.attributes;
 
-				return [
-					props.isSelected && (
-						<InspectorControls
-							key={ 'inspector' }
-						>
-							<PanelBody title={ __( 'General' ) }>
-								<div className="jet-media-control components-base-control">
-									<div className="components-base-control__label">{ __( 'Default Icon' ) }</div>
-									{ attributes.check_mark_icon_default_url && <img src={ attributes.check_mark_icon_default_url } width="100%" height="auto"/> }
-									<MediaUpload
-										onSelect={ media => {
-											props.setAttributes( {
-												check_mark_icon_default:     media.id,
-												check_mark_icon_default_url: media.url,
-											} );
-										} }
-										type="image"
-										value={ attributes.check_mark_icon_default }
-										render={ ( { open } ) => (
-											<Button
-												isSecondary
-												icon="edit"
-												onClick={ open }
-											>{ __( 'Select Icon' ) }</Button>
-										) }
-									/>
-									{ attributes.check_mark_icon_default_url &&
-									<Button
-										onClick={ () => {
-											props.setAttributes( {
-												check_mark_icon_default: 0,
-												check_mark_icon_default_url: '',
-											} )
-										} }
-										isLink
-										isDestructive
-									>
-										{ __( 'Remove Icon' ) }
-									</Button>
-									}
-								</div>
-								<div className="jet-media-control components-base-control">
-									<div className="components-base-control__label">{ __( 'Checked Icon' ) }</div>
-									{ attributes.check_mark_icon_checked_url && <img src={ attributes.check_mark_icon_checked_url } width="100%" height="auto"/> }
-									<MediaUpload
-										onSelect={ media => {
-											props.setAttributes( {
-												check_mark_icon_checked:     media.id,
-												check_mark_icon_checked_url: media.url,
-											} );
-										} }
-										type="image"
-										value={ attributes.check_mark_icon_checked }
-										render={ ( { open } ) => (
-											<Button
-												isSecondary
-												icon="edit"
-												onClick={ open }
-											>{ __( 'Select Icon' ) }</Button>
-										) }
-									/>
-									{ attributes.check_mark_icon_checked_url &&
-									<Button
-										onClick={ () => {
-											props.setAttributes( {
-												check_mark_icon_checked: 0,
-												check_mark_icon_checked_url: '',
-											} )
-										} }
-										isLink
-										isDestructive
-									>
-										{ __( 'Remove Icon' ) }
-									</Button>
-									}
-								</div>
-							</PanelBody>
-						</InspectorControls>
-					),
+			return [
+				props.isSelected && (
+					<InspectorControls
+						key={ 'inspector' }
+					>
+						<PanelBody title={ __( 'General' ) }>
+							<div className="jet-media-control components-base-control">
+								<div className="components-base-control__label">{ __( 'Default Icon' ) }</div>
+								{ attributes.check_mark_icon_default_url && <img src={ attributes.check_mark_icon_default_url } width="100%" height="auto"/> }
+								<MediaUpload
+									onSelect={ media => {
+										props.setAttributes( {
+											check_mark_icon_default:     media.id,
+											check_mark_icon_default_url: media.url,
+										} );
+									} }
+									type="image"
+									value={ attributes.check_mark_icon_default }
+									render={ ( { open } ) => (
+										<Button
+											isSecondary
+											icon="edit"
+											onClick={ open }
+										>{ __( 'Select Icon' ) }</Button>
+									) }
+								/>
+								{ attributes.check_mark_icon_default_url &&
+								<Button
+									onClick={ () => {
+										props.setAttributes( {
+											check_mark_icon_default: 0,
+											check_mark_icon_default_url: '',
+										} )
+									} }
+									isLink
+									isDestructive
+								>
+									{ __( 'Remove Icon' ) }
+								</Button>
+								}
+							</div>
+							<div className="jet-media-control components-base-control">
+								<div className="components-base-control__label">{ __( 'Checked Icon' ) }</div>
+								{ attributes.check_mark_icon_checked_url && <img src={ attributes.check_mark_icon_checked_url } width="100%" height="auto"/> }
+								<MediaUpload
+									onSelect={ media => {
+										props.setAttributes( {
+											check_mark_icon_checked:     media.id,
+											check_mark_icon_checked_url: media.url,
+										} );
+									} }
+									type="image"
+									value={ attributes.check_mark_icon_checked }
+									render={ ( { open } ) => (
+										<Button
+											isSecondary
+											icon="edit"
+											onClick={ open }
+										>{ __( 'Select Icon' ) }</Button>
+									) }
+								/>
+								{ attributes.check_mark_icon_checked_url &&
+								<Button
+									onClick={ () => {
+										props.setAttributes( {
+											check_mark_icon_checked: 0,
+											check_mark_icon_checked_url: '',
+										} )
+									} }
+									isLink
+									isDestructive
+								>
+									{ __( 'Remove Icon' ) }
+								</Button>
+								}
+							</div>
+						</PanelBody>
+					</InspectorControls>
+				),
+				<div { ...useBlockProps() }>
 					<Disabled key={ 'block_render' }>
 						<ServerSideRender
 							block="jet-engine/check-mark"
@@ -122,8 +122,8 @@ if ( -1 !== window.JetEngineListingData.activeModules.indexOf( 'booking-forms' )
 							httpMethod="POST"
 						/>
 					</Disabled>
-				];
-			}
+				</div>
+			];
 		},
 		save: props => {
 			return null;

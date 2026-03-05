@@ -21,15 +21,25 @@ class WDN_ConfigHideNotices extends WBCR\Factory_Templates_134\Configurate {
 		if ( is_admin() ) {
 			$hide_notices_type = $this->getPopulateOption( 'hide_admin_notices', 'only_selected' );
 
-			if ( 'not_hide' !== $hide_notices_type && 'compact_panel' !== $hide_notices_type ) {
-				add_action( 'admin_print_scripts', [ $this, 'catchNotices' ], 999 );
+			if ( 'only_selected' === $hide_notices_type ) {
+				add_action( 'admin_head', [ $this, 'printNotices' ], 999 );
+			}
 
-				if ( empty( $hide_notices_type ) || $hide_notices_type == 'only_selected' ) {
-					add_action( 'admin_head', [ $this, 'printNotices' ], 999 );
-				}
+			if ( 'not_hide' !== $hide_notices_type ) {
 
-				if ( ! empty( $hide_notices_type ) ) {
-					add_action( 'admin_bar_menu', [ $this, 'notificationsPanel' ], 999 );
+				add_action( 'admin_head', [ $this, 'hide_nags' ], 999 );
+				add_action( 'admin_print_scripts', [ $this, 'catch_compact_notice' ], 999 );
+				add_action( 'admin_print_footer_scripts', [ $this, 'show_compact_panel' ], 999 );
+
+				add_filter( 'wdan/notifications/all', [ $this, 'notifications_all' ] );
+				add_action( 'wdn/notifications/panel/all', [ $this, 'notifications_panel_all' ], 10, 3 );
+				add_filter( 'wdn/notifications/catch/all', [ $this, 'catch_notices_all' ], 10, 4 );
+
+				// If the type is not compact_panel, process regular notices too.
+				if ( 'compact_panel' !== $hide_notices_type ) {
+
+					add_action( 'admin_print_scripts', [ $this, 'catch_notices' ], 999 );
+					add_action( 'admin_bar_menu', [ $this, 'notifications_anel' ], 999 );
 					add_action( 'admin_enqueue_scripts', [ $this, 'enqueue_styles' ] );
 				}
 			}
@@ -46,6 +56,10 @@ class WDN_ConfigHideNotices extends WBCR\Factory_Templates_134\Configurate {
 
 
 	public function enqueue_styles() {
+		if ( "all" === $this->plugin->getPopulateOption( 'hide_admin_notices' ) ) {
+			return;
+		}
+
 		wp_enqueue_style( 'wbcr-notification-hide-style', WDN_PLUGIN_URL . '/admin/assets/css/general.css', [], $this->plugin->getPluginVersion() );
 
 		if ( ! $this->getPopulateOption( 'show_notices_in_adminbar', false ) && current_user_can( 'manage_network' ) ) {
@@ -55,7 +69,7 @@ class WDN_ConfigHideNotices extends WBCR\Factory_Templates_134\Configurate {
 		wp_enqueue_script( 'wbcr-notification-panel-scripts', WDN_PLUGIN_URL . '/admin/assets/js/notifications-panel.js', [], $this->plugin->getPluginVersion() );
 	}
 
-	public function notificationsPanel( &$wp_admin_bar ) {
+	public function notifications_anel( &$wp_admin_bar ) {
 		if ( ! $this->getPopulateOption( 'show_notices_in_adminbar', false ) ) {
 			return;
 		}
@@ -102,7 +116,7 @@ class WDN_ConfigHideNotices extends WBCR\Factory_Templates_134\Configurate {
 					$message .= '<div class="wbcr-han-panel-restore-notify-line">';
 					$message .= '<a href="#" data-nonce="' . wp_create_nonce( $this->plugin->getPluginName() . '_ajax_restore_notice_nonce' );
 					$message .= '" data-notice-id="' . esc_attr( $notice_id ) . '" class="wbcr-han-panel-restore-notify-link">';
-					$message .= __( 'Restore notice', 'clearfy' );
+					$message .= __( 'Restore notice', 'disable-admin-notices' );
 					$message .= '</a></div>';
 
 					$wp_admin_bar->add_menu( [
@@ -119,7 +133,7 @@ class WDN_ConfigHideNotices extends WBCR\Factory_Templates_134\Configurate {
 				}
 			}
 
-			if ( $this->plugin->is_premium() && ( current_user_can( 'manage_options' ) || ( is_multisite() && current_user_can( 'manage_network' ) ) ) ) {
+			if ( current_user_can( 'manage_options' ) || ( is_multisite() && current_user_can( 'manage_network' ) ) ) {
 				// All
 				do_action( 'wdn/notifications/panel/all', $wp_admin_bar, $notifications_all, $i );
 			}
@@ -194,7 +208,7 @@ class WDN_ConfigHideNotices extends WBCR\Factory_Templates_134\Configurate {
 	}
 
 	public
-	function catchNotices() {
+	function catch_notices() {
 		global $wbcr_dan_plugin_all_notices;
 
 		try {
@@ -285,11 +299,11 @@ class WDN_ConfigHideNotices extends WBCR\Factory_Templates_134\Configurate {
 					}
 
 					$nonce             = wp_create_nonce( $this->plugin->getPluginName() . '_ajax_hide_notices_nonce' );
-					$hide_link_for_me  = "<button data-target='user' data-nonce='{$nonce}' data-notice-id='{$uniq_id1}_{$uniq_id2}' class='wbcr-dan-hide-notice-link'>" . __( 'Hide  <b>for me</b>', 'disable-admin-notices' ) . "</button>";
+					$hide_link_for_me  = "<button data-target='user' data-nonce='{$nonce}' data-notice-id='{$uniq_id1}_{$uniq_id2}' class='wbcr-dan-hide-notice-link'>" . __( 'Hide <b>for me</b>', 'disable-admin-notices' ) . "</button>";
 					$hide_link_for_all = "";
 
-					if ( $this->plugin->is_premium() && ( current_user_can( 'manage_options' ) || ( is_multisite() && current_user_can( 'manage_network' ) ) ) ) {
-						$hide_link_for_all = "<button data-target='all'  data-nonce='{$nonce}' data-notice-id='{$uniq_id1}_{$uniq_id2}' class='wbcr-dan-hide-notice-link'>" . __( 'Hide  <b>for all</b>', 'disable-admin-notices' ) . "</button>";
+					if ( current_user_can( 'manage_options' ) || ( is_multisite() && current_user_can( 'manage_network' ) ) ) {
+						$hide_link_for_all = "<button data-target='all'  data-nonce='{$nonce}' data-notice-id='{$uniq_id1}_{$uniq_id2}' class='wbcr-dan-hide-notice-link'>" . __( 'Hide <b>for all</b>', 'disable-admin-notices' ) . "</button>";
 					}
 
 					if ( strpos( $cont, 'redux-connect-message' ) ) {
@@ -298,11 +312,22 @@ class WDN_ConfigHideNotices extends WBCR\Factory_Templates_134\Configurate {
 
 					// Fix for Woocommerce membership and Jetpack message
 					if ( $cont != '<div class="js-wc-memberships-admin-notice-placeholder"></div>' && false === strpos( $cont, 'jetpack-jitm-message' ) ) {
-						$cont = preg_replace( '/<(noscript|script|style)([^>]+)?>(.*?)<\/(noscript|script|style)>(<\/(noscript|script|style)>)*/is', '', $cont );
-						$cont = preg_replace( '/<!--(.*?)-->/is', '', $cont );
 						$cont = rtrim( trim( $cont ) );
-						$cont = preg_replace( '/^(<div[^>]+>)(.*?)(<\/div>)$/is',
-							"$1<div class='wbcr-dan-hide-notices'>$2</div><div class='wbcr-dan-hide-links'>{$hide_link_for_me} {$hide_link_for_all}</div>$3", $cont );
+						// Insert opening wrapper right after the first opening <div>
+						$cont = preg_replace(
+							'/(<div\b[^>]*>)/i',
+							'$1<div class="wbcr-dan-hide-notices">',
+							$cont,
+							1
+						);
+
+						// Insert closing wrapper + links div before the LAST closing </div>
+						$cont = preg_replace(
+							'/<\/div>(?!.*<\/div>)/is',
+							'</div><div class="wbcr-dan-hide-links">' . $hide_link_for_me . ' ' . $hide_link_for_all . '</div></div>',
+							$cont,
+							1
+						);
 					}
 
 					if ( empty( $cont ) ) {
@@ -377,5 +402,278 @@ class WDN_ConfigHideNotices extends WBCR\Factory_Templates_134\Configurate {
 		}
 
 		return $arr1;
+	}
+
+	public function hide_nags() {
+		?>
+		<?php if ( $this->plugin->getPopulateOption( 'disable_updates_nags_for_plugins' ) ): ?>
+            <style>
+                .update-message, #wp-admin-bar-updates, span.update-plugins {
+                    display: none !important;
+                }
+            </style>
+		<?php endif; ?>
+		<?php if ( $this->plugin->getPopulateOption( 'disable_updates_nags_for_core' ) ): ?>
+            <style>
+                div.update-nag {
+                    display: none !important;
+                }
+            </style>
+		<?php endif; ?>
+		<?php if ( "compact_panel" === $this->plugin->getPopulateOption( 'hide_admin_notices' ) ): ?>
+            <style id="wdan-disable-notices-style">
+                div.updated, div.error, div.notice, div.wdan-notice {
+                    display: none !important;
+                }
+            </style>
+            <style>
+                .wdan-notices-compact-panel {
+                    background: #fff;
+                    border: 1px solid #cecccc;
+
+                    cursor: pointer;
+                    margin-bottom: 20px;
+                    padding: 5px 5px 5px 5px;
+					margin: 10px 0 5px 0;
+                }
+
+                .wdan-notices-compact-panel.wdan-oppened {
+                    cursor: default;
+                }
+
+                .wdan-notices-compact-panel h3 {
+                    display: inline-block;
+                    color: #32373c;
+                    font-weight: normal;
+                    font-size: 13px;
+                    margin: 0;
+                }
+
+                .wdan-notices-compact-panel h3 .dashicons {
+                    height: 20px;
+                    width: 20px;
+                    font-size: 20px;
+                    line-height: 0.8;
+
+                }
+
+                .wdan-notices-compact-panel.wdan-oppened .wdan-notices-compact-panel__title > .dashicons {
+                    -webkit-transform: rotateX(180deg);
+                    transform: rotateX(180deg);
+                    line-height: 1;
+                }
+
+                .wdan-notices-compact-panel ul {
+                    display: block;
+                    float: right;
+                    margin: 0;
+
+                }
+
+                .wdan-notices-compact-panel__notices {
+                    display: none;
+                    padding: 15px;
+                }
+
+                .wdan-notices-compact-panel.wdan-oppened .wdan-notices-compact-panel__notices {
+                    display: block;
+                }
+
+                .wdan-notices-compact-panel__error {
+                    color: red;
+                }
+
+                .wdan-notices-compact-panel__warning {
+					background-color: #2271b1;
+					border-color: #2271b1;
+					border-radius: 50%;
+					color: #fff;
+					text-align: center;
+					display: flex;
+					justify-content: center;
+					align-items: center;
+					width: 20px;
+					height: 20px;
+                }
+
+                .wdan-notices-compact-panel__success {
+                    color: green;
+                }
+            </style>
+		<?php endif; ?>
+		<?php
+	}
+
+	public function catch_compact_notice() {
+		if ( "compact_panel" !== $this->plugin->getPopulateOption( 'hide_admin_notices' ) ) {
+			return;
+		}
+
+		$content = wdan_collect_notices( 'admin_notices' );
+		$content = array_merge( $content, wdan_collect_notices( 'all_admin_notices' ) );
+
+		wdan_clear_all_notices( 'admin_notices', [
+			'Learndash_Admin_Menus_Tabs',
+			'WC_Memberships_Admin',
+			'YIT_Plugin_Panel_WooCommerce'
+		], [ 'et_pb_export_layouts_interface' ] );
+
+		wdan_clear_all_notices( 'all_admin_notices', [
+			'Learndash_Admin_Menus_Tabs',
+			'WC_Memberships_Admin',
+			'YIT_Plugin_Panel_WooCommerce'
+		], [ 'et_pb_export_layouts_interface' ] );
+
+		if ( empty( $content ) ) {
+			return;
+		}
+
+		add_action( 'admin_notices', function () use ( $content ) {
+			foreach ( $content as $html ) {
+				echo "<div class='wdan-notice'>" . base64_encode( $html ) . "</div>";
+			}
+		} );
+	}
+
+	public function show_compact_panel() {
+		if ( "compact_panel" !== $this->plugin->getPopulateOption( 'hide_admin_notices' ) ) {
+			return;
+		}
+		?>
+
+        <script>
+            jQuery(document).ready(function ($) {
+
+                function wdanB64DecodeUnicode(str) {
+                    // Going backwards: from bytestream, to percent-encoding, to original string.
+                    return decodeURIComponent(atob(str).split('').map(function (c) {
+                        return '%' + ('00' + c.charCodeAt(0).toString(16)).slice(-2);
+                    }).join(''));
+                }
+
+                let notices = $('div.updated, div.error, div.notice, div.update-nag, div.wdan-notice').not('.inline, .below-h2').not('.inline').detach(),
+                    contanier = $('.wdan-notices-compact-panel').detach(),
+                    $headerEnd = $('.wp-header-end');
+
+                notices.each(function () {
+                    contanier.find('.wdan-notices-compact-panel__notices').append("<div class='wdan-notice'>" + wdanB64DecodeUnicode($(this).html()) + "</div>");
+                });
+
+                /*
+				 * The `.below-h2` class is here just for backward compatibility with plugins
+				 * that are (incorrectly) using it. Do not use. Use `.inline` instead. See #34570.
+				 * If '.wp-header-end' is found, append the notices after it otherwise
+				 * after the first h1 or h2 heading found within the main content.
+				 */
+                if (!$headerEnd.length) {
+                    $headerEnd = $('.wrap h1, .wrap h2').first();
+                }
+
+                $headerEnd.after(contanier);
+
+                let compactPanelNoticesEl = $('.wdan-notices-compact-panel__notices'),
+                    other = compactPanelNoticesEl.find('div.wdan-notice').length;
+
+                $('.wdan-notices-compact-panel__warning').find('span').text(other);
+
+                $('#wdan-disable-notices-style').remove();
+                contanier.show();
+
+                contanier.find('.wdan-notices-compact-panel__button').click(function () {
+                    $(this).parent().toggleClass('wdan-oppened');
+                    return false;
+                });
+
+            });
+        </script>
+        <div class="wdan-notices-compact-panel" style="display: none;">
+            <div class="wdan-notices-compact-panel__button">
+                <h3 class="wdan-notices-compact-panel__title">
+                    <span class="dashicons dashicons-arrow-down"></span> 
+					<?php esc_html_e( 'Notifications', 'disable-admin-notices' ); ?>
+                </h3>
+                <ul>
+                    <li class="wdan-notices-compact-panel__warning">
+						<span>0</span>
+					</li>
+                </ul>
+            </div>
+            <div class="wdan-notices-compact-panel__notices">
+
+            </div>
+        </div>
+		<?php
+	}
+
+	public function notifications_all() {
+		return $this->plugin->getPopulateOption( 'hidden_notices', [] );
+	}
+
+	/**
+	 * @param $wp_admin_bar WP_Admin_Bar
+	 * @param $notifications array
+	 */
+	public function notifications_panel_all( $wp_admin_bar, $notifications, $i ) {
+		if ( ! empty( $notifications ) ) {
+			$wp_admin_bar->add_menu( [
+				'id'     => 'wbcr-han-notify-panel-group-all',
+				'parent' => 'wbcr-han-notify-panel',
+				'title'  => __( 'Hidden for all', 'disable-admin-notices' ),
+				'href'   => false,
+				'meta'   => [
+					'class' => ''
+				]
+			] );
+
+			foreach ( $notifications as $notice_id => $message ) {
+				$message = wp_kses( $message, [] );
+				$message = $this->getExcerpt( stripslashes( $message ), 0, 350 );
+				$message .= '<div class="wbcr-han-panel-restore-notify-line">';
+				$message .= '<a href="#" data-nonce="' . wp_create_nonce( $this->plugin->getPluginName() . '_ajax_restore_notice_nonce' );
+				$message .= '" data-notice-id="' . esc_attr( $notice_id ) . '" class="wbcr-han-panel-restore-notify-link">';
+				$message .= __( 'Restore notice', 'disable-admin-notices' );
+				$message .= '</a></div>';
+
+				$wp_admin_bar->add_menu( [
+					'id'     => 'wbcr-han-notify-panel-item-' . $i,
+					'parent' => 'wbcr-han-notify-panel',
+					'title'  => $message,
+					'href'   => false,
+					'meta'   => [
+						'class' => ''
+					]
+				] );
+
+				$i ++;
+			}
+		}
+	}
+
+	/**
+	 * @param $hidden_notices
+	 * @param $uniq_id1
+	 * @param $uniq_id2
+	 *
+	 * @return bool
+	 */
+	public function catch_notices_all( $skip_notice, $hidden_notices, $uniq_id1, $uniq_id2 ) {
+		$skip_notice = true;
+		if ( ! empty( $hidden_notices ) ) {
+			foreach ( (array) $hidden_notices as $key => $notice ) {
+				$splited_notice_id = explode( '_', $key );
+				if ( empty( $splited_notice_id ) || sizeof( $splited_notice_id ) < 2 ) {
+					continue;
+				}
+				$compare_notice_id_1 = $splited_notice_id[0];
+				$compare_notice_id_2 = $splited_notice_id[1];
+
+				if ( $compare_notice_id_1 == $uniq_id1 || $compare_notice_id_2 == $uniq_id2 ) {
+					$skip_notice = false;
+					break;
+				}
+			}
+		}
+
+		return $skip_notice;
 	}
 }

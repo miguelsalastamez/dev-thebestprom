@@ -389,7 +389,6 @@
 }
 #WBCR .wbcr-factory-templates-134-impressive-page-template .wbcr-factory-sidebar-widget {
   display: inline-block;
-  min-height: 230px;
   width: 100%;
   margin-top: 20px;
   background-color: #fff;
@@ -452,6 +451,15 @@
   text-align: center;
   font-weight: 600;
   color: #8BC34A;
+}
+#WBCR .wbcr-factory-templates-134-impressive-page-template i.dashicons {
+  font-size: 17px;
+}
+#WBCR .wbcr-factory-templates-134-impressive-page-template i.dashicons.dashicons-star-filled {
+  color: #FF9529;
+}
+#WBCR .wbcr-factory-templates-134-impressive-page-template .wbcr-leave-review-link {
+  text-decoration: none;
 }
 #WBCR .wbcr-factory-templates-134-impressive-page-template .wbcr-factory-page-more_features .wbcr-factory-feature-box {
   min-height: 240px;

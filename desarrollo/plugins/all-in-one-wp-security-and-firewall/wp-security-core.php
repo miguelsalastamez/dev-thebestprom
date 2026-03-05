@@ -8,7 +8,7 @@ if (!class_exists('AIO_WP_Security')) {
 
 	class AIO_WP_Security {
 
-		public $version = '5.4.4';
+		public $version = '5.4.6';
 
 		public $db_version = '2.1.4';
 
@@ -195,6 +195,11 @@ if (!class_exists('AIO_WP_Security')) {
 				$this->load_aio_firewall();
 			}
 
+			if (self::onboarding_wizard_requirements_met()) {
+				include_once(AIO_WP_SECURITY_PATH.'/vendor/team-updraft/lib-onboarding-wizard/autoload.php');
+				include_once(AIO_WP_SECURITY_PATH.'/classes/wp-security-onboarding.php');
+			}
+
 			// Load common files for everywhere
 			if (!class_exists('Updraft_Semaphore_3_0')) {
 				include_once AIO_WP_SECURITY_PATH.'/vendor/team-updraft/common-libs/src/updraft-semaphore/class-updraft-semaphore.php';
@@ -286,8 +291,15 @@ if (!class_exists('AIO_WP_Security')) {
 			// Only runs when the plugin activates
 			global $wpdb;// phpcs:ignore VariableAnalysis.CodeAnalysis.VariableAnalysis.UnusedVariable -- Used for the include below
 			include_once(AIO_WP_SECURITY_PATH.'/classes/wp-security-installer.php');
+
+			$is_first_activation = (false === get_option('aiowpsec_db_version')); // Needs to be set before run_installer().
+
 			AIOWPSecurity_Installer::run_installer();
 			AIOWPSecurity_Installer::set_cron_tasks_upon_activation();
+
+			if ($is_first_activation && self::onboarding_wizard_requirements_met()) {
+				AIOWPSecurity_Onboarding::activate();
+			}
 		}
 
 		/**
@@ -348,8 +360,9 @@ if (!class_exists('AIO_WP_Security')) {
 			do_action('aio_wp_security_before_template', $path, $template_file, $return_instead_of_echo, $extract_these);
 
 			if (!file_exists($template_file)) {
-				error_log("All-In-One Security: template not found: $template_file");
-				echo __('Error:', 'all-in-one-wp-security-and-firewall').' '.__('template not found', 'all-in-one-wp-security-and-firewall')." ($template_file)";
+				// phpcs:ignore WordPress.PHP.DevelopmentFunctions.error_log_error_log -- Notification for devs so they know they made a mistake..
+				error_log("All In One Security: template not found: $template_file");
+				echo esc_html__('Error:', 'all-in-one-wp-security-and-firewall') . ' ' . esc_html__('template not found', 'all-in-one-wp-security-and-firewall') . ' (' . esc_html($template_file) . ')';
 			} else {
 				extract($extract_these);
 				global $wpdb;// phpcs:ignore VariableAnalysis.CodeAnalysis.VariableAnalysis.UnusedVariable -- Bring variable into the included template's scope
@@ -431,6 +444,7 @@ if (!class_exists('AIO_WP_Security')) {
 			$firewall_path = AIOWPSecurity_Utility_Firewall::get_firewall_path();
 
 			if (!(@include_once($firewall_path))) {
+				// phpcs:ignore WordPress.PHP.DevelopmentFunctions.error_log_error_log -- Used for customer support.
 				error_log('AIOS firewall error: failed to load the firewall. Unable to include wp-security-firewall.php.');
 			}
 		}
@@ -459,7 +473,7 @@ if (!class_exists('AIO_WP_Security')) {
 		 * @return void
 		 */
 		public function load_plugin_textdomain() {
-				load_plugin_textdomain('all-in-one-wp-security-and-firewall', false, dirname(plugin_basename(__FILE__)) . '/languages/');
+			load_plugin_textdomain('all-in-one-wp-security-and-firewall', false, dirname(plugin_basename(__FILE__)) . '/languages/');
 		}
 
 		/**
@@ -469,6 +483,9 @@ if (!class_exists('AIO_WP_Security')) {
 		 */
 		public function wp_security_plugin_init() {
 			//Actions, filters, shortcodes goes here
+			if (self::onboarding_wizard_requirements_met()) {
+				new AIOWPSecurity_Onboarding();
+			}
 			// AIOWPSecurity_Cronjob_Handler __construct runs filter 'cron_schedules' so the object should be initialized here because it uses translations.
 			$this->cron_handler = new AIOWPSecurity_Cronjob_Handler();
 			$this->user_login_obj = new AIOWPSecurity_User_Login();//Do the user login operation tasks
@@ -524,18 +541,20 @@ if (!class_exists('AIO_WP_Security')) {
 		 */
 		private function redirect_user_after_force_logout() {
 			global $aio_wp_security;
+
 			if (isset($_GET['aiowpsec_do_log_out'])) {
-				$nonce = isset($_GET['_wpnonce']) ? $_GET['_wpnonce'] : '';
+				// phpcs:ignore WordPress.Security.NonceVerification.Recommended -- Nonce check below.
+				$nonce = isset($_GET['_wpnonce']) ? sanitize_key(wp_unslash($_GET['_wpnonce'])) : '';
 				// We can not use AIOWPSecurity_Utility_Permissions::check_nonce_and_user_cap to check user capabilities = manage_option as subscriber, editor etc users do not have it only administrators will have. If that check is applied it can not force the logout user and creates too many redirect errors.
 				if (!wp_verify_nonce($nonce, 'aio_logout')) {
 					return;
 				}
 				wp_logout();
 				if (isset($_GET['after_logout'])) { //Redirect to the after logout url directly
-					$after_logout_url = esc_url($_GET['after_logout']);
+					$after_logout_url = esc_url(sanitize_url(wp_unslash($_GET['after_logout'])));
 					AIOWPSecurity_Utility::redirect_to_url($after_logout_url);
 				}
-				$additional_data = strip_tags($_GET['al_additional_data']);
+				$additional_data = isset($_GET['al_additional_data']) ? sanitize_text_field(wp_unslash($_GET['al_additional_data'])) : '';
 				if (isset($additional_data)) {
 					$login_url = '';
 
@@ -605,7 +624,8 @@ if (!class_exists('AIO_WP_Security')) {
 				return $this->is_aiowps_admin_page;
 			}
 			global $pagenow;
-			$this->is_aiowps_admin_page = ('admin.php' == $pagenow && isset($_GET['page']) && false !== strpos($_GET['page'], AIOWPSEC_MENU_SLUG_PREFIX));
+			// phpcs:ignore WordPress.Security.NonceVerification.Recommended -- Nonce unavailable.
+			$this->is_aiowps_admin_page = ('admin.php' == $pagenow && isset($_GET['page']) && false !== strpos(sanitize_text_field(wp_unslash($_GET['page'])), AIOWPSEC_MENU_SLUG_PREFIX));
 			return $this->is_aiowps_admin_page;
 		}
 
@@ -619,12 +639,8 @@ if (!class_exists('AIO_WP_Security')) {
 				return $this->is_aiowps_google_recaptcha_tab_page;
 			}
 			global $pagenow;
-			$this->is_aiowps_google_recaptcha_tab_page = ('admin.php' == $pagenow
-															&& isset($_GET['page'])
-															&& 'aiowpsec_brute_force' == $_GET['page']
-															&& isset($_GET['tab'])
-															&& 'captcha-settings' == $_GET['tab']
-			);
+			// phpcs:ignore WordPress.Security.NonceVerification.Recommended -- PCP warning. No nonce available.
+			$this->is_aiowps_google_recaptcha_tab_page = ('admin.php' == $pagenow && isset($_GET['page']) && 'aiowpsec_brute_force' == $_GET['page'] && isset($_GET['tab']) && 'captcha-settings' == $_GET['tab']);
 			return $this->is_aiowps_google_recaptcha_tab_page;
 		}
 		
@@ -690,6 +706,24 @@ if (!class_exists('AIO_WP_Security')) {
 			}
 
 			return $salt.$salt_postfixes[$scheme];
+		}
+
+		/**
+		 * Checks whether the current environment is compatible with the onboarding wizard.
+		 *
+		 * @global string $wp_version
+		 *
+		 * @return bool
+		 */
+		private static function onboarding_wizard_requirements_met() {
+			static $requirements_met = null;
+
+			if (null === $requirements_met) {
+				global $wp_version;
+				$requirements_met = (version_compare(PHP_VERSION, '7.4', '>=') && version_compare($wp_version, '6.2', '>='));
+			}
+
+			return $requirements_met;
 		}
 
 	} // End of class

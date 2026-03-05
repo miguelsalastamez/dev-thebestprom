@@ -33,6 +33,14 @@ class Map_Sync extends \Jet_Smart_Filters_Block_Base {
 				'type'    => 'string',
 				'default' => '',
 			),
+			'additional_providers_enabled' => array(
+				'type'    => 'boolean',
+				'default' => false,
+			),
+			'additional_providers_list' => array(
+				'type'    => 'array',
+				'default' => [],
+			),
 		);
 	}
 
@@ -40,6 +48,10 @@ class Map_Sync extends \Jet_Smart_Filters_Block_Base {
 		jet_smart_filters()->set_filters_used();
 		$settings['filter_id'] = 0;
 		$settings['additional_providers'] = jet_smart_filters()->utils->get_additional_providers( $settings );
+
+		if ( empty( $settings['content_provider'] ) || $settings['content_provider'] === 'not-selected' ) {
+			return $this->is_editor() ? __( 'Please select a provider', 'jet-smart-filters' ) : false;
+		}
 
 		ob_start();
 		jet_smart_filters()->filter_types->render_filter_template( 'map-sync', $settings );

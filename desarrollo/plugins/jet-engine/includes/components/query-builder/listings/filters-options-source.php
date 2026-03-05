@@ -127,8 +127,8 @@ class Filters_Options_Source {
 
 		foreach ( $items as $item ) {
 
-			$value = isset( $item->$value_field ) ? wp_kses( $item->$value_field, array() ) : false;
-			$label = isset( $item->$label_field ) ? wp_kses( $item->$label_field, array() ) : false;
+			$value = isset( $item->$value_field ) ? $item->$value_field : false;
+			$label = isset( $item->$label_field ) ? $item->$label_field : false;
 
 			if ( ! $this->is_valid_value( $value ) || ! $this->is_valid_value( $label ) ) {
 				continue;

@@ -15,6 +15,8 @@ if ( ! class_exists( 'Jet_Engine_Module_Calendar' ) ) {
 	 */
 	class Jet_Engine_Module_Calendar extends Jet_Engine_Module_Base {
 
+		const FRONTEND_SCRIPT_HANDLE = 'jet-engine-calendar';
+
 		/**
 		 * Module ID
 		 *
@@ -145,6 +147,31 @@ if ( ! class_exists( 'Jet_Engine_Module_Calendar' ) ) {
 			add_action(
 				'jet-smart-filters/providers/register',
 				array( $this, 'register_filters_provider' )
+			);
+
+			add_action(
+				'jet-engine/listings/frontend-scripts',
+				array( $this, 'frontend_scripts' )
+			);
+
+			add_filter(
+				'jet-engine/listings/frontend-scripts/dependencies',
+				array( $this, 'add_frontend_scripts_dependency' )
+			);
+		}
+
+		public function add_frontend_scripts_dependency( $deps ) {
+			$deps[] = self::FRONTEND_SCRIPT_HANDLE;
+			return $deps;
+		}
+
+		public function frontend_scripts() {
+			wp_enqueue_script(
+				self::FRONTEND_SCRIPT_HANDLE,
+				jet_engine()->plugin_url( 'assets/js/frontend/modules/calendar.js' ),
+				array( 'jquery', 'jet-plugins' ),
+				jet_engine()->get_version(),
+				true
 			);
 		}
 

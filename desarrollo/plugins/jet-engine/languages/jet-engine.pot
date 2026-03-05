@@ -14684,7 +14684,7 @@ msgid ""
 msgstr ""
 
 #: includes/dashboard/misc-settings.php:51
-msgid "Disable legacy User Meta processing"
+msgid "Disable legacy User Props / Meta processing"
 msgstr ""
 
 #: includes/dashboard/misc-settings.php:52

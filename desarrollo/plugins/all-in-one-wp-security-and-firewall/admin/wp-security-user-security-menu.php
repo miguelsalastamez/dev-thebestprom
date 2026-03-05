@@ -132,14 +132,16 @@ class AIOWPSecurity_User_Security_Menu extends AIOWPSecurity_Admin_Menu {
 	 * @return Void
 	 */
 	protected function render_login_lockout() {
-		global $aio_wp_security, $aiowps_feature_mgr;
+		global $aio_wp_security;
 
 		include_once 'wp-security-list-locked-ip.php'; // For rendering the AIOWPSecurity_List_Table in tab1
 		$locked_ip_list = new AIOWPSecurity_List_Locked_IP(); // For rendering the AIOWPSecurity_List_Table in tab1
 
-		$aiowps_lockdown_allowed_ip_addresses = $aio_wp_security->configs->get_value('aiowps_lockdown_allowed_ip_addresses');
+		$aios_commands = new AIOWPSecurity_Commands();
 
-		$aio_wp_security->include_template('wp-admin/user-security/login-lockout.php', false, array('aiowps_feature_mgr' => $aiowps_feature_mgr, 'locked_ip_list' => $locked_ip_list, "aiowps_lockdown_allowed_ip_addresses" => $aiowps_lockdown_allowed_ip_addresses));
+		$user_security_data = $aios_commands->get_user_security_data();
+
+		$aio_wp_security->include_template('wp-admin/user-security/login-lockout.php', false, array('user_security_data' => $user_security_data, 'locked_ip_list' => $locked_ip_list));
 	}
 
 	/**
@@ -150,9 +152,13 @@ class AIOWPSecurity_User_Security_Menu extends AIOWPSecurity_Admin_Menu {
 	 * @return void
 	 */
 	protected function render_force_logout() {
-		global $aio_wp_security, $aiowps_feature_mgr;
+		global $aio_wp_security;
 
-		$aio_wp_security->include_template('wp-admin/user-security/force-logout.php', false, array('aiowps_feature_mgr' => $aiowps_feature_mgr));
+		$aios_commands = new AIOWPSecurity_Commands();
+
+		$user_security_data = $aios_commands->get_user_security_data();
+
+		$aio_wp_security->include_template('wp-admin/user-security/force-logout.php', false, $user_security_data);
 	}
 
 	/**

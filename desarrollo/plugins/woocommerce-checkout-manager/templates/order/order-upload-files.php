@@ -64,7 +64,7 @@ $title = get_option( 'wooccm_order_upload_files_title', esc_html__( 'Uploaded fi
 			<span><?php esc_html_e( 'Upload Files', 'woocommerce-checkout-manager' ); ?></span>
 			<input data-order_id="<?php echo esc_attr( $order->get_id() ); ?>" data-order_key="<?php echo esc_attr( $order->get_order_key() ); ?>" type="file" name="wooccm_order_attachment_upload" id="wooccm_order_attachment_upload" multiple />
 		</a>
-		<input type="button" id="wooccm_order_attachment_update" class="button button-secondary" value="<?php esc_html_e( 'Save Changes', 'woocommerce-checkout-manager' ); ?>" disabled="disabled">
+		<input type="button" id="wooccm_order_attachment_update" data-order_key="<?php echo esc_attr( $order->get_order_key() ); ?>" class="button button-secondary" value="<?php esc_html_e( 'Save Changes', 'woocommerce-checkout-manager' ); ?>" disabled="disabled">
 		<span class="wooccm_upload_results"></span>
 	</p>
 </div>

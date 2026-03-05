@@ -14,8 +14,12 @@ const {
 } = wp.primitives;
 
 const {
-	InspectorControls
+	InspectorControls,
 } = wp.editor;
+
+const {
+	useBlockProps,
+} = wp.blockEditor;
 
 const {
 	PanelBody,
@@ -30,6 +34,7 @@ const Icon = <SVG width="24" height="24" viewBox="0 0 64 64" fill="none" xmlns="
 
 registerBlockType( 'jet-smart-filters/location-distance', {
 	title: __( 'Location Distance' ),
+	apiVersion: 3,
 	icon: Icon,
 	category: 'jet-smart-filters',
 	supports: {
@@ -89,9 +94,9 @@ registerBlockType( 'jet-smart-filters/location-distance', {
 		},
 	},
 	className: 'jet-smart-filters-location-distance',
-	edit: class extends wp.element.Component {
+	edit: ( props ) => {
 
-		getOptionsFromObject( object ) {
+		const getOptionsFromObject = function( object ) {
 
 			const result = [];
 
@@ -106,192 +111,186 @@ registerBlockType( 'jet-smart-filters/location-distance', {
 
 		}
 
-		render() {
+		const updateAdditionalProvidersRepeaterItem = ( index, key, value ) => {
+			const providersList = clone( props.attributes.additional_providers_list );
+			providersList[index][key] = value;
 
-			const props = this.props;
+			props.setAttributes( { additional_providers_list: providersList } );
+		};
 
-			const updateAdditionalProvidersRepeaterItem = ( index, key, value ) => {
-				const providersList = clone( props.attributes.additional_providers_list );
-				providersList[index][key] = value;
-
-				props.setAttributes( { additional_providers_list: providersList } );
-			};
-
-			return [
-				props.isSelected && (
-					<InspectorControls
-						key={'inspector'}
-					>
-						<PanelBody title={__( 'General' )}>
-							<div>
-								<h4 style={{margin:'5px 0 0'}}>Please note!</h4>
-								<p style={{ color: '#757575', fontSize: '12px' }}>
-									This filter is compatible only with queries from JetEngine Query Builder. ALso you need to set up <a href="https://crocoblock.com/knowledge-base/jetsmartfilters/location-distance-filter-overview/" target="_blank">Geo Query</a> in your query settings to make the filter work correctly.
-								</p>
-							</div>
-							<SelectControl
-								label={ __( 'Select filter' ) }
-								value={ props.attributes.filter_id }
-								options={ this.getOptionsFromObject( window.JetSmartFilterBlocksData.filters['location-distance'] ) }
-								onChange={ newValue => {
-									props.setAttributes({ filter_id: Number(newValue) });
-								} }
-							/>
-							<SelectControl
-								label={ __( 'This filter for' ) }
-								value={ props.attributes.content_provider }
-								options={ this.getOptionsFromObject( window.JetSmartFilterBlocksData.providers ) }
-								onChange={ newValue => {
-									props.setAttributes({ content_provider: newValue });
-								} }
-							/>
-							<SelectControl
-								label={ __( 'Apply type' ) }
-								value={ props.attributes.apply_type }
-								options={ [{
-									label: __('AJAX'),
-									value: 'ajax'
-								},
-								{
-									label: __('Page reload'),
-									value: 'reload'
-								},
-								{
-									label: __('Mixed'),
-									value: 'mixed'
-								}] }
-								onChange={ newValue => {
-									props.setAttributes({ apply_type: newValue });
-								} }
-							/>
-							<SelectControl
-								label={ __('Apply on') }
-								value={ props.attributes.apply_on }
-								options={ [{
-									label: __( 'Value change' ),
-									value: 'value'
-								},
-								{
-									label: __( 'Click on apply button' ),
-									value: 'submit'
-								}] }
-								onChange={ newValue => {
-									props.setAttributes({ apply_on: newValue });
-								}}
-							/>
-							<ToggleControl
-								label={ __( 'Show filter label' ) }
-								checked={ props.attributes.show_label }
-								onChange={ newValue => {
-									props.setAttributes( { show_label: newValue } );
-								}}
-							/>
-							<TextControl
-								type="text"
-								label={ __( 'Placeholder' ) }
-								help={ __( 'Placeholder text for the location input' ) }
-								value={ props.attributes.placeholder }
-								onChange={ newValue => {
-									props.setAttributes( { placeholder: newValue } );
-								} }
-							/>
-							<TextControl
-								type="text"
-								label={ __( 'Text for user geolocation control' ) }
-								help={ __( 'This text used for User Geolocation icon tooltip and as location input value, when User Geolocation is used' ) }
-								value={ props.attributes.geolocation_placeholder }
-								onChange={ newValue => {
-									props.setAttributes( { geolocation_placeholder: newValue } );
-								} }
-							/>
-							<TextControl
-								type="text"
-								label={ __( 'Query ID' ) }
-								help={ __( 'Set unique query ID if you use multiple blocks of same provider on the page. Same ID you need to set for filtered block.' ) }
-								value={ props.attributes.query_id }
-								onChange={ newValue => {
-									props.setAttributes( { query_id: newValue } );
-								} }
-							/>
-							<ToggleControl
-								label={ __( 'Additional Providers Enabled' ) }
-								checked={ props.attributes.additional_providers_enabled }
-								onChange={ newValue => {
-									props.setAttributes( { additional_providers_enabled: newValue } );
-								}}
-							/>
-							{props.attributes.additional_providers_enabled === true && (
-								<Repeater
-									data={ props.attributes.additional_providers_list }
-									default={{
-										additional_provider: ''
-									}}
-									onChange={ newData => {
-										props.setAttributes({ additional_providers_list: newData });
-									} }
-								>
-									{
-										(item, index) =>
-											<React.Fragment>
-												<SelectControl
-													label={ __('Additional Provider') }
-													value={ item.additional_provider }
-													options={ this.getOptionsFromObject( window.JetSmartFilterBlocksData.providers ) }
-													onChange={ newValue => {
-														updateAdditionalProvidersRepeaterItem(index, 'additional_provider', newValue);
-													}}
-												/>
-												<TextControl
-													type="text"
-													label={ __('Additional Query ID') }
-													value={ item.additional_query_id }
-													onChange={ newValue => {
-														updateAdditionalProvidersRepeaterItem(index, 'additional_query_id', newValue);
-													}}
-												/>
-											</React.Fragment>
-									}
-								</Repeater>
-							)}
-						</PanelBody>
-						<PanelBody title={__( 'Distance Control' )}>
-							<SelectControl
-								label={ __( 'Distance Units' ) }
-								value={ props.attributes.distance_units }
-								options={ [{
-									label: __('Kilometers'),
-									value: 'km'
-								},
-								{
-									label: __('Miles'),
-									value: 'mi'
-								}] }
-								onChange={ newValue => {
-									props.setAttributes({ distance_units: newValue });
-								} }
-							/>
-							<TextareaControl
-								label={ __( 'Distance List' ) }
-								help={ __( 'Comma-separated list of distance options numbers' ) }
-								value={ props.attributes.distance_list }
-								onChange={ newValue => {
-									props.setAttributes( { distance_list: newValue } );
-								} }
-							/>
-						</PanelBody>
-					</InspectorControls>
-				),
-				<div class="jet-smart-filters-block-holder">
-					<Disabled key={ 'block_render' }>
-						<ServerSideRender
-							block="jet-smart-filters/location-distance"
-							attributes={ props.attributes }
+		return [
+			props.isSelected && (
+				<InspectorControls
+					key={'inspector'}
+				>
+					<PanelBody title={__( 'General' )}>
+						<div>
+							<h4 style={{margin:'5px 0 0'}}>Please note!</h4>
+							<p style={{ color: '#757575', fontSize: '12px' }}>
+								This filter is compatible only with queries from JetEngine Query Builder. ALso you need to set up <a href="https://crocoblock.com/knowledge-base/jetsmartfilters/location-distance-filter-overview/" target="_blank">Geo Query</a> in your query settings to make the filter work correctly.
+							</p>
+						</div>
+						<SelectControl
+							label={ __( 'Select filter' ) }
+							value={ props.attributes.filter_id }
+							options={ getOptionsFromObject( window.JetSmartFilterBlocksData.filters['location-distance'] ) }
+							onChange={ newValue => {
+								props.setAttributes({ filter_id: Number(newValue) });
+							} }
 						/>
-					</Disabled>
-				</div>
-			];
-
-		}
+						<SelectControl
+							label={ __( 'This filter for' ) }
+							value={ props.attributes.content_provider }
+							options={ getOptionsFromObject( window.JetSmartFilterBlocksData.providers ) }
+							onChange={ newValue => {
+								props.setAttributes({ content_provider: newValue });
+							} }
+						/>
+						<SelectControl
+							label={ __( 'Apply type' ) }
+							value={ props.attributes.apply_type }
+							options={ [{
+								label: __('AJAX'),
+								value: 'ajax'
+							},
+							{
+								label: __('Page reload'),
+								value: 'reload'
+							},
+							{
+								label: __('Mixed'),
+								value: 'mixed'
+							}] }
+							onChange={ newValue => {
+								props.setAttributes({ apply_type: newValue });
+							} }
+						/>
+						<SelectControl
+							label={ __('Apply on') }
+							value={ props.attributes.apply_on }
+							options={ [{
+								label: __( 'Value change' ),
+								value: 'value'
+							},
+							{
+								label: __( 'Click on apply button' ),
+								value: 'submit'
+							}] }
+							onChange={ newValue => {
+								props.setAttributes({ apply_on: newValue });
+							}}
+						/>
+						<ToggleControl
+							label={ __( 'Show filter label' ) }
+							checked={ props.attributes.show_label }
+							onChange={ newValue => {
+								props.setAttributes( { show_label: newValue } );
+							}}
+						/>
+						<TextControl
+							type="text"
+							label={ __( 'Placeholder' ) }
+							help={ __( 'Placeholder text for the location input' ) }
+							value={ props.attributes.placeholder }
+							onChange={ newValue => {
+								props.setAttributes( { placeholder: newValue } );
+							} }
+						/>
+						<TextControl
+							type="text"
+							label={ __( 'Text for user geolocation control' ) }
+							help={ __( 'This text used for User Geolocation icon tooltip and as location input value, when User Geolocation is used' ) }
+							value={ props.attributes.geolocation_placeholder }
+							onChange={ newValue => {
+								props.setAttributes( { geolocation_placeholder: newValue } );
+							} }
+						/>
+						<TextControl
+							type="text"
+							label={ __( 'Query ID' ) }
+							help={ __( 'Set unique query ID if you use multiple blocks of same provider on the page. Same ID you need to set for filtered block.' ) }
+							value={ props.attributes.query_id }
+							onChange={ newValue => {
+								props.setAttributes( { query_id: newValue } );
+							} }
+						/>
+						<ToggleControl
+							label={ __( 'Additional Providers Enabled' ) }
+							checked={ props.attributes.additional_providers_enabled }
+							onChange={ newValue => {
+								props.setAttributes( { additional_providers_enabled: newValue } );
+							}}
+						/>
+						{props.attributes.additional_providers_enabled === true && (
+							<Repeater
+								data={ props.attributes.additional_providers_list }
+								default={{
+									additional_provider: ''
+								}}
+								onChange={ newData => {
+									props.setAttributes({ additional_providers_list: newData });
+								} }
+							>
+								{
+									(item, index) =>
+										<React.Fragment>
+											<SelectControl
+												label={ __('Additional Provider') }
+												value={ item.additional_provider }
+												options={ getOptionsFromObject( window.JetSmartFilterBlocksData.providers ) }
+												onChange={ newValue => {
+													updateAdditionalProvidersRepeaterItem(index, 'additional_provider', newValue);
+												}}
+											/>
+											<TextControl
+												type="text"
+												label={ __('Additional Query ID') }
+												value={ item.additional_query_id }
+												onChange={ newValue => {
+													updateAdditionalProvidersRepeaterItem(index, 'additional_query_id', newValue);
+												}}
+											/>
+										</React.Fragment>
+								}
+							</Repeater>
+						)}
+					</PanelBody>
+					<PanelBody title={__( 'Distance Control' )}>
+						<SelectControl
+							label={ __( 'Distance Units' ) }
+							value={ props.attributes.distance_units }
+							options={ [{
+								label: __('Kilometers'),
+								value: 'km'
+							},
+							{
+								label: __('Miles'),
+								value: 'mi'
+							}] }
+							onChange={ newValue => {
+								props.setAttributes({ distance_units: newValue });
+							} }
+						/>
+						<TextareaControl
+							label={ __( 'Distance List' ) }
+							help={ __( 'Comma-separated list of distance options numbers' ) }
+							value={ props.attributes.distance_list }
+							onChange={ newValue => {
+								props.setAttributes( { distance_list: newValue } );
+							} }
+						/>
+					</PanelBody>
+				</InspectorControls>
+			),
+			<div class="jet-smart-filters-block-holder" { ...useBlockProps() }>
+				<Disabled key={ 'block_render' }>
+					<ServerSideRender
+						block="jet-smart-filters/location-distance"
+						attributes={ props.attributes }
+					/>
+				</Disabled>
+			</div>
+		];
 
 	},
 	save: props => {

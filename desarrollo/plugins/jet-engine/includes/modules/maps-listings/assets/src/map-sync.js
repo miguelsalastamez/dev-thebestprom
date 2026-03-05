@@ -2,6 +2,10 @@ const { registerBlockType } = wp.blocks;
 const { __ } = wp.i18n;
 
 const {
+	ServerSideRender
+} = window.JetEngineBlocksComponents;
+
+const {
 	SVG,
 	Path
 } = wp.primitives;
@@ -11,8 +15,12 @@ const {
 } = wp.editor;
 
 const {
+	useBlockProps,
+} = wp.blockEditor;
+
+const {
 	PanelBody,
-	SelectControl,
+	Disabled,
 	TextControl,
 	ToggleControl
 } = wp.components;
@@ -26,6 +34,7 @@ const Icon = <SVG version="1.1" xmlns="http://www.w3.org/2000/svg" width="24" he
 
 registerBlockType( 'jet-smart-filters/map-sync', {
 	title: __( 'Map Sync' ),
+	apiVersion: 3,
 	icon: Icon,
 	category: 'jet-smart-filters',
 	supports: {
@@ -56,9 +65,11 @@ registerBlockType( 'jet-smart-filters/map-sync', {
 		},
 	},
 	className: 'jet-smart-filters-map-sync',
-	edit: class extends wp.element.Component {
+	edit: ( props ) => {
 
-		getOptionsFromObject( object ) {
+		const attributes = props.attributes;
+
+		const getOptionsFromObject = function( object ) {
 
 			const result = [];
 
@@ -73,123 +84,125 @@ registerBlockType( 'jet-smart-filters/map-sync', {
 
 		}
 
-		render() {
-			
-			const props = this.props;
+		const repeaterControls = [
+			{
+				label: 'Provider',
+				name: 'additional_provider',
+				type: 'select',
+				options: getOptionsFromObject( window.JetSmartFilterBlocksData.mapSyncProviders ),
+			},
+			{
+				label: 'Query ID',
+				name: 'additional_query_id',
+				type: 'text'
+			}
+		];
 
-			const repeaterControls = [
-				{
-					label: 'Provider',
-					name: 'additional_provider',
-					type: 'select',
-					options: this.getOptionsFromObject( window.JetSmartFilterBlocksData.mapSyncProviders ),
-				},
-				{
-					label: 'Query ID',
-					name: 'additional_query_id',
-					type: 'text'
-				}
-			];
+		return [
+			props.isSelected && (
+				<InspectorControls
+					key={'inspector'}
+				>
+					<PanelBody title={__( 'General' )}>
+						<div>
+							<h4 style={{margin:'5px 0 0'}}>Please note!</h4>
+							<p style={{ color: '#757575', fontSize: '12px' }}>
+								This filter is compatible only with queries from JetEngine Query Builder. ALso you need to set up <a href="https://crocoblock.com/knowledge-base/jetengine/how-to-set-geo-search-based-on-user-geolocation/" target="_blank">Geo Query</a> in your query settings to make the filter work correctly.
+							</p>
+						
+							<h4 style={{margin:'5px 0 0'}}>This filter for: Map Listing.</h4>
+							<p style={{ color: '#757575', fontSize: '12px' }}>
+								<i>Map Sync filter does not work if there is no Map Listing on the page, and that Map Listing is a main provider.</i>
+							</p>
+						</div>
+						<TextControl
+							type="text"
+							label={ __( 'Query ID' ) }
+							help={ __( 'Map Listing query ID. Set unique query ID if you use multiple Map Listings on the page. Same ID you need to set for filtered block.' ) }
+							value={ props.attributes.query_id }
+							onChange={ newValue => {
+								props.setAttributes( { query_id: newValue } );
+							} }
+						/>
 
-			return [
-				props.isSelected && (
-					<InspectorControls
-						key={'inspector'}
-					>
-						<PanelBody title={__( 'General' )}>
-							<div>
-								<h4 style={{margin:'5px 0 0'}}>Please note!</h4>
-								<p style={{ color: '#757575', fontSize: '12px' }}>
-									This filter is compatible only with queries from JetEngine Query Builder. ALso you need to set up <a href="https://crocoblock.com/knowledge-base/jetengine/how-to-set-geo-search-based-on-user-geolocation/" target="_blank">Geo Query</a> in your query settings to make the filter work correctly.
-								</p>
-							
-								<h4 style={{margin:'5px 0 0'}}>This filter for: Map Listing.</h4>
-								<p style={{ color: '#757575', fontSize: '12px' }}>
-									<i>Map Sync filter does not work if there is no Map Listing on the page, and that Map Listing is a main provider.</i>
-								</p>
-							</div>
-							<TextControl
-								type="text"
-								label={ __( 'Query ID' ) }
-								help={ __( 'Map Listing query ID. Set unique query ID if you use multiple Map Listings on the page. Same ID you need to set for filtered block.' ) }
-								value={ props.attributes.query_id }
-								onChange={ newValue => {
-									props.setAttributes( { query_id: newValue } );
-								} }
-							/>
+						<ToggleControl
+							label={ __( 'Additional Providers Enabled' ) }
+							checked={ props.attributes.additional_providers_enabled }
+							onChange={ () => {
+								props.setAttributes({ additional_providers_enabled: ! props.attributes.additional_providers_enabled });
+							} }
+						/>
 
-							<ToggleControl
-								label={ __( 'Additional Providers Enabled' ) }
-								checked={ props.attributes.additional_providers_enabled }
-								onChange={ () => {
-									props.setAttributes({ additional_providers_enabled: ! props.attributes.additional_providers_enabled });
-								} }
-							/>
+						{ props.attributes.additional_providers_enabled && <RepeaterControl
+							data={ props.attributes?.additional_providers_list || [] }
+							default={ {} }
+							onChange={ newData => {
+								props.setAttributes( { additional_providers_list: newData } );
+							} }
+						>
+							{
+								( item, index ) =>
+									<div>
+									{ repeaterControls.map( ( control ) => {
 
-							{ props.attributes.additional_providers_enabled && <RepeaterControl
-								data={ props.attributes?.additional_providers_list || [] }
-								default={ {} }
-								onChange={ newData => {
-									props.setAttributes( { additional_providers_list: newData } );
-								} }
-							>
-								{
-									( item, index ) =>
-										<div>
-										{ repeaterControls.map( ( control ) => {
+										const setValue = ( newValue ) => {
+																		
+											const additionalProviders  = [ ...props.attributes.additional_providers_list ];
+											const currentItem = additionalProviders[ index ];
 
-											const setValue = ( newValue ) => {
-																			
-												const additionalProviders  = [ ...props.attributes.additional_providers_list ];
-												const currentItem = additionalProviders[ index ];
-
-												if ( ! currentItem ) {
-													return;
-												}
-
-												additionalProviders[ index ] = _.assign( {}, currentItem, {
-													[ control.name ]: newValue
-												} );
-
-												props.setAttributes( { additional_providers_list: [ ...additionalProviders ] } );
-
+											if ( ! currentItem ) {
+												return;
 											}
 
-											return <CustomControl
-												control={ control }
-												value={ item[ control.name ] }
-												getValue={ ( key, attr, object ) => {
+											additionalProviders[ index ] = _.assign( {}, currentItem, {
+												[ control.name ]: newValue
+											} );
 
-													object = object || {};
+											props.setAttributes( { additional_providers_list: [ ...additionalProviders ] } );
 
-													if ( ! key || ! attr ) {
-														return '';
-													}
+										}
 
-													if ( ! object[ key ] ) {
-														return '';
-													}
+										return <CustomControl
+											control={ control }
+											value={ item[ control.name ] }
+											getValue={ ( key, attr, object ) => {
 
-													return object[ key ];
-												} }
-												attr={ control.name }
-												attributes={ item }
-												onChange={ newValue => {
-													setValue( newValue );
-												} }
-											>
-											</CustomControl>
-											} ) }
-										</div>
-								}
-							</RepeaterControl> }
+												object = object || {};
 
-						</PanelBody>
-					</InspectorControls>
-				)
-			];
+												if ( ! key || ! attr ) {
+													return '';
+												}
 
-		}
+												if ( ! object[ key ] ) {
+													return '';
+												}
+
+												return object[ key ];
+											} }
+											attr={ control.name }
+											attributes={ item }
+											onChange={ newValue => {
+												setValue( newValue );
+											} }
+										>
+										</CustomControl>
+										} ) }
+									</div>
+							}
+						</RepeaterControl> }
+
+					</PanelBody>
+				</InspectorControls>
+			),
+			<div { ...useBlockProps() }>
+				<Disabled key={ 'block_render' }>
+					<ServerSideRender
+						block="jet-smart-filters/map-sync"
+						attributes={ attributes }
+					/>
+				</Disabled>
+			</div>
+		];
 
 	},
 	save: props => {

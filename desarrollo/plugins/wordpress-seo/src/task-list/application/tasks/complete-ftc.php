@@ -1,4 +1,5 @@
 <?php
+
 // phpcs:disable Yoast.NamingConventions.NamespaceName.TooLong -- Needed in the folder structure.
 namespace Yoast\WP\SEO\Task_List\Application\Tasks;
 
@@ -76,7 +77,7 @@ class Complete_FTC extends Abstract_Task {
 		return new Call_To_Action_Entry(
 			\__( 'Start configuration', 'wordpress-seo' ),
 			'link',
-			$this->get_link()
+			$this->get_link(),
 		);
 	}
 

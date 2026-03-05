@@ -1,0 +1,107 @@
+[29-Jul-2020 15:58:25 CST6CDT] PHP Fatal error:  Uncaught Error: Call to undefined function is_main_site() in /home/customer/www/thebestprom.com/public_html/wp-includes/update.php:813
+Stack trace:
+#0 {main}
+  thrown in /home/customer/www/thebestprom.com/public_html/wp-includes/update.php on line 813
+[30-Jul-2020 16:04:17 CST6CDT] PHP Fatal error:  Uncaught Error: Class 'IXR_Server' not found in /home/customer/www/thebestprom.com/public_html/wp-includes/class-wp-xmlrpc-server.php:23
+Stack trace:
+#0 {main}
+  thrown in /home/customer/www/thebestprom.com/public_html/wp-includes/class-wp-xmlrpc-server.php on line 23
+[31-Jul-2020 10:48:13 CST6CDT] PHP Fatal error:  Uncaught Error: Call to undefined function feed_content_type() in /home/customer/www/thebestprom.com/public_html/wp-includes/feed-atom-comments.php:8
+Stack trace:
+#0 {main}
+  thrown in /home/customer/www/thebestprom.com/public_html/wp-includes/feed-atom-comments.php on line 8
+[02-Sep-2020 17:28:28 CST6CDT] PHP Fatal error:  Uncaught Error: Call to undefined function feed_content_type() in /home/customer/www/thebestprom.com/public_html/wp-includes/feed-atom-comments.php:8
+Stack trace:
+#0 {main}
+  thrown in /home/customer/www/thebestprom.com/public_html/wp-includes/feed-atom-comments.php on line 8
+[03-Sep-2020 17:31:10 CST6CDT] PHP Fatal error:  Uncaught Error: Class 'IXR_Server' not found in /home/customer/www/thebestprom.com/public_html/wp-includes/class-wp-xmlrpc-server.php:23
+Stack trace:
+#0 {main}
+  thrown in /home/customer/www/thebestprom.com/public_html/wp-includes/class-wp-xmlrpc-server.php on line 23
+[04-Sep-2020 01:22:16 CST6CDT] PHP Fatal error:  Uncaught Error: Call to undefined function is_main_site() in /home/customer/www/thebestprom.com/public_html/wp-includes/update.php:873
+Stack trace:
+#0 {main}
+  thrown in /home/customer/www/thebestprom.com/public_html/wp-includes/update.php on line 873
+[07-Jun-2022 07:56:57 UTC] PHP Fatal error:  require_once(): Failed opening required 'ABSPATHWPINC/class-wp-object-cache.php' (include_path='.:/usr/local/php74/pear') in /home/customer/www/thebestprom.com/public_html/wp-includes/cache.php on line 12
+[07-Jun-2022 08:57:24 UTC] PHP Fatal error:  Uncaught Error: Class 'Walker' not found in /home/customer/www/thebestprom.com/public_html/wp-includes/class-walker-nav-menu.php:17
+Stack trace:
+#0 {main}
+  thrown in /home/customer/www/thebestprom.com/public_html/wp-includes/class-walker-nav-menu.php on line 17
+[07-Jun-2022 09:15:29 UTC] PHP Fatal error:  require_once(): Failed opening required 'ABSPATHWPINC/customize/class-wp-customize-nav-menus-panel.php' (include_path='.:/usr/local/php74/pear') in /home/customer/www/thebestprom.com/public_html/wp-includes/class-wp-customize-panel.php on line 395
+[07-Jun-2022 09:45:10 UTC] PHP Fatal error:  require(): Failed opening required 'ABSPATHWPINC/option.php' (include_path='.:/usr/local/php74/pear') in /home/customer/www/thebestprom.com/public_html/wp-includes/functions.php on line 8
+[07-Jun-2022 10:49:24 UTC] PHP Fatal error:  require_once(): Failed opening required 'ABSPATHWPINC/IXR/class-IXR-server.php' (include_path='.:/usr/local/php74/pear') in /home/customer/www/thebestprom.com/public_html/wp-includes/class-IXR.php on line 42
+[07-Jun-2022 10:58:05 UTC] PHP Fatal error:  Uncaught Error: Class 'IXR_Server' not found in /home/customer/www/thebestprom.com/public_html/wp-includes/class-wp-xmlrpc-server.php:23
+Stack trace:
+#0 {main}
+  thrown in /home/customer/www/thebestprom.com/public_html/wp-includes/class-wp-xmlrpc-server.php on line 23
+[07-Jun-2022 11:01:31 UTC] PHP Fatal error:  Uncaught Error: Call to undefined function feed_content_type() in /home/customer/www/thebestprom.com/public_html/wp-includes/feed-rss.php:8
+Stack trace:
+#0 {main}
+  thrown in /home/customer/www/thebestprom.com/public_html/wp-includes/feed-rss.php on line 8
+[07-Jun-2022 11:13:16 UTC] PHP Fatal error:  Uncaught Error: Call to undefined function _deprecated_file() in /home/customer/www/thebestprom.com/public_html/wp-includes/session.php:9
+Stack trace:
+#0 {main}
+  thrown in /home/customer/www/thebestprom.com/public_html/wp-includes/session.php on line 9
+[07-Jun-2022 11:31:16 UTC] PHP Fatal error:  Uncaught Error: Call to undefined function _deprecated_file() in /home/customer/www/thebestprom.com/public_html/wp-includes/class-snoopy.php:6
+Stack trace:
+#0 {main}
+  thrown in /home/customer/www/thebestprom.com/public_html/wp-includes/class-snoopy.php on line 6
+[07-Jun-2022 11:40:45 UTC] PHP Fatal error:  Uncaught Error: Call to undefined function is_main_site() in /home/customer/www/thebestprom.com/public_html/wp-includes/update.php:956
+Stack trace:
+#0 {main}
+  thrown in /home/customer/www/thebestprom.com/public_html/wp-includes/update.php on line 956
+[07-Jun-2022 12:05:38 UTC] PHP Fatal error:  Uncaught Error: Class 'Walker' not found in /home/customer/www/thebestprom.com/public_html/wp-includes/class-walker-category.php:17
+Stack trace:
+#0 {main}
+  thrown in /home/customer/www/thebestprom.com/public_html/wp-includes/class-walker-category.php on line 17
+[07-Jun-2022 12:23:41 UTC] PHP Fatal error:  Uncaught Error: Call to undefined function _deprecated_file() in /home/customer/www/thebestprom.com/public_html/wp-includes/class-wp-feed-cache.php:11
+Stack trace:
+#0 {main}
+  thrown in /home/customer/www/thebestprom.com/public_html/wp-includes/class-wp-feed-cache.php on line 11
+[07-Jun-2022 12:57:22 UTC] PHP Fatal error:  Uncaught Error: Class 'Walker' not found in /home/customer/www/thebestprom.com/public_html/wp-includes/class-walker-comment.php:17
+Stack trace:
+#0 {main}
+  thrown in /home/customer/www/thebestprom.com/public_html/wp-includes/class-walker-comment.php on line 17
+[07-Jun-2022 13:15:12 UTC] PHP Fatal error:  require_once(): Failed opening required 'ABSPATHWPINC/ms-site.php' (include_path='.:/usr/local/php74/pear') in /home/customer/www/thebestprom.com/public_html/wp-includes/ms-blogs.php on line 11
+[07-Jun-2022 13:30:37 UTC] PHP Fatal error:  Uncaught Error: Call to undefined function add_shortcode() in /home/customer/www/thebestprom.com/public_html/wp-includes/media.php:2110
+Stack trace:
+#0 {main}
+  thrown in /home/customer/www/thebestprom.com/public_html/wp-includes/media.php on line 2110
+[07-Jun-2022 13:46:03 UTC] PHP Fatal error:  require(): Failed opening required 'ABSPATHWPINC/SimplePie/Misc.php' (include_path='.:/usr/local/php74/pear') in /home/customer/www/thebestprom.com/public_html/wp-includes/class-simplepie.php on line 5
+[07-Jun-2022 14:06:47 UTC] PHP Fatal error:  Uncaught Error: Call to undefined function _deprecated_file() in /home/customer/www/thebestprom.com/public_html/wp-includes/class-feed.php:10
+Stack trace:
+#0 {main}
+  thrown in /home/customer/www/thebestprom.com/public_html/wp-includes/class-feed.php on line 10
+[07-Jun-2022 14:07:26 UTC] PHP Fatal error:  Uncaught Error: Class 'Text_Diff_Renderer_inline' not found in /home/customer/www/thebestprom.com/public_html/wp-includes/class-wp-text-diff-renderer-inline.php:16
+Stack trace:
+#0 {main}
+  thrown in /home/customer/www/thebestprom.com/public_html/wp-includes/class-wp-text-diff-renderer-inline.php on line 16
+[07-Jun-2022 14:19:16 UTC] PHP Fatal error:  Uncaught Error: Call to undefined function feed_content_type() in /home/customer/www/thebestprom.com/public_html/wp-includes/feed-rss2-comments.php:8
+Stack trace:
+#0 {main}
+  thrown in /home/customer/www/thebestprom.com/public_html/wp-includes/feed-rss2-comments.php on line 8
+[01-Jul-2022 08:43:24 UTC] PHP Fatal error:  Uncaught Error: Call to undefined function _deprecated_file() in /home/customer/www/thebestprom.com/public_html/wp-includes/class-json.php:2
+Stack trace:
+#0 {main}
+  thrown in /home/customer/www/thebestprom.com/public_html/wp-includes/class-json.php on line 2
+[01-Jul-2022 09:28:13 UTC] PHP Fatal error:  Uncaught Error: Call to undefined function add_filter() in /home/customer/www/thebestprom.com/public_html/wp-includes/blocks.php:1272
+Stack trace:
+#0 {main}
+  thrown in /home/customer/www/thebestprom.com/public_html/wp-includes/blocks.php on line 1272
+[01-Jul-2022 12:10:07 UTC] PHP Fatal error:  Uncaught Error: Class 'IXR_Client' not found in /home/customer/www/thebestprom.com/public_html/wp-includes/class-wp-http-ixr-client.php:8
+Stack trace:
+#0 {main}
+  thrown in /home/customer/www/thebestprom.com/public_html/wp-includes/class-wp-http-ixr-client.php on line 8
+[01-Jul-2022 14:37:42 UTC] PHP Fatal error:  require_once(): Failed opening required 'ABSPATHWPINC/customize/class-wp-customize-themes-section.php' (include_path='.:/usr/local/php74/pear') in /home/customer/www/thebestprom.com/public_html/wp-includes/class-wp-customize-section.php on line 396
+[01-Jul-2022 14:55:32 UTC] PHP Fatal error:  Uncaught Error: Call to undefined function add_filter() in /home/customer/www/thebestprom.com/public_html/wp-includes/default-filters.php:22
+Stack trace:
+#0 {main}
+  thrown in /home/customer/www/thebestprom.com/public_html/wp-includes/default-filters.php on line 22
+[01-Jul-2022 15:47:40 UTC] PHP Fatal error:  Uncaught Error: Call to undefined function _deprecated_file() in /home/customer/www/thebestprom.com/public_html/wp-includes/date.php:11
+Stack trace:
+#0 {main}
+  thrown in /home/customer/www/thebestprom.com/public_html/wp-includes/date.php on line 11
+[28-Nov-2022 22:39:35 UTC] PHP Fatal error:  Uncaught Error: Call to undefined function _deprecated_file() in /home/customer/www/thebestprom.com/public_html/wp-includes/class.wp-dependencies.php:11
+Stack trace:
+#0 {main}
+  thrown in /home/customer/www/thebestprom.com/public_html/wp-includes/class.wp-dependencies.php on line 11

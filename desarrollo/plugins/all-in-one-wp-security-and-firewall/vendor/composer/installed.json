@@ -128,6 +128,37 @@
             "type": "library",
             "installation-source": "dist",
             "install-path": "../team-updraft/lib-central"
+        },
+        {
+            "name": "team-updraft/lib-onboarding-wizard",
+            "version": "1.0.4",
+            "version_normalized": "1.0.4.0",
+            "source": {
+                "type": "git",
+                "url": "ssh://git@source.updraftplus.com:20022/team-updraft/lib-onboarding-wizard.git",
+                "reference": "021f9bd1207221dc76229e77eacea77a43e65c27"
+            },
+            "dist": {
+                "type": "zip",
+                "url": "https://source.updraftplus.com/api/v4/projects/140/packages/composer/archives/team-updraft/lib-onboarding-wizard.zip?sha=021f9bd1207221dc76229e77eacea77a43e65c27",
+                "reference": "021f9bd1207221dc76229e77eacea77a43e65c27",
+                "shasum": ""
+            },
+            "require": {
+                "composer-plugin-api": "^2.0"
+            },
+            "type": "composer-plugin",
+            "extra": {
+                "class": "LibOnboardingWizard"
+            },
+            "installation-source": "dist",
+            "autoload": {
+                "classmap": [
+                    "composer-plugin-extras"
+                ]
+            },
+            "description": "onboarding wizard",
+            "install-path": "../team-updraft/lib-onboarding-wizard"
         }
     ],
     "dev": false,

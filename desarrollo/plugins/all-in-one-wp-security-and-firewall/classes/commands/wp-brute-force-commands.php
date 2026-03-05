@@ -10,10 +10,16 @@ trait AIOWPSecurity_Brute_Force_Commands_Trait {
 	 *
 	 * @param array $data - the request data contains PHP settings
 	 *
-	 * @return array
+	 * @return array|WP_Error
 	 */
 	public function perform_rename_login_page($data) {
 		global $aio_wp_security;
+
+		if (AIOS_Helper::is_updraft_central_request()) {
+			if (!AIOWPSecurity_Utility_Permissions::has_manage_cap()) {
+				return new WP_Error(esc_html__('Sorry, you do not have enough privilege to execute the requested action.', 'all-in-one-wp-security-and-firewall'));
+			}
+		}
 
 		$success = true;
 		$options = array();
@@ -61,10 +67,16 @@ trait AIOWPSecurity_Brute_Force_Commands_Trait {
 	 *
 	 * @param array $data The data received from the AJAX request.
 	 *
-	 * @return array The response containing the status, message, and badge.
+	 * @return array|WP_Error The response containing the status, message, and badge.
 	 */
 	public function perform_cookie_based_brute_force_prevention($data) {
 		global $aio_wp_security;
+
+		if (AIOS_Helper::is_updraft_central_request()) {
+			if (!AIOWPSecurity_Utility_Permissions::has_manage_cap()) {
+				return new WP_Error(esc_html__('Sorry, you do not have enough privilege to execute the requested action.', 'all-in-one-wp-security-and-firewall'));
+			}
+		}
 
 		$options = array();
 		$values = array();
@@ -228,9 +240,14 @@ trait AIOWPSecurity_Brute_Force_Commands_Trait {
 	 *
 	 * @param array $data The data received from the AJAX request.
 	 *
-	 * @return array The response containing the status, message, and badge.
+	 * @return array|WP_Error The response containing the status, message, and badge.
 	 */
 	public function perform_honeypot_settings($data) {
+		if (AIOS_Helper::is_updraft_central_request()) {
+			if (!AIOWPSecurity_Utility_Permissions::has_manage_cap()) {
+				return new WP_Error(esc_html__('Sorry, you do not have enough privilege to execute the requested action.', 'all-in-one-wp-security-and-firewall'));
+			}
+		}
 
 		$options = array();
 		// Save all the form values to the options
@@ -251,10 +268,16 @@ trait AIOWPSecurity_Brute_Force_Commands_Trait {
 	 *
 	 * @param array $data The data received from the AJAX request.
 	 *
-	 * @return array The response containing the status, message, and badge.
+	 * @return array|WP_Error The response containing the status, message, and badge.
 	 */
 	public function perform_captcha_settings($data) {
 		global $aio_wp_security;
+
+		if (AIOS_Helper::is_updraft_central_request()) {
+			if (!AIOWPSecurity_Utility_Permissions::has_manage_cap()) {
+				return new WP_Error(esc_html__('Sorry, you do not have enough privilege to execute the requested action.', 'all-in-one-wp-security-and-firewall'));
+			}
+		}
 
 		$captcha_themes = $aio_wp_security->captcha_obj->get_captcha_themes();
 		$supported_captchas = $aio_wp_security->captcha_obj->get_supported_captchas();
@@ -557,5 +580,153 @@ trait AIOWPSecurity_Brute_Force_Commands_Trait {
 		} else {
 			return $aio_wp_security->include_template('wp-admin/brute-force/partials/cookie-test-container.php', true);
 		}
+	}
+
+	/**
+	 * Retrieve settings for the rename login page feature.
+	 *
+	 * @return array Data for the rename login page feature.
+	 */
+	public function get_rename_login_page_data() {
+		global $aio_wp_security;
+
+		if (get_option('permalink_structure')) {
+			$home_url = trailingslashit(home_url());
+		} else {
+			$home_url = trailingslashit(home_url()) . '?';
+		}
+
+		$aiowps_enable_rename_login_page = $aio_wp_security->configs->get_value('aiowps_enable_rename_login_page');
+		$aiowps_login_page_slug = $aio_wp_security->configs->get_value('aiowps_login_page_slug');
+
+		return array(
+			'home_url' => $home_url,
+			'aiowps_enable_rename_login_page' => $aiowps_enable_rename_login_page,
+			'aiowps_login_page_slug' => $aiowps_login_page_slug,
+		);
+	}
+
+	/**
+	 * Retrieve settings for the honeypot feature.
+	 *
+	 * @return array Data for the honeypot feature.
+	 */
+	public function get_honeypot_data() {
+		global $aio_wp_security;
+
+		$aiowps_enable_login_honeypot = $aio_wp_security->configs->get_value('aiowps_enable_login_honeypot');
+		$aiowps_enable_registration_honeypot = $aio_wp_security->configs->get_value('aiowps_enable_registration_honeypot');
+
+		return array(
+			'aiowps_enable_login_honeypot' => $aiowps_enable_login_honeypot,
+			'aiowps_enable_registration_honeypot' => $aiowps_enable_registration_honeypot,
+		);
+	}
+
+	/**
+	 * Retrieve settings for the cookie-based brute force protection feature.
+	 *
+	 * @return array Data for the cookie-based brute force protection feature.
+	 */
+	public function get_cookie_based_brute_force_data() {
+		global $aio_wp_security;
+
+		$aiowps_cookie_test_success = $aio_wp_security->configs->get_value('aiowps_cookie_test_success');
+		$aiowps_enable_brute_force_attack_prevention = $aio_wp_security->configs->get_value('aiowps_enable_brute_force_attack_prevention');
+		$aiowps_brute_force_secret_word = $aio_wp_security->configs->get_value('aiowps_brute_force_secret_word');
+		$aiowps_cookie_based_brute_force_redirect_url = $aio_wp_security->configs->get_value('aiowps_cookie_based_brute_force_redirect_url');
+		$aiowps_brute_force_attack_prevention_pw_protected_exception = $aio_wp_security->configs->get_value('aiowps_brute_force_attack_prevention_pw_protected_exception');
+		$aiowps_brute_force_attack_prevention_ajax_exception = $aio_wp_security->configs->get_value('aiowps_brute_force_attack_prevention_ajax_exception');
+
+		return array(
+			'aiowps_cookie_test_success' => $aiowps_cookie_test_success,
+			'aiowps_enable_brute_force_attack_prevention' => $aiowps_enable_brute_force_attack_prevention,
+			'aiowps_brute_force_secret_word' => $aiowps_brute_force_secret_word,
+			'aiowps_cookie_based_brute_force_redirect_url' => $aiowps_cookie_based_brute_force_redirect_url,
+			'aiowps_brute_force_attack_prevention_pw_protected_exception' => $aiowps_brute_force_attack_prevention_pw_protected_exception,
+			'aiowps_brute_force_attack_prevention_ajax_exception' => $aiowps_brute_force_attack_prevention_ajax_exception,
+		);
+	}
+
+	/**
+	 * Retrieve settings for the CAPTCHA feature.
+	 *
+	 * @return array Data for the CAPTCHA feature.
+	 */
+	public function get_captcha_settings_data() {
+		global $aio_wp_security;
+
+		$supported_captchas = $aio_wp_security->captcha_obj->get_supported_captchas();
+		$captcha_themes = $aio_wp_security->captcha_obj->get_captcha_themes();
+
+		$aiowps_default_captcha = $aio_wp_security->configs->get_value('aiowps_default_captcha');
+
+		$captcha_theme = 'auto';
+		if ('cloudflare-turnstile' === $aiowps_default_captcha) {
+			$captcha_theme = $aio_wp_security->configs->get_value('aiowps_turnstile_theme');
+		}
+
+		$aiowps_turnstile_site_key = $aio_wp_security->configs->get_value('aiowps_turnstile_site_key');
+		$aiowps_turnstile_secret_key = $aio_wp_security->configs->get_value('aiowps_turnstile_secret_key');
+		$cloudflare_turnstile_verify_configuration = $aio_wp_security->captcha_obj->cloudflare_turnstile_verify_configuration($aiowps_turnstile_site_key, $aiowps_turnstile_secret_key);
+		$aios_google_recaptcha_invalid_configuration = $aio_wp_security->configs->get_value('aios_google_recaptcha_invalid_configuration');
+		$aiowps_recaptcha_site_key = $aio_wp_security->configs->get_value('aiowps_recaptcha_site_key');
+		$aiowps_recaptcha_secret_key = $aio_wp_security->configs->get_value('aiowps_recaptcha_secret_key');
+
+		$is_woocommerce_plugin_active = AIOWPSecurity_Utility::is_woocommerce_plugin_active();
+		$is_buddypress_plugin_active = AIOWPSecurity_Utility::is_buddypress_plugin_active();
+		$is_bbpress_plugin_active = AIOWPSecurity_Utility::is_bbpress_plugin_active();
+		$is_contact_form_7_plugin_active = AIOWPSecurity_Utility::is_contact_form_7_plugin_active();
+
+		$aiowps_enable_login_captcha = $aio_wp_security->configs->get_value('aiowps_enable_login_captcha');
+		$aiowps_enable_registration_page_captcha = $aio_wp_security->configs->get_value('aiowps_enable_registration_page_captcha');
+		$aiowps_enable_lost_password_captcha = $aio_wp_security->configs->get_value('aiowps_enable_lost_password_captcha');
+		$aiowps_enable_custom_login_captcha = $aio_wp_security->configs->get_value('aiowps_enable_custom_login_captcha');
+		$aiowps_enable_comment_captcha = $aio_wp_security->configs->get_value('aiowps_enable_comment_captcha');
+		$aiowps_enable_password_protected_captcha = $aio_wp_security->configs->get_value('aiowps_enable_password_protected_captcha');
+
+		$aiowps_enable_woo_login_captcha = $aio_wp_security->configs->get_value('aiowps_enable_woo_login_captcha');
+		$aiowps_enable_woo_lostpassword_captcha = $aio_wp_security->configs->get_value('aiowps_enable_woo_lostpassword_captcha');
+		$aiowps_enable_woo_register_captcha = $aio_wp_security->configs->get_value('aiowps_enable_woo_register_captcha');
+		$is_enabled_guest_checkout = ('yes' == get_option('woocommerce_enable_guest_checkout')) ? 1 : 0;
+		$aiowps_enable_woo_checkout_captcha = $aio_wp_security->configs->get_value('aiowps_enable_woo_checkout_captcha');
+
+		$aiowps_enable_bp_register_captcha = $aio_wp_security->configs->get_value('aiowps_enable_bp_register_captcha');
+		$aiowps_enable_bbp_new_topic_captcha = $aio_wp_security->configs->get_value('aiowps_enable_bbp_new_topic_captcha');
+		$aiowps_enable_contact_form_7_captcha = $aio_wp_security->configs->get_value('aiowps_enable_contact_form_7_captcha');
+		$aiowps_captcha_shortcode = AIOWPSEC_CAPTCHA_SHORTCODE;
+
+		return array(
+			'supported_captchas' => $supported_captchas,
+			'captcha_themes' => $captcha_themes,
+			'captcha_theme' => $captcha_theme,
+			'aiowps_default_captcha' => $aiowps_default_captcha,
+			'aiowps_turnstile_site_key' => $aiowps_turnstile_site_key,
+			'aiowps_turnstile_secret_key' => AIOWPSecurity_Utility::mask_string($aiowps_turnstile_secret_key),
+			'cloudflare_turnstile_verify_configuration' => $cloudflare_turnstile_verify_configuration,
+			'aios_google_recaptcha_invalid_configuration' => $aios_google_recaptcha_invalid_configuration,
+			'aiowps_recaptcha_site_key' => $aiowps_recaptcha_site_key,
+			'aiowps_recaptcha_secret_key' => $aiowps_recaptcha_secret_key,
+			'is_woocommerce_plugin_active' => $is_woocommerce_plugin_active,
+			'is_buddypress_plugin_active' => $is_buddypress_plugin_active,
+			'is_bbpress_plugin_active' => $is_bbpress_plugin_active,
+			'is_contact_form_7_plugin_active' => $is_contact_form_7_plugin_active,
+			'is_other_form_plugins_active' => AIOWPSecurity_Utility::is_other_form_plugins_active(),
+			'aiowps_enable_login_captcha' => $aiowps_enable_login_captcha,
+			'aiowps_enable_registration_page_captcha' => $aiowps_enable_registration_page_captcha,
+			'aiowps_enable_lost_password_captcha' => $aiowps_enable_lost_password_captcha,
+			'aiowps_enable_custom_login_captcha' => $aiowps_enable_custom_login_captcha,
+			'aiowps_enable_comment_captcha' => $aiowps_enable_comment_captcha,
+			'aiowps_enable_password_protected_captcha' => $aiowps_enable_password_protected_captcha,
+			'aiowps_enable_woo_login_captcha' => $aiowps_enable_woo_login_captcha,
+			'aiowps_enable_woo_lostpassword_captcha' => $aiowps_enable_woo_lostpassword_captcha,
+			'aiowps_enable_woo_register_captcha' => $aiowps_enable_woo_register_captcha,
+			'is_enabled_guest_checkout' => $is_enabled_guest_checkout,
+			'aiowps_enable_woo_checkout_captcha' => $aiowps_enable_woo_checkout_captcha,
+			'aiowps_enable_bp_register_captcha' => $aiowps_enable_bp_register_captcha,
+			'aiowps_enable_bbp_new_topic_captcha' => $aiowps_enable_bbp_new_topic_captcha,
+			'aiowps_enable_contact_form_7_captcha' => $aiowps_enable_contact_form_7_captcha,
+			'aiowps_captcha_shortcode' => $aiowps_captcha_shortcode,
+		);
 	}
 }

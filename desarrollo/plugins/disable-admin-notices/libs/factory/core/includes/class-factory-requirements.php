@@ -140,6 +140,15 @@ if ( ! class_exists( 'Wbcr_Factory480_Requirements' ) ) {
 			}
 
 			add_action( 'admin_init', array( $this, 'register_notices' ) );
+
+			add_action( 'init', array( $this, 'register_title' ) );
+		}
+
+		/**
+		 * Register plugin title.
+		 */
+		public function register_title() {
+			$this->plugin_title = __( 'Disable admin notices', 'disable-admin-notices' );
 		}
 
 		public function get_plugin_version() {

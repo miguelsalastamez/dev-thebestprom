@@ -858,7 +858,8 @@ if ( ! class_exists( 'Jet_Engine_Listings_Data' ) ) {
 		 */
 		public function get_prop( $property = null, $object = null ) {
 
-			if ( $this->is_user_prop( $property ) ) {
+			if ( $this->is_user_prop( $property )
+			     && ! jet_engine()->misc_settings->get_settings( 'disable_legacy_user_meta' ) ) {
 
 				if ( $object ) {
 					$current_user = $object;
@@ -888,6 +889,15 @@ if ( ! class_exists( 'Jet_Engine_Listings_Data' ) ) {
 				}
 
 				$vars = get_object_vars( $object );
+
+				if ( is_a( $object, '\WP_User' ) ) {
+					$vars = ! empty( $vars['data'] ) ? (array) $vars['data'] : array();
+					
+					if ( 'user_nicename' === $property && isset( $object->ID ) ) {
+						$vars['user_nicename'] = get_user_meta( $object->ID, 'nickname', true );
+					}
+				}
+
 				$vars = apply_filters( 'jet-engine/listings/data/object-vars', $vars, $object );
 
 				if ( 'post_id' === $property && 'WP_Post' === get_class( $object ) ) {

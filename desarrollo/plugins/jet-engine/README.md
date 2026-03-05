@@ -1,5 +1,51 @@
 # ChangeLog
 
+## 3.8.5
+* ADD: Data Stores. Introduce 'Clear Data' action for database-backed data stores;
+* ADD: Meta Boxes. `Position` and `Priority` settings;
+* UPD: Listing Grid. Allow to set up to 12 columns for the listing;
+* UPD: Query Builder. Allow to set `items_per_page` via the filter for WC query;
+* UPD: Relations. Allow to rewrite related item title in the relations table with `jet-engine/relations/type-item-title` filter;
+* FIX: Dynamic Calendar. Prevent over-complicating SQL queries on multiple calendar widget renders;
+* FIX: Dynamic Calendar. Improve calendar month navigation to properly handle multiday calendar with cache;
+* FIX: Dynamic Field. Correct object fit for Gallery callbacks;
+* FIX: Query Builder. Make repeater meta query comparisons case-insensitive to improve matching accuracy;
+* FIX: Query Builder. Problem with Posts Query editing after Tax Query clauses order change;
+* FIX: Taxonomies. Prevent adding a new term if required meta field is empty;
+* FIX: JetPopup. Issue with dynamic popup data loading after last updates;
+* FIX: Block Editor. Refactor blocks edit components to prepare for upcoming WP update.
+
+## 3.8.4.2
+* FIX: More strict permission check for MCP tools Rest API.
+
+## 3.8.4.1
+* FIX: Meta Boxes. Improved REST API field type schema and safe unserialization of post metadata in REST responses.
+
+## 3.8.4
+* ADD: Admin Coumns. Number formatting callback for admin columns;
+* UPD: Admin Filters. Support select meta fields with multiple selections for more flexible filtering;
+* FIX: Dynamic Calendar. Respects WordPress timezone when rendering posts dates;
+* FIX: Map Listings. Open map listing popup correctly when using Repeater query;
+* FIX: Meta Boxes. Saving of custom meta field values in some cases;
+* FIX: Bricks. Correctly re-initialize Bricks scripts in JetEngine listing slider;
+* FIX: Elementor Theme Builder. Correctly set current context for terms archive preview in the editor;
+* FIX: Repeater Fields. Correctly sanitize nested repeater field names;
+* FIX: Relation. Handle incorrect items removing.
+
+## 3.8.3
+* ADD: Option Pages. `Automatically load options` control to allow enable/disable options autoloading;
+* UPD: Performance. Split listings-related front-end JS to modules and minify enqueued files;
+* UPD: Blocks Views. Change JetEngine blocks API version to v3 (for improved compatibility with future WP updates);
+* UPD: JetPopup Compatibility. Listing popup and Repeater Queries;
+* UPD: Query Builder. Better support for column aliases in SQL queries;
+* UPD: Bricks + Query Builder. Slider and Accordion elements now supports Query Builder;
+* UPD: https://github.com/Crocoblock/suggestions/issues/8146;
+* FIX: Relations. Issue with listing behvaior, when there is no related items to display;
+* FIX: Security. Better DB values escaping before printing in some cases.
+
+## 3.8.2.1
+* FIX: Escaped refresh cache URL in Workflows UI for better security.
+
 ## 3.8.2
 * UPD: https://github.com/Crocoblock/suggestions/issues/1150;
 * FIX: Blocks Views. Ensure numeric type for autoplay and animation speed controls in Listing Grid block;

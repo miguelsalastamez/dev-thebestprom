@@ -13,6 +13,7 @@ const Icon = <SVG width="38" height="24" viewBox="0 0 64 40" fill="none" xmlns="
 
 registerBlockType( 'jet-engine/profile-menu', {
 	icon: Icon,
+	apiVersion: 3,
 	title: __( 'Profile Menu' ),
 	category: 'jet-engine',
 	attributes: {

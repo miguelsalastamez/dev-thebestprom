@@ -8,7 +8,8 @@ const {
 
 const {
 	InspectorControls,
-	MediaUpload
+	MediaUpload,
+	useBlockProps,
 } = wp.blockEditor;
 
 const {
@@ -37,509 +38,508 @@ ImglinkFields[0]['values'].push( {
 } );
 
 registerBlockType( 'jet-engine/dynamic-image', {
+	apiVersion: '3',
 	title: __( 'Dynamic Image' ),
 	icon: ImgIcon,
 	category: 'jet-engine',
 	attributes: window.JetEngineListingData.atts.dynamicImage,
 	className: 'jet-listing-dynamic-image',
 	usesContext: [ 'postId', 'postType', 'queryId' ],
-	edit: class extends wp.element.Component {
+	edit: ( props ) => {
 
-		render() {
+		const attributes         = props.attributes;
+		const imageSizes         = window.JetEngineListingData.imageSizes;
+		const linkFields         = ImglinkFields;
+		const mediaFields        = window.JetEngineListingData.mediaFields;
+		const optionsFields      = window.JetEngineListingData.optionsFields;
+		const mediaOptionsFields = window.JetEngineListingData.mediaOptionsFields;
+		const allowedContextList = window.JetEngineListingData.allowedContextList;
+		const profilePages       = window.JetEngineListingData.profileBuilderPages;
 
-			const props              = this.props;
-			const attributes         = props.attributes;
-			const imageSizes         = window.JetEngineListingData.imageSizes;
-			const linkFields         = ImglinkFields;
-			const mediaFields        = window.JetEngineListingData.mediaFields;
-			const optionsFields      = window.JetEngineListingData.optionsFields;
-			const mediaOptionsFields = window.JetEngineListingData.mediaOptionsFields;
-			const allowedContextList = window.JetEngineListingData.allowedContextList;
-			const profilePages       = window.JetEngineListingData.profileBuilderPages;
+		var object = window.JetEngineListingData.object_id;
+		var listing = window.JetEngineListingData.settings;
 
-			var object = window.JetEngineListingData.object_id;
-			var listing = window.JetEngineListingData.settings;
+		if ( props.context.queryId ) {
+			object  = props.context.postId;
+			listing = {
+				listing_source: 'posts',
+				listing_post_type: props.context.postType,
+			};
+		}
 
-			if ( props.context.queryId ) {
-				object  = props.context.postId;
-				listing = {
-					listing_source: 'posts',
-					listing_post_type: props.context.postType,
-				};
-			}
+		// Unset component controls do avoid request overloading
+		if ( listing.component_controls_list ) {
+			delete listing.component_controls_list;
+		}
 
-			// Unset component controls do avoid request overloading
-			if ( listing.component_controls_list ) {
-				delete listing.component_controls_list;
-			}
+		if ( listing.component_style_controls_list ) {
+			delete listing.component_style_controls_list;
+		}
 
-			if ( listing.component_style_controls_list ) {
-				delete listing.component_style_controls_list;
-			}
+		return [
+			props.isSelected && (
+					<InspectorControls
+						key={ 'inspector' }
+					>
+						<PanelBody title={ __( 'General' ) }>
+							<GroupedSelectControl
+								label={ __( 'Source' ) }
+								value={ attributes.dynamic_image_source }
+								options={mediaFields}
+								onChange={ newValue => {
+									props.setAttributes({ dynamic_image_source: newValue });
+								}}
+							/>
 
-			return [
-				props.isSelected && (
-						<InspectorControls
-							key={ 'inspector' }
-						>
-							<PanelBody title={ __( 'General' ) }>
+							{ 'options_page' === attributes.dynamic_image_source &&
+								<GroupedSelectControl
+									label={ __( 'Option' ) }
+									value={ attributes.dynamic_field_option }
+									options={mediaOptionsFields}
+									onChange={ newValue => {
+										props.setAttributes({
+											dynamic_field_option: newValue,
+										});
+									}}
+								/>
+							}
+
+							{ 'acf_field_groups' === attributes.dynamic_image_source && undefined !== window.JetEngineListingData.acfImagesFields &&
+								<GroupedSelectControl
+									label={ __( 'ACF Field' ) }
+									value={ attributes.acf_field_key }
+									options={ window.JetEngineListingData.acfImagesFields }
+									onChange={ newValue => {
+										props.setAttributes({ acf_field_key: newValue });
+									}}
+								/>
+							}
+
+							<TextControl
+								type="text"
+								label={ __("Or set manually") }
+								help={ __("Here you can set the custom/meta field name, repeater key, component control name, etc. Please note that in the case of the custom/meta field name, this option overrides the value selected above.") }
+								value={attributes.dynamic_image_source_custom}
+								onChange={ newValue =>
+									props.setAttributes({
+										dynamic_image_source_custom: newValue
+									})
+								}
+							/>
+
+							<TextControl
+								type="text"
+								label={ __("Image URL Prefix") }
+								help={ __("Add prefix to the image URL. For example for the cases when source contains only part of the URL") }
+								value={attributes.image_url_prefix}
+								onChange={ newValue =>
+									props.setAttributes({
+										image_url_prefix: newValue
+									})
+								}
+							/>
+
+						</PanelBody>
+
+						<PanelBody title={ __( 'Layout' ) }>
+							{ 'user_avatar' !== attributes.dynamic_image_source &&
+								<SelectControl
+									label={ __( 'Image Size' ) }
+									value={ attributes.dynamic_image_size }
+									options={imageSizes}
+									onChange={ newValue => {
+										props.setAttributes({
+											dynamic_image_size: newValue,
+										});
+									}}
+								/>
+							}
+							{ 'user_avatar' === attributes.dynamic_image_source &&
+								<RangeControl
+									label={ __( 'Image Size' ) }
+									value={ attributes.dynamic_avatar_size }
+									onChange={ newValue => {
+										props.setAttributes({
+											dynamic_avatar_size: newValue,
+										});
+									}}
+									min={ 10 }
+									max={ 500 }
+								/>
+							}
+							<SelectControl
+								label={ __( 'Aspect Ratio' ) }
+								value={ attributes.custom_aspect_ratio }
+								options={ [
+									{
+										value: '',
+										label: __( 'Original' ),
+									},
+									{
+										value: '1:1',
+										label: __( '1:1' ),
+									},
+									{
+										value: '3:2',
+										label: '3:2',
+									},
+									{
+										value: '16:9',
+										label: '16:9',
+									},
+									{
+										value: '4:3',
+										label: '4:3',
+									},
+									{
+										value: '2:3',
+										label: '2:3',
+									},
+									{
+										value: '9:16',
+										label: '9:16',
+									},
+									{
+										value: '3:4',
+										label: '3:4',
+									},
+								] }
+								onChange={ newValue => {
+									props.setAttributes({
+										custom_aspect_ratio: newValue,
+									});
+								}}
+							/>
+							<Flex
+								gap={ 5 }
+								align={ 'flex-start' }
+							>
+								<UnitControl
+									label={ __( 'Image Width' ) }
+									value={ attributes.custom_image_width }
+									onChange={ newValue => {
+										props.setAttributes({
+											custom_image_width: newValue,
+										});
+									}}
+									units={ [
+										{
+											value:'px',
+											label: 'px',
+										},
+										{
+											value: '%',
+											label: '%',
+										}
+									] }
+									placeholder={ __( 'Auto' ) }
+									allowEmpty={ true }
+								/>
+								<UnitControl
+									label={ __( 'Image Height' ) }
+									value={ attributes.custom_image_height }
+									onChange={ newValue => {
+										props.setAttributes({
+											custom_image_height: newValue,
+										});
+									}}
+									units={ [
+										{
+											value:'px',
+											label: 'px',
+										},
+										{
+											value: '%',
+											label: '%',
+										}
+									] }
+									placeholder={ __( 'Auto' ) }
+									allowEmpty={ true }
+								/>
+							</Flex>
+							{ '' !== attributes.custom_aspect_ratio && <ToggleGroupControl
+								label={ __( 'Scale' ) }
+								value={ attributes.custom_scale }
+								onChange={ newValue => {
+									props.setAttributes({
+										custom_scale: newValue,
+									});
+								} }
+								isBlock
+							>
+								<ToggleGroupControlOption
+									label={ __( 'Cover' ) }
+									value="cover"
+								/>
+								<ToggleGroupControlOption
+									label={ __( 'Contain' ) }
+									value="contain"
+								/>
+							</ToggleGroupControl> }
+							<TextControl
+								type="text"
+								label={ __( 'Custom Image Alt' ) }
+								value={attributes.custom_image_alt}
+								onChange={ newValue =>
+									props.setAttributes({
+										custom_image_alt: newValue
+									})
+								}
+							/>
+							<ToggleControl
+								label={ __( 'Lazy Load' ) }
+								checked={ attributes.lazy_load_image }
+								onChange={ () => {
+									props.setAttributes({ lazy_load_image: ! attributes.lazy_load_image });
+								} }
+							/>
+							<ToggleControl
+								label={ __( 'Linked image' ) }
+								checked={ attributes.linked_image }
+								onChange={ () => {
+									props.setAttributes({ linked_image: ! attributes.linked_image });
+								} }
+							/>
+							{ attributes.linked_image &&
 								<GroupedSelectControl
 									label={ __( 'Source' ) }
-									value={ attributes.dynamic_image_source }
-									options={mediaFields}
+									value={ attributes.image_link_source }
+									options={linkFields}
 									onChange={ newValue => {
-										props.setAttributes({ dynamic_image_source: newValue });
+										props.setAttributes({ image_link_source: newValue });
 									}}
 								/>
-
-								{ 'options_page' === attributes.dynamic_image_source &&
-									<GroupedSelectControl
-										label={ __( 'Option' ) }
-										value={ attributes.dynamic_field_option }
-										options={mediaOptionsFields}
-										onChange={ newValue => {
-											props.setAttributes({
-												dynamic_field_option: newValue,
-											});
-										}}
-									/>
-								}
-
-								{ 'acf_field_groups' === attributes.dynamic_image_source && undefined !== window.JetEngineListingData.acfImagesFields &&
-									<GroupedSelectControl
-										label={ __( 'ACF Field' ) }
-										value={ attributes.acf_field_key }
-										options={ window.JetEngineListingData.acfImagesFields }
-										onChange={ newValue => {
-											props.setAttributes({ acf_field_key: newValue });
-										}}
-									/>
-								}
-
-								<TextControl
-									type="text"
-									label={ __("Or set manually") }
-									help={ __("Here you can set the custom/meta field name, repeater key, component control name, etc. Please note that in the case of the custom/meta field name, this option overrides the value selected above.") }
-									value={attributes.dynamic_image_source_custom}
-									onChange={ newValue =>
-										props.setAttributes({
-											dynamic_image_source_custom: newValue
-										})
-									}
+							}
+							{ ( attributes.linked_image && 'options_page' === attributes.image_link_source ) &&
+								<GroupedSelectControl
+									label={ __( 'Option' ) }
+									value={ attributes.image_link_option }
+									options={optionsFields}
+									onChange={ newValue => {
+										props.setAttributes({ image_link_option: newValue });
+									}}
 								/>
-
-								<TextControl
-									type="text"
-									label={ __("Image URL Prefix") }
-									help={ __("Add prefix to the image URL. For example for the cases when source contains only part of the URL") }
-									value={attributes.image_url_prefix}
-									onChange={ newValue =>
-										props.setAttributes({
-											image_url_prefix: newValue
-										})
-									}
+							}
+							{ ( attributes.linked_image && 'acf_field_groups' === attributes.image_link_source ) && undefined !== window.JetEngineListingData.acfLinksFields &&
+								<GroupedSelectControl
+									label={ __( 'ACF Field' ) }
+									value={ attributes.acf_link_field_key }
+									options={ window.JetEngineListingData.acfLinksFields }
+									onChange={ newValue => {
+										props.setAttributes({ acf_link_field_key: newValue });
+									}}
 								/>
-
-							</PanelBody>
-
-							<PanelBody title={ __( 'Layout' ) }>
-								{ 'user_avatar' !== attributes.dynamic_image_source &&
-									<SelectControl
-										label={ __( 'Image Size' ) }
-										value={ attributes.dynamic_image_size }
-										options={imageSizes}
-										onChange={ newValue => {
-											props.setAttributes({
-												dynamic_image_size: newValue,
-											});
-										}}
-									/>
-								}
-								{ 'user_avatar' === attributes.dynamic_image_source &&
-									<RangeControl
-										label={ __( 'Image Size' ) }
-										value={ attributes.dynamic_avatar_size }
-										onChange={ newValue => {
-											props.setAttributes({
-												dynamic_avatar_size: newValue,
-											});
-										}}
-										min={ 10 }
-										max={ 500 }
-									/>
-								}
-								<SelectControl
-									label={ __( 'Aspect Ratio' ) }
-									value={ attributes.custom_aspect_ratio }
-									options={ [
-										{
-											value: '',
-											label: __( 'Original' ),
-										},
-										{
-											value: '1:1',
-											label: __( '1:1' ),
-										},
-										{
-											value: '3:2',
-											label: '3:2',
-										},
-										{
-											value: '16:9',
-											label: '16:9',
-										},
-										{
-											value: '4:3',
-											label: '4:3',
-										},
-										{
-											value: '2:3',
-											label: '2:3',
-										},
-										{
-											value: '9:16',
-											label: '9:16',
-										},
-										{
-											value: '3:4',
-											label: '3:4',
-										},
-									] }
+							}
+							{ ( attributes.linked_image && 'profile_page' === attributes.image_link_source ) && profilePages &&
+								<GroupedSelectControl
+									label={ __( 'Profile Page' ) }
+									value={ attributes.dynamic_link_profile_page }
+									options={profilePages}
 									onChange={ newValue => {
 										props.setAttributes({
-											custom_aspect_ratio: newValue,
+											dynamic_link_profile_page: newValue,
 										});
 									}}
 								/>
-								<Flex
-									gap={ 5 }
-									align={ 'flex-start' }
-								>
-									<UnitControl
-										label={ __( 'Image Width' ) }
-										value={ attributes.custom_image_width }
-										onChange={ newValue => {
-											props.setAttributes({
-												custom_image_width: newValue,
-											});
-										}}
-										units={ [
-											{
-												value:'px',
-												label: 'px',
-											},
-											{
-												value: '%',
-												label: '%',
-											}
-										] }
-										placeholder={ __( 'Auto' ) }
-										allowEmpty={ true }
-									/>
-									<UnitControl
-										label={ __( 'Image Height' ) }
-										value={ attributes.custom_image_height }
-										onChange={ newValue => {
-											props.setAttributes({
-												custom_image_height: newValue,
-											});
-										}}
-										units={ [
-											{
-												value:'px',
-												label: 'px',
-											},
-											{
-												value: '%',
-												label: '%',
-											}
-										] }
-										placeholder={ __( 'Auto' ) }
-										allowEmpty={ true }
-									/>
-								</Flex>
-								{ '' !== attributes.custom_aspect_ratio && <ToggleGroupControl
-									label={ __( 'Scale' ) }
-									value={ attributes.custom_scale }
-									onChange={ newValue => {
-										props.setAttributes({
-											custom_scale: newValue,
-										});
-									} }
-									isBlock
-								>
-									<ToggleGroupControlOption
-										label={ __( 'Cover' ) }
-										value="cover"
-									/>
-									<ToggleGroupControlOption
-										label={ __( 'Contain' ) }
-										value="contain"
-									/>
-								</ToggleGroupControl> }
-								<TextControl
-									type="text"
-									label={ __( 'Custom Image Alt' ) }
-									value={attributes.custom_image_alt}
-									onChange={ newValue =>
-										props.setAttributes({
-											custom_image_alt: newValue
-										})
-									}
-								/>
-								<ToggleControl
-									label={ __( 'Lazy Load' ) }
-									checked={ attributes.lazy_load_image }
-									onChange={ () => {
-										props.setAttributes({ lazy_load_image: ! attributes.lazy_load_image });
-									} }
-								/>
-								<ToggleControl
-									label={ __( 'Linked image' ) }
-									checked={ attributes.linked_image }
-									onChange={ () => {
-										props.setAttributes({ linked_image: ! attributes.linked_image });
-									} }
-								/>
-								{ attributes.linked_image &&
-									<GroupedSelectControl
-										label={ __( 'Source' ) }
-										value={ attributes.image_link_source }
-										options={linkFields}
-										onChange={ newValue => {
-											props.setAttributes({ image_link_source: newValue });
-										}}
-									/>
-								}
-								{ ( attributes.linked_image && 'options_page' === attributes.image_link_source ) &&
-									<GroupedSelectControl
-										label={ __( 'Option' ) }
-										value={ attributes.image_link_option }
-										options={optionsFields}
-										onChange={ newValue => {
-											props.setAttributes({ image_link_option: newValue });
-										}}
-									/>
-								}
-								{ ( attributes.linked_image && 'acf_field_groups' === attributes.image_link_source ) && undefined !== window.JetEngineListingData.acfLinksFields &&
-									<GroupedSelectControl
-										label={ __( 'ACF Field' ) }
-										value={ attributes.acf_link_field_key }
-										options={ window.JetEngineListingData.acfLinksFields }
-										onChange={ newValue => {
-											props.setAttributes({ acf_link_field_key: newValue });
-										}}
-									/>
-								}
-								{ ( attributes.linked_image && 'profile_page' === attributes.image_link_source ) && profilePages &&
-									<GroupedSelectControl
-										label={ __( 'Profile Page' ) }
-										value={ attributes.dynamic_link_profile_page }
-										options={profilePages}
-										onChange={ newValue => {
-											props.setAttributes({
-												dynamic_link_profile_page: newValue,
-											});
-										}}
-									/>
-								}
-								{ attributes.linked_image &&
-									<div>
-										<TextControl
-											type="text"
-											label={ __("Or set manually") }
-											help={ __("Here you can set the custom/meta field name, repeater key, component control name, etc. Please note that in the case of the custom/meta field name, this option overrides the value selected above.") }
-											value={attributes.image_link_source_custom}
-											onChange={ newValue =>
-												props.setAttributes({
-													image_link_source_custom: newValue
-												})
-											}
-										/>
-										<TextControl
-											type="text"
-											label={ __("Link URL Prefix") }
-											help={ __("Add prefix to the URL, for example tel:, mailto: etc.") }
-											value={attributes.link_url_prefix}
-											onChange={ newValue =>
-												props.setAttributes({
-													link_url_prefix: newValue
-												})
-											}
-										/>
-									</div>
-								}
-								<ToggleControl
-									label={ __( 'Open in new window' ) }
-									checked={ attributes.open_in_new }
-									onChange={ () => {
-										props.setAttributes({ open_in_new: ! attributes.open_in_new });
-									} }
-								/>
-								<SelectControl
-									label={ __( 'Add "rel" attr' ) }
-									value={ attributes.rel_attr }
-									options={ [
-										{
-											value: '',
-											label: __( 'No' ),
-										},
-										{
-											value: 'alternate',
-											label: __( 'Alternate' ),
-										},
-										{
-											value: 'author',
-											label: __( 'Author' ),
-										},
-										{
-											value: 'bookmark',
-											label: __( 'Bookmark' ),
-										},
-										{
-											value: 'external',
-											label: __( 'External' ),
-										},
-										{
-											value: 'help',
-											label: __( 'Help' ),
-										},
-										{
-											value: 'license',
-											label: __( 'License' ),
-										},
-										{
-											value: 'next',
-											label: __( 'Next' ),
-										},
-										{
-											value: 'nofollow',
-											label: __( 'Nofollow' ),
-										},
-										{
-											value: 'noreferrer',
-											label: __( 'Noreferrer' ),
-										},
-										{
-											value: 'noopener',
-											label: __( 'Noopener' ),
-										},
-										{
-											value: 'prev',
-											label: __( 'Prev' ),
-										},
-										{
-											value: 'search',
-											label: __( 'Search' ),
-										},
-										{
-											value: 'tag',
-											label: __( 'Tag' ),
-										},
-									] }
-									onChange={ newValue => {
-										props.setAttributes({ rel_attr: newValue });
-									}}
-								/>
-								<ToggleControl
-									label={ __( 'Hide if value is empty' ) }
-									checked={ attributes.hide_if_empty }
-									onChange={ () => {
-										props.setAttributes({ hide_if_empty: ! attributes.hide_if_empty });
-									} }
-								/>
-								<div className="jet-media-control components-base-control">
-									<div className="components-base-control__label">Fallback Image</div>
-									{ attributes.fallback_image_url &&
-										<img src={ attributes.fallback_image_url } width="100%" height="auto" />
-									}
-									<MediaUpload
-										onSelect={ media => {
-												props.setAttributes( {
-													fallback_image: media.id,
-													fallback_image_url: media.url,
-												} );
-											}
-										}
-										type="image"
-										value={attributes.fallback_image}
-										render={({ open }) => (
-											<Button
-												isSecondary
-												icon="edit"
-												onClick={ open }
-											>{ __("Select Image") }</Button>
-										)}
-									/>
-									{ attributes.fallback_image_url &&
-										<Button
-											onClick={ () => {
-												props.setAttributes( {
-													fallback_image: 0,
-													fallback_image_url: '',
-												} )
-											} }
-											isLink
-											isDestructive
-										>
-											{ __( 'Remove Image' ) }
-										</Button>
-									}
-								</div>
-								<SelectControl
-									label={ 'Context' }
-									options={ allowedContextList }
-									value={ attributes.object_context }
-									onChange={ newValue => {
-										props.setAttributes({
-											object_context: newValue
-										});
-									} }
-								/>
-							</PanelBody>
-
-							<PanelBody title={ __( 'Caption' ) }>
-								<ToggleControl
-									label={ __( 'Add Image Caption' ) }
-									checked={ attributes.add_image_caption }
-									onChange={ () => {
-										props.setAttributes({ add_image_caption: ! attributes.add_image_caption });
-									} }
-								/>
-								{ true === attributes.add_image_caption &&
-									<SelectControl
-										label={ __( 'Image Caption Position' ) }
-										value={ attributes.image_caption_position }
-										options={ [
-											{
-												value: 'after',
-												label: __( 'After' ),
-											},
-											{
-												value: 'before',
-												label: __( 'Before' ),
-											},
-										] }
-										onChange={ newValue => {
-											props.setAttributes({ image_caption_position: newValue });
-										}}
-									/>
-								}
-								{ true === attributes.add_image_caption &&
+							}
+							{ attributes.linked_image &&
+								<div>
 									<TextControl
 										type="text"
-										label={ __( 'Image Caption Text' ) }
-										value={attributes.image_caption}
+										label={ __("Or set manually") }
+										help={ __("Here you can set the custom/meta field name, repeater key, component control name, etc. Please note that in the case of the custom/meta field name, this option overrides the value selected above.") }
+										value={attributes.image_link_source_custom}
 										onChange={ newValue =>
 											props.setAttributes({
-												image_caption: newValue
+												image_link_source_custom: newValue
 											})
 										}
 									/>
+									<TextControl
+										type="text"
+										label={ __("Link URL Prefix") }
+										help={ __("Add prefix to the URL, for example tel:, mailto: etc.") }
+										value={attributes.link_url_prefix}
+										onChange={ newValue =>
+											props.setAttributes({
+												link_url_prefix: newValue
+											})
+										}
+									/>
+								</div>
+							}
+							<ToggleControl
+								label={ __( 'Open in new window' ) }
+								checked={ attributes.open_in_new }
+								onChange={ () => {
+									props.setAttributes({ open_in_new: ! attributes.open_in_new });
+								} }
+							/>
+							<SelectControl
+								label={ __( 'Add "rel" attr' ) }
+								value={ attributes.rel_attr }
+								options={ [
+									{
+										value: '',
+										label: __( 'No' ),
+									},
+									{
+										value: 'alternate',
+										label: __( 'Alternate' ),
+									},
+									{
+										value: 'author',
+										label: __( 'Author' ),
+									},
+									{
+										value: 'bookmark',
+										label: __( 'Bookmark' ),
+									},
+									{
+										value: 'external',
+										label: __( 'External' ),
+									},
+									{
+										value: 'help',
+										label: __( 'Help' ),
+									},
+									{
+										value: 'license',
+										label: __( 'License' ),
+									},
+									{
+										value: 'next',
+										label: __( 'Next' ),
+									},
+									{
+										value: 'nofollow',
+										label: __( 'Nofollow' ),
+									},
+									{
+										value: 'noreferrer',
+										label: __( 'Noreferrer' ),
+									},
+									{
+										value: 'noopener',
+										label: __( 'Noopener' ),
+									},
+									{
+										value: 'prev',
+										label: __( 'Prev' ),
+									},
+									{
+										value: 'search',
+										label: __( 'Search' ),
+									},
+									{
+										value: 'tag',
+										label: __( 'Tag' ),
+									},
+								] }
+								onChange={ newValue => {
+									props.setAttributes({ rel_attr: newValue });
+								}}
+							/>
+							<ToggleControl
+								label={ __( 'Hide if value is empty' ) }
+								checked={ attributes.hide_if_empty }
+								onChange={ () => {
+									props.setAttributes({ hide_if_empty: ! attributes.hide_if_empty });
+								} }
+							/>
+							<div className="jet-media-control components-base-control">
+								<div className="components-base-control__label">Fallback Image</div>
+								{ attributes.fallback_image_url &&
+									<img src={ attributes.fallback_image_url } width="100%" height="auto" />
 								}
-							</PanelBody>
-						</InspectorControls>
-				),
+								<MediaUpload
+									onSelect={ media => {
+											props.setAttributes( {
+												fallback_image: media.id,
+												fallback_image_url: media.url,
+											} );
+										}
+									}
+									type="image"
+									value={attributes.fallback_image}
+									render={({ open }) => (
+										<Button
+											isSecondary
+											icon="edit"
+											onClick={ open }
+										>{ __("Select Image") }</Button>
+									)}
+								/>
+								{ attributes.fallback_image_url &&
+									<Button
+										onClick={ () => {
+											props.setAttributes( {
+												fallback_image: 0,
+												fallback_image_url: '',
+											} )
+										} }
+										isLink
+										isDestructive
+									>
+										{ __( 'Remove Image' ) }
+									</Button>
+								}
+							</div>
+							<SelectControl
+								label={ 'Context' }
+								options={ allowedContextList }
+								value={ attributes.object_context }
+								onChange={ newValue => {
+									props.setAttributes({
+										object_context: newValue
+									});
+								} }
+							/>
+						</PanelBody>
+
+						<PanelBody title={ __( 'Caption' ) }>
+							<ToggleControl
+								label={ __( 'Add Image Caption' ) }
+								checked={ attributes.add_image_caption }
+								onChange={ () => {
+									props.setAttributes({ add_image_caption: ! attributes.add_image_caption });
+								} }
+							/>
+							{ true === attributes.add_image_caption &&
+								<SelectControl
+									label={ __( 'Image Caption Position' ) }
+									value={ attributes.image_caption_position }
+									options={ [
+										{
+											value: 'after',
+											label: __( 'After' ),
+										},
+										{
+											value: 'before',
+											label: __( 'Before' ),
+										},
+									] }
+									onChange={ newValue => {
+										props.setAttributes({ image_caption_position: newValue });
+									}}
+								/>
+							}
+							{ true === attributes.add_image_caption &&
+								<TextControl
+									type="text"
+									label={ __( 'Image Caption Text' ) }
+									value={attributes.image_caption}
+									onChange={ newValue =>
+										props.setAttributes({
+											image_caption: newValue
+										})
+									}
+								/>
+							}
+						</PanelBody>
+					</InspectorControls>
+			),
+			<div { ...useBlockProps() }>
 				<Disabled key={ 'block_render' }>
 					<ServerSideRender
 						block="jet-engine/dynamic-image"
@@ -550,8 +550,8 @@ registerBlockType( 'jet-engine/dynamic-image', {
 						} }
 					/>
 				</Disabled>
-			];
-		}
+			</div>
+		];
 	},
 	save: props => {
 		return null;

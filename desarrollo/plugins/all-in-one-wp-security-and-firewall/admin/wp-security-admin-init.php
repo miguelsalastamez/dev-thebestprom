@@ -44,13 +44,16 @@ class AIOWPSecurity_Admin_Init {
 	 */
 	public function __construct() {
 		// This class is only initialized if is_admin() is true
-		
+
 		if (AIOWPSecurity_Utility_Permissions::has_manage_cap()) {
 			$this->admin_includes();
 			add_action('admin_menu', array($this, 'setup_menu_items'));
 			add_action('admin_menu', array($this, 'create_admin_menus'));
 			add_action('admin_menu', array($this, 'premium_upgrade_submenu'), 40);
 			add_action('admin_init', array($this, 'aiowps_csv_download'));
+			if (class_exists('AIOWPSecurity_Onboarding')) {
+				add_action('admin_init', array('AIOWPSecurity_Onboarding', 'maybe_redirect_to_dashboard_page'));
+			}
 		}
 
 		add_action('admin_init', array($this, 'hook_admin_notices'));

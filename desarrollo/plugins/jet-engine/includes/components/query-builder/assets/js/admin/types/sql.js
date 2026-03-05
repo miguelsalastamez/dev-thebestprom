@@ -45,6 +45,7 @@
 			this.presetWhere();
 			this.presetOrder();
 			this.presetCols();
+			this.presetColAliases();
 		},
 		computed: {
 			columnSchema: function() {
@@ -129,6 +130,8 @@
 
 				}
 
+				this.$set( this.query, 'columns_for_alias', result.map( i => i.value ) );
+
 				if ( this?.query?.include_columns?.length ) {
 					const currentValue = this.query.include_columns.values();
 					const valuesList   = result.map( op => op.value );
@@ -145,6 +148,24 @@
 
 				return result;
 
+			},
+			availableColumnsForAlias: function() {
+				let result = [];
+
+				if ( this?.query?.include_columns?.length ) {
+					const calc = this.query.include_columns;
+
+					result = this.availableColumns.map( ( item ) => {
+						return {
+							value: item.value,
+							label: calc.includes( item.value ) ? item.label : item.label + ' (not included)',
+						};
+					} );
+				} else {
+					result = this.availableColumns;
+				}
+
+				return result;
 			},
 			availableOrderByColumns: function() {
 				var columns = JSON.parse( JSON.stringify( this.availableColumns ) );
@@ -364,6 +385,11 @@
 			presetCols: function() {
 				if ( ! this.query.calc_cols ) {
 					this.$set( this.query, 'calc_cols', [] );
+				}
+			},
+			presetColAliases: function() {
+				if ( ! this.query.column_aliases ) {
+					this.$set( this.query, 'column_aliases', [] );
 				}
 			},
 			newDynamicWhere: function( newClause, metaQuery, prevID ) {

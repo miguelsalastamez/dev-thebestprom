@@ -92,6 +92,26 @@ if ( ! class_exists( 'Jet_Engine_Meta_Boxes' ) ) {
 			require_once $this->component_path( 'mcp/controller.php' );
 			new \Jet_Engine\Meta_Boxes\MCP\Controller();
 
+			add_action( 'admin_enqueue_scripts', array( $this, 'before_add_tag_form_script' ) );
+
+		}
+
+		public function before_add_tag_form_script( $suffix ) {
+			if ( $suffix !== 'edit-tags.php' ) {
+				return;
+			}
+
+			wp_add_inline_script(
+				'admin-tags',
+				"jQuery( 'form#addtag #submit' ).on('click', function (e) {
+					if ( ! cxInterfaceBuilderAPI.controlValidation.requiredValidation( true, jQuery( 'form#addtag' ) ) ) {
+						e.preventDefault();
+						e.stopImmediatePropagation();
+						cxInterfaceBuilderAPI.controlValidation.scrollToFirstErrorField();
+					}
+				});",
+				'before'
+			);
 		}
 
 		/**
@@ -241,6 +261,8 @@ if ( ! class_exists( 'Jet_Engine_Meta_Boxes' ) ) {
 						}
 
 						$post_types = ! empty( $args['allowed_post_type'] ) ? $args['allowed_post_type'] : array();
+						$position   = ! empty( $args['position'] ) ? $args['position'] : 'normal';
+						$priority   = ! empty( $args['priority'] ) ? $args['priority'] : 'high';
 						$title      = isset( $args['name'] ) ? $args['name'] : '';
 
 						foreach ( $post_types as $post_type ) {
@@ -259,7 +281,7 @@ if ( ! class_exists( 'Jet_Engine_Meta_Boxes' ) ) {
 								$this->data
 							);
 
-							$meta_instance = new Jet_Engine_CPT_Meta( $post_type, $meta_fields, $title, 'normal', 'high', $args );
+							$meta_instance = new Jet_Engine_CPT_Meta( $post_type, $meta_fields, $title, $position, $priority, $args );
 
 							if ( ! empty( $args['show_edit_link'] ) ) {
 								$meta_instance->add_edit_link( add_query_arg(

@@ -1,4 +1,5 @@
 <?php
+
 // phpcs:disable Yoast.NamingConventions.NamespaceName.TooLong -- Needed in the folder structure.
 namespace Yoast\WP\SEO\Task_List\Application\Tasks;
 
@@ -99,7 +100,7 @@ class Set_Search_Appearance_Templates extends Abstract_Post_Type_Task {
 		$post_type = \get_post_type_object( $this->get_post_type() );
 		$link      = \sprintf(
 			'admin.php?page=wpseo_page_settings#/post-type/%s',
-			$this->route_helper->get_route( $post_type->name, $post_type->rewrite, $post_type->rest_base )
+			$this->route_helper->get_route( $post_type->name, $post_type->rewrite, $post_type->rest_base ),
 		);
 
 		return \self_admin_url( $link );
@@ -114,7 +115,7 @@ class Set_Search_Appearance_Templates extends Abstract_Post_Type_Task {
 		return new Call_To_Action_Entry(
 			\__( 'Set search templates', 'wordpress-seo' ),
 			'link',
-			$this->get_link()
+			$this->get_link(),
 		);
 	}
 
@@ -128,10 +129,10 @@ class Set_Search_Appearance_Templates extends Abstract_Post_Type_Task {
 
 		return new Copy_Set(
 			/* translators: %1$s expands to the post type label this task is about */
-			\sprintf( \__( 'Set search appearance templates for your %1$s', 'wordpress-seo' ), \strtolower( $post_type->label ) ),
+			\sprintf( \__( 'Set search appearance templates for your content type: %1$s', 'wordpress-seo' ), $post_type->label ),
 			/* translators: %1$s expands to the post type name this task is about */
 			\sprintf( \__( 'Generic titles and descriptions make your results unclear in search. Templates ensure every %1$s has a clear, click-worthy snippet automatically.', 'wordpress-seo' ), $post_type->name ),
-			\__( 'Go to Search appearance, choose your post type, and set default title and meta description patterns.', 'wordpress-seo' )
+			\__( 'Go to Search appearance, choose your post type, and set default title and meta description patterns.', 'wordpress-seo' ),
 		);
 	}
 }

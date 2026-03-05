@@ -1,0 +1,36 @@
+[07-Sep-2020 22:47:55 UTC] event-tickets/common -  Log: Iniciando Tribe Events en Sep, 7th at 10:09:55 pm
+[22-Dec-2020 23:44:01 UTC] event-tickets/common -  Log: Iniciando Tribe Events en Dec, 22nd at 11:12:01 pm
+[27-Dec-2020 23:11:16 UTC] event-tickets/common -  Log: Iniciando Tribe Events en Dec, 27th at 11:12:16 pm
+[03-Apr-2021 01:02:18 UTC] event-tickets/common -  Log: Iniciando Tribe Events en Apr, 3rd at 01:04:18 am
+[03-Apr-2021 09:20:50 UTC] event-tickets/common -  Log: Iniciando Tribe Events en Apr, 3rd at 09:04:50 am
+[29-Sep-2021 17:26:59 UTC] event-tickets/common -  Log: Iniciando Tribe Events en Sep, 29th at 05:09:59 pm
+[30-Sep-2021 07:38:36 UTC] event-tickets/common -  Log: Iniciando Tribe Events en Sep, 30th at 07:09:36 am
+[15-Oct-2021 13:59:43 UTC] event-tickets/common -  Log: Iniciando Tribe Events en Oct, 15th at 01:10:43 pm
+[19-Oct-2021 07:36:13 UTC] event-tickets/common -  Log: Iniciando Tribe Events en Oct, 19th at 07:10:13 am
+[03-Dec-2021 05:54:08 UTC] event-tickets/common -  Log: Iniciando Tribe Events en Dec, 3rd at 05:12:08 am
+[15-Jan-2022 13:24:18 UTC] the-events-calendar/common -  Log: Iniciando Tribe Events en Jan, 15th at 01:01:18 pm
+[17-Feb-2022 19:18:48 UTC] event-tickets/common -  Log: Iniciando Tribe Events en Feb, 17th at 07:02:48 pm
+[06-Mar-2022 11:57:53 UTC] event-tickets/common -  Log: Iniciando Tribe Events en Mar, 6th at 11:03:53 am
+[07-Jun-2022 08:22:54 UTC] PHP Fatal error:  Uncaught Error: Call to undefined function __() in /home/customer/www/thebestprom.com/public_html/wp-admin/user/menu.php:10
+Stack trace:
+#0 {main}
+  thrown in /home/customer/www/thebestprom.com/public_html/wp-admin/user/menu.php on line 10
+[07-Jun-2022 10:24:05 UTC] event-tickets/common -  Log: Iniciando Tribe Events en Jun, 7th at 10:06:05 am
+[07-Jun-2022 13:00:08 UTC] event-tickets/common -  Log: Iniciando Tribe Events en Jun, 7th at 01:06:08 pm
+[07-Jun-2022 13:00:11 UTC] event-tickets/common -  Log: Iniciando Tribe Events en Jun, 7th at 01:06:11 pm
+[07-Jun-2022 14:31:30 UTC] event-tickets/common -  Log: Iniciando Tribe Events en Jun, 7th at 02:06:30 pm
+[09-Jun-2022 10:41:13 UTC] event-tickets/common -  Log: Iniciando Tribe Events en Jun, 9th at 10:06:13 am
+[09-Jun-2022 11:13:24 UTC] event-tickets/common -  Log: Iniciando Tribe Events en Jun, 9th at 11:06:24 am
+[09-Jun-2022 11:49:28 UTC] event-tickets/common -  Log: Iniciando Tribe Events en Jun, 9th at 11:06:28 am
+[09-Jun-2022 12:25:47 UTC] event-tickets/common -  Log: Iniciando Tribe Events en Jun, 9th at 12:06:47 pm
+[09-Jun-2022 12:52:46 UTC] event-tickets/common -  Log: Iniciando Tribe Events en Jun, 9th at 12:06:46 pm
+[09-Jun-2022 13:09:05 UTC] event-tickets/common -  Log: Iniciando Tribe Events en Jun, 9th at 01:06:05 pm
+[09-Jun-2022 13:58:11 UTC] event-tickets/common -  Log: Iniciando Tribe Events en Jun, 9th at 01:06:11 pm
+[09-Jun-2022 14:10:55 UTC] event-tickets/common -  Log: Iniciando Tribe Events en Jun, 9th at 02:06:55 pm
+[09-Jun-2022 15:18:59 UTC] event-tickets/common -  Log: Iniciando Tribe Events en Jun, 9th at 03:06:59 pm
+[09-Jun-2022 15:40:40 UTC] event-tickets/common -  Log: Iniciando Tribe Events en Jun, 9th at 03:06:40 pm
+[09-Jun-2022 15:40:44 UTC] event-tickets/common -  Log: Iniciando Tribe Events en Jun, 9th at 03:06:44 pm
+[28-Nov-2022 22:41:50 UTC] PHP Fatal error:  Uncaught Error: Call to undefined function __() in /home/customer/www/thebestprom.com/public_html/wp-admin/user/menu.php:10
+Stack trace:
+#0 {main}
+  thrown in /home/customer/www/thebestprom.com/public_html/wp-admin/user/menu.php on line 10

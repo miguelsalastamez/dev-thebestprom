@@ -15,12 +15,12 @@ if ( ! class_exists( 'Jet_Engine_Rest_Post_Meta' ) ) {
 	 */
 	class Jet_Engine_Rest_Post_Meta {
 
-		public $field          = array();
+		public $field = array();
 		public $object_subtype = null;
-		
+
 		public function __construct( $field = array(), $post_type = null ) {
-			
-			$this->field     = $field;
+
+			$this->field = $field;
 			$this->object_subtype = $post_type;
 
 			$this->prepare_object();
@@ -32,13 +32,13 @@ if ( ! class_exists( 'Jet_Engine_Rest_Post_Meta' ) ) {
 		}
 
 		public function prepare_object() {
-			
+
 			$support_custom_fields = post_type_supports( $this->object_subtype, 'custom-fields' );
 
 			if ( ! $support_custom_fields ) {
 				add_post_type_support( $this->object_subtype, 'custom-fields' );
 			}
-			
+
 		}
 
 		public function get_field_type() {
@@ -54,15 +54,15 @@ if ( ! class_exists( 'Jet_Engine_Rest_Post_Meta' ) ) {
 					}
 
 					break;
-				
+
 				case 'checkbox':
-					
+
 					if ( ! empty( $this->field['is_array'] ) ) {
 						$field_type = 'array';
 					} else {
 						$field_type = 'object';
 					}
-					
+
 					break;
 
 				case 'repeater':
@@ -77,13 +77,13 @@ if ( ! class_exists( 'Jet_Engine_Rest_Post_Meta' ) ) {
 					break;
 
 				case 'select':
-					
+
 					if ( ! empty( $this->field['multiple'] ) ) {
 						$field_type = 'array';
 					} else {
 						$field_type = 'string';
 					}
-					
+
 					break;
 
 				case 'media':
@@ -97,7 +97,7 @@ if ( ! class_exists( 'Jet_Engine_Rest_Post_Meta' ) ) {
 							$field_type = 'string';
 						}
 					}
-					
+
 					break;
 			}
 
@@ -110,19 +110,19 @@ if ( ! class_exists( 'Jet_Engine_Rest_Post_Meta' ) ) {
 			$result = true;
 
 			switch ( $field_type ) {
-				
+
 				case 'array':
 
 					if ( 'media' === $this->field['type'] && isset( $this->field['value_format'] ) && 'both' === $this->field['value_format'] ) {
 						$result = array( 'schema' => array(
-							'type'  => 'array',
+							'type' => 'array',
 							'items' => array(
 								'type' => 'object',
 								'properties' => array(
 									'id' => array(
 										'type' => 'integer',
 									),
-									'url'  => array(
+									'url' => array(
 										'type' => 'string',
 									),
 								),
@@ -130,7 +130,7 @@ if ( ! class_exists( 'Jet_Engine_Rest_Post_Meta' ) ) {
 						) );
 					} else {
 						$result = array( 'schema' => array(
-							'type'  => 'array',
+							'type' => 'array',
 							'items' => array(
 								'type' => array( 'string', 'integer' ),
 							),
@@ -140,17 +140,17 @@ if ( ! class_exists( 'Jet_Engine_Rest_Post_Meta' ) ) {
 					break;
 
 				case 'object':
-					
-					$result = array( 
-						'type'             => 'object',
-						'schema'           => array( 'additionalProperties' => true ),
-						'prepare_callback' => array( $this, 'prepare_object_value' ) 
+
+					$result = array(
+						'type' => 'object',
+						'schema' => array( 'additionalProperties' => true ),
+						'prepare_callback' => array( $this, 'prepare_object_value' )
 					);
 
 					break;
-				
+
 				default:
-					
+
 					$result = true;
 					break;
 			}
@@ -175,7 +175,12 @@ if ( ! class_exists( 'Jet_Engine_Rest_Post_Meta' ) ) {
 		}
 
 		public function prepare_object_value( $value, $request, $args ) {
-			return maybe_unserialize( $value );
+
+			if ( is_string( $value ) && is_serialized( $value ) ) {
+				$value = @unserialize( $value, array( 'allowed_classes' => false ) );
+			}
+
+			return $value;
 		}
 
 	}

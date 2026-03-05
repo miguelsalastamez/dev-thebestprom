@@ -392,6 +392,10 @@ class Render_Manager {
 
 	public function update_popup_cache( $popup_id ) {
 
+		if ( ! get_post( $popup_id ) ) {
+			return;
+		}
+
 		$popup_settings = jet_popup()->settings->get_popup_settings( $popup_id );
 	
 		$use_ajax          = filter_var( $popup_settings['jet_popup_use_ajax'] ?? false, FILTER_VALIDATE_BOOLEAN );

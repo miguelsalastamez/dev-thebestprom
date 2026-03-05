@@ -15,6 +15,10 @@ const {
 } = wp.editor;
 
 const {
+	useBlockProps,
+} = wp.blockEditor;
+
+const {
 	PanelBody,
 	SelectControl,
 	Disabled,
@@ -25,6 +29,7 @@ const Icon = <SVG width="24" height="24" viewBox="0 0 45 41" fill="none" xmlns="
 
 registerBlockType( 'jet-smart-filters/user-geolocation', {
 	title: __( 'User Geolocation' ),
+	apiVersion: 3,
 	icon: Icon,
 	category: 'jet-smart-filters',
 	supports: {
@@ -46,9 +51,9 @@ registerBlockType( 'jet-smart-filters/user-geolocation', {
 		},
 	},
 	className: 'jet-smart-filters-alphabet',
-	edit: class extends wp.element.Component {
+	edit: ( props ) => {
 
-		getOtptionsFromObject( object ) {
+		const getOtptionsFromObject = function( object ) {
 
 			const result = [];
 
@@ -63,59 +68,56 @@ registerBlockType( 'jet-smart-filters/user-geolocation', {
 
 		}
 
-		render() {
-
-			const props = this.props;
-
-			return [
-				props.isSelected && (
-					<InspectorControls
-						key={'inspector'}
-					>
-						<PanelBody title={__( 'General' )}>
-							<div>
-								<h4 style={{margin:'5px 0 0'}}>Please note!</h4>
-								<p style={{ color: '#757575', fontSize: '12px' }}>
-									This filter is compatible only with queries from JetEngine Query Builder. ALso you need to set up <a href="https://crocoblock.com/knowledge-base/jetengine/how-to-set-geo-search-based-on-user-geolocation/" target="_blank">Geo Query</a> in your query settings to make the filter work correctly.
-								</p>
-							</div>
-							<SelectControl
-								label={ __( 'Select filter' ) }
-								value={ props.attributes.filter_id }
-								options={ this.getOtptionsFromObject( window.JetSmartFilterBlocksData.filters['user-geolocation'] ) }
-								onChange={ newValue => {
-									props.setAttributes({ filter_id: Number(newValue) });
-								} }
-							/>
-							<SelectControl
-								label={ __( 'This filter for' ) }
-								value={ props.attributes.content_provider }
-								options={ this.getOtptionsFromObject( window.JetSmartFilterBlocksData.providers ) }
-								onChange={ newValue => {
-									props.setAttributes({ content_provider: newValue });
-								} }
-							/>
-							<TextControl
-								type="text"
-								label={ __( 'Query ID' ) }
-								help={ __( 'Set unique query ID if you use multiple blocks of same provider on the page. Same ID you need to set for filtered block.' ) }
-								value={ props.attributes.query_id }
-								onChange={ newValue => {
-									props.setAttributes( { query_id: newValue } );
-								} }
-							/>
-						</PanelBody>
-					</InspectorControls>
-				),
+		return [
+			props.isSelected && (
+				<InspectorControls
+					key={'inspector'}
+				>
+					<PanelBody title={__( 'General' )}>
+						<div>
+							<h4 style={{margin:'5px 0 0'}}>Please note!</h4>
+							<p style={{ color: '#757575', fontSize: '12px' }}>
+								This filter is compatible only with queries from JetEngine Query Builder. ALso you need to set up <a href="https://crocoblock.com/knowledge-base/jetengine/how-to-set-geo-search-based-on-user-geolocation/" target="_blank">Geo Query</a> in your query settings to make the filter work correctly.
+							</p>
+						</div>
+						<SelectControl
+							label={ __( 'Select filter' ) }
+							value={ props.attributes.filter_id }
+							options={ getOtptionsFromObject( window.JetSmartFilterBlocksData.filters['user-geolocation'] ) }
+							onChange={ newValue => {
+								props.setAttributes({ filter_id: Number(newValue) });
+							} }
+						/>
+						<SelectControl
+							label={ __( 'This filter for' ) }
+							value={ props.attributes.content_provider }
+							options={ getOtptionsFromObject( window.JetSmartFilterBlocksData.providers ) }
+							onChange={ newValue => {
+								props.setAttributes({ content_provider: newValue });
+							} }
+						/>
+						<TextControl
+							type="text"
+							label={ __( 'Query ID' ) }
+							help={ __( 'Set unique query ID if you use multiple blocks of same provider on the page. Same ID you need to set for filtered block.' ) }
+							value={ props.attributes.query_id }
+							onChange={ newValue => {
+								props.setAttributes( { query_id: newValue } );
+							} }
+						/>
+					</PanelBody>
+				</InspectorControls>
+			),
+			<div { ...useBlockProps() }>
 				<Disabled key={ 'block_render' }>
 					<ServerSideRender
 						block="jet-smart-filters/user-geolocation"
 						attributes={ props.attributes }
 					/>
 				</Disabled>
-			];
-
-		}
+			</div>
+			
+		];
 
 	},
 	save: props => {

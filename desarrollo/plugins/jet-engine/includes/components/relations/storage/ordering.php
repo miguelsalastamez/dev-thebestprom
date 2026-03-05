@@ -132,7 +132,7 @@ class Ordering {
 	 *
 	 * @since  1.0.0
 	 * @access public
-	 * @return Jet_Engine
+	 * @return static
 	 */
 	public static function instance() {
 

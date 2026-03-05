@@ -37,6 +37,7 @@ if ( ! class_exists( 'Jet_Engine_Elementor_Pro_Package' ) ) {
 			add_action( 'elementor/frontend/before_get_builder_content', array( $this, 'set_current_obj_before_term_loop_item' ) );
 			add_action( 'elementor/frontend/get_builder_content',        array( $this, 'set_initial_obj_after_term_loop_item' ) );
 
+			add_action( 'jet-engine/listing-element/before-render', array( $this, 'handle_listing_element_context' ), 10 );
 		}
 
 		public function on_elementor_init() {
@@ -250,6 +251,66 @@ if ( ! class_exists( 'Jet_Engine_Elementor_Pro_Package' ) ) {
 			$this->initial_object = null;
 		}
 
+		/**
+		 * Ensure JetEngine gets the correct object context inside Elementor templates.
+		 *
+		 * @param object $element JetEngine element instance.
+		 */
+		public function handle_listing_element_context( $element ) {
+
+			// Ensure we are in Elementor Editor
+			if ( ! \Elementor\Plugin::$instance->editor->is_edit_mode() ) {
+				return;
+			}
+
+			// Get current Elementor template ID
+			$template_id = $this->get_elementor_template_id_stable();
+
+			if ( ! $template_id ) {
+				return;
+			}
+
+			// Check if it's a Theme Builder template
+			$template_type = get_post_meta( $template_id, '_elementor_template_type', true );
+
+			if ( ! in_array( $template_type, [ 'archive' ], true ) ) {
+				return;
+			}
+
+			$is_editor_ajax = jet_engine()->elementor_views->is_editor_ajax();
+			$stack          = jet_engine()->listings->objects_stack->get_stack();
+
+			if ( ! $is_editor_ajax && 1 !== count( $stack ) ) {
+				return;
+			}
+
+			// Inject the correct term object for JetEngine
+			$queried = get_queried_object();
+
+			if ( $queried instanceof WP_Term ) {
+				jet_engine()->listings->data->set_current_object( $queried );
+			}
+
+		}
+
+		/**
+		 * Retrieve the current Elementor template ID in editor or AJAX context.
+		 *
+		 * @return int Template ID or 0 if not found.
+		 */
+		function get_elementor_template_id_stable() {
+			$template_id = \Elementor\Plugin::$instance->editor->get_post_id();
+
+			if ( empty( $template_id ) && isset( $_REQUEST['editor_post_id'] ) ) {
+				$template_id = absint( $_REQUEST['editor_post_id'] );
+			}
+
+			if ( empty( $template_id ) && isset( $_REQUEST['post'] ) ) {
+				$template_id = absint( $_REQUEST['post'] );
+			}
+
+			return $template_id;
+		}
 	}
 
 }

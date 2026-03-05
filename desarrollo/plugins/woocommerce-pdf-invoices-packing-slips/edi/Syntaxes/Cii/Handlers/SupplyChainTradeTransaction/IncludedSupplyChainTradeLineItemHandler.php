@@ -47,14 +47,28 @@ class IncludedSupplyChainTradeLineItemHandler extends AbstractCiiHandler {
 			// Price parts
 			$parts = $this->compute_item_price_parts( $item, false );
 
-			$gross_unit    = $this->format_decimal( $parts['gross_unit'], 2 );
-			$net_unit      = $this->format_decimal( $parts['net_unit'],   2 );
-			$unit_discount = max( 0.0, $this->format_decimal( $parts['gross_unit'] - $parts['net_unit'], 2 ) );
+			// Round gross/net units first (numeric), then derive discount, then recompute net.
+			$gross_unit_f = (float) $this->format_decimal( $parts['gross_unit'], 2 );
+			$net_unit_f   = (float) $this->format_decimal( $parts['net_unit'],   2 );
+
+			$unit_discount_f = $gross_unit_f - $net_unit_f;
+			if ( $unit_discount_f < 0 ) {
+				$unit_discount_f = 0.0;
+			}
+
+			$unit_discount_f = (float) $this->format_decimal( $unit_discount_f, 2 );
+
+			// Recompute net from gross - discount to guarantee equality in XML.
+			$net_unit_f = $gross_unit_f - $unit_discount_f;
+
+			$gross_unit    = $this->format_decimal( $gross_unit_f, 2 );
+			$net_unit      = $this->format_decimal( $net_unit_f,   2 );
+			$unit_discount = $this->format_decimal( $unit_discount_f, 2 );
 
 			$price_children = array(
 				array(
 					'name'  => 'ram:ChargeAmount',
-					'value' => $this->format_decimal( $parts['net_unit'], 2 ),
+					'value' => $net_unit,
 				),
 				array(
 					'name'       => 'ram:BasisQuantity',
@@ -65,31 +79,31 @@ class IncludedSupplyChainTradeLineItemHandler extends AbstractCiiHandler {
 				),
 			);
 
-			// Only products can have a price-level discount
-			if ( $unit_discount > 0 && is_a( $item, 'WC_Order_Item_Product' ) ) {
-				$price_children[] = array(
-					'name'  => 'ram:AppliedTradeAllowanceCharge',
-					'value' => array(
-						array(
-							'name'  => 'ram:ChargeIndicator',
-							'value' => array(
-								array(
-									'name'  => 'udt:Indicator',
-									'value' => 'false'
-								),
-							),
-						),
-						array(
-							'name'  => 'ram:ActualAmount',
-							'value' => $this->format_decimal( $unit_discount ),
-						),
-						array(
-							'name'  => 'ram:BasisAmount',
-							'value' => $gross_unit,
-						),
-					),
-				);
-			}
+			// Only products can have a price-level discount (already reflected in net price)
+			// if ( $unit_discount > 0 && is_a( $item, 'WC_Order_Item_Product' ) ) {
+			// 	$price_children[] = array(
+			// 		'name'  => 'ram:AppliedTradeAllowanceCharge',
+			// 		'value' => array(
+			// 			array(
+			// 				'name'  => 'ram:ChargeIndicator',
+			// 				'value' => array(
+			// 					array(
+			// 						'name'  => 'udt:Indicator',
+			// 						'value' => 'false'
+			// 					),
+			// 				),
+			// 			),
+			// 			array(
+			// 				'name'  => 'ram:ActualAmount',
+			// 				'value' => $unit_discount,
+			// 			),
+			// 			array(
+			// 				'name'  => 'ram:BasisAmount',
+			// 				'value' => $gross_unit,
+			// 			),
+			// 		),
+			// 	);
+			// }
 
 			// Build SpecifiedTradeProduct
 			$product_value = array(
@@ -122,6 +136,12 @@ class IncludedSupplyChainTradeLineItemHandler extends AbstractCiiHandler {
 				}
 			}
 
+			$quantity_value = $parts['qty'];
+
+			// Use Woo’s net_total for the line total amount.
+			$net_line_total_f = (float) $this->format_decimal( $parts['net_total'], 2 );
+			$net_line_total   = $this->format_decimal( $net_line_total_f, 2 );
+
 			$line_item = array(
 				'name'  => 'ram:IncludedSupplyChainTradeLineItem',
 				'value' => array(
@@ -152,7 +172,7 @@ class IncludedSupplyChainTradeLineItemHandler extends AbstractCiiHandler {
 						'value' => array(
 							array(
 								'name'       => 'ram:BilledQuantity',
-								'value'      => $parts['qty'],
+								'value'      => $quantity_value,
 								'attributes' => array(
 									'unitCode' => 'C62',
 								),
@@ -169,7 +189,7 @@ class IncludedSupplyChainTradeLineItemHandler extends AbstractCiiHandler {
 									'value' => array(
 										array(
 											'name'  => 'ram:LineTotalAmount',
-											'value' => $this->format_decimal( $parts['net_total'] ),
+											'value' => $net_line_total,
 										),
 									),
 								),

@@ -126,25 +126,36 @@ class Upload {
 
 					$session_handler = WC()->session;
 
-					$is_user_logged = 0 === $current_user->ID;
+					// Security Fix: CVE-2025-13930 - Fixed inverted login check
+					$is_user_logged = 0 !== $current_user->ID;
 
-					$order_email            = $order->get_billing_email();
-					$session_customer_email = $session_handler->get( 'customer' )['email'];
+					// For guest orders, require order key validation
+					if ( ! $is_user_logged ) {
+						// Validate order key for guest orders
+						$order_key = isset( $_REQUEST['order_key'] ) ? wc_clean( wp_unslash( $_REQUEST['order_key'] ) ) : '';
 
-					$is_session_email_equal_order_email = $order_email === $session_customer_email;
+						if ( empty( $order_key ) || ! hash_equals( $order->get_order_key(), $order_key ) ) {
+							wp_send_json_error( esc_html__( 'Invalid order key.', 'woocommerce-checkout-manager' ) );
+						}
 
-					if ( ! $is_user_logged && ! $is_session_email_equal_order_email ) {
-						wp_send_json_error( esc_html__( 'You must be logged in.', 'woocommerce-checkout-manager' ) );
-					}
+						// Verify session email matches order email
+						$session_customer       = $session_handler ? $session_handler->get( 'customer' ) : array();
+						$session_customer_email = isset( $session_customer['email'] ) ? $session_customer['email'] : '';
+						$order_email            = $order->get_billing_email();
 
-					$order_user_id = $order->get_user_id();
+						if ( empty( $session_customer_email ) || $order_email !== $session_customer_email ) {
+							wp_send_json_error( esc_html__( 'Email mismatch.', 'woocommerce-checkout-manager' ) );
+						}
+					} else {
+						// For logged-in users, verify ownership or capabilities
+						$order_user_id         = $order->get_user_id();
+						$user_has_capabilities = current_user_can( 'administrator' )
+							|| current_user_can( 'edit_others_shop_orders' )
+							|| current_user_can( 'delete_others_shop_orders' );
 
-					$user_has_capabilities = current_user_can( 'administrator' ) || current_user_can( 'edit_others_shop_orders' ) || current_user_can( 'delete_others_shop_orders' );
-
-					$is_current_user_order_equal_user_id = $current_user->ID === $order_user_id;
-
-					if ( ! $user_has_capabilities && ! $is_current_user_order_equal_user_id ) {
-						wp_send_json_error( esc_html__( 'This is not your order.', 'woocommerce-checkout-manager' ) );
+						if ( ! $user_has_capabilities && $current_user->ID !== $order_user_id ) {
+							wp_send_json_error( esc_html__( 'This is not your order.', 'woocommerce-checkout-manager' ) );
+						}
 					}
 
 					wp_delete_attachment( $attachtoremove );

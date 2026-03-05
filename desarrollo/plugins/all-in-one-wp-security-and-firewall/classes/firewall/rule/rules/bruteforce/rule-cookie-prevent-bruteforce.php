@@ -77,7 +77,10 @@ class Rule_Cookie_Prevent_Bruteforce extends Rule {
 				
 				// admin side ajax called
 				$is_admin_ajax_request = ('1' == $prevent_ajax_exception && isset($_SERVER['SCRIPT_NAME']) && ('admin-ajax.php' === basename($_SERVER['SCRIPT_NAME']))) ? 1 : 0;
-				
+
+				/* UDC command */
+				$is_udc_command = (isset($_SERVER['QUERY_STRING']) && 'action=updraft_central' === $_SERVER['QUERY_STRING']) && (isset($_SERVER['SCRIPT_NAME']) && ('admin-ajax.php' === basename($_SERVER['SCRIPT_NAME']))) ? 1 : 0;
+
 				// password protected page called
 				$is_password_protected_access = ('1' == $pw_protected_exception && isset($_GET['action']) && 'postpass' == $_GET['action']) ? 1 : 0; // phpcs:ignore WordPress.Security.NonceVerification.Recommended -- PCP warning. A nonce is not available at this point.
 				
@@ -85,7 +88,7 @@ class Rule_Cookie_Prevent_Bruteforce extends Rule {
 				$is_logout_resetpassword_action = (isset($_GET['action']) && ('logout' == $_GET['action'] || 'rp' == $_GET['action'] || 'resetpass' == $_GET['action'])) ? 1 : 0; // phpcs:ignore WordPress.Security.NonceVerification.Recommended -- PCP warning. A nonce is not available at this point.
 				
 				// cookie based brute force on and accessing admin without ajax and password protected then redirect
-				if ($is_admin_or_login && !$is_admin_ajax_request && !$is_password_protected_access && !$is_logout_resetpassword_action) {
+				if ($is_admin_or_login && !$is_admin_ajax_request && !$is_udc_command && !$is_password_protected_access && !$is_logout_resetpassword_action) {
 					$redirect_url = $aiowps_firewall_config->get_value('aios_cookie_based_brute_force_redirect_url');
 					$this->location = $redirect_url;
 					return Rule::SATISFIED;

@@ -5,9 +5,9 @@ Requires PHP: 7.4
 Requires at least: 6.7
 Requires Plugins: woocommerce
 Tested up to: 6.9
-WC requires at least: 10.2
-WC tested up to: 10.4
-Stable tag: 3.3.0
+WC requires at least: 10.3
+WC tested up to: 10.5
+Stable tag: 3.5.0
 License: GPLv2 or later
 License URI: http://www.gnu.org/licenses/gpl-2.0.html
 
@@ -69,6 +69,26 @@ This plugin relies on the following external services:
 2. Checking on the health of WooCommerce Tax
 
 == Changelog ==
+
+= 3.5.0 - 2026-02-23 =
+* Add   - Add informational banner for non-connection-owner administrators when WooCommerce Tax Terms of Service have not been accepted, displaying the Jetpack connection owner's name. 
+* Fix   - Fix missing Sift tracker script by inlining it instead of loading a non-distributed file.
+* Fix   - Fix zip file structure in GitHub workflow build process.
+* Fix   - Update Docker Compose version to 2.24.0 in E2E Tests GitHub workflow.
+
+= 3.4.1 - 2026-02-09 =
+* Add   - Itemized tax calculation for mixed carts with per-item tax locations.
+
+= 3.4.0 - 2026-02-03 =
+* Add   - Optimize Woo Tax API calls by restricting same-state tax checks.
+* Add   - Country validation for TaxJar requests.
+* Add   - Add woocommerce_tax_line_item_location filter for per-item tax location override.
+* Fix   - Prevent admin slowdown by making Sift configuration non-blocking.
+* Fix   - Prevent opted_out tracks event from being sent when user never opted in.
+* Tweak - WooCommerce 10.5 Compatibility.
+
+= 3.3.1 - 2026-01-12 =
+* Fix   - Normalize state and country codes to uppercase in TaxJar integration.
 
 = 3.3.0 - 2025-12-11 =
 * Add   - Add default nexus address.

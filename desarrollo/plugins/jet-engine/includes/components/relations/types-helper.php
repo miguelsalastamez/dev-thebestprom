@@ -268,6 +268,10 @@ class Types_Helper {
 	 */
 	public function get_type_item_title( $type, $item_id, $relation ) {
 
+		if ( empty( $item_id ) ) {
+			return esc_html__( 'Error: Empty object ID', 'jet-engine' );
+		}
+
 		$type_data     = $this->type_parts_by_name( $type );
 		$type_instance = $this->get_instances( $type_data[0] );
 
@@ -275,7 +279,9 @@ class Types_Helper {
 			return '#' . $item_id;
 		}
 
-		return $type_instance->get_type_item_title( $item_id, $type_data[1], $relation );
+		$title = $type_instance->get_type_item_title( $item_id, $type_data[1], $relation );
+	
+		return apply_filters( 'jet-engine/relations/type-item-title', $title, $item_id, $type, $type_instance, $relation );
 
 	}
 

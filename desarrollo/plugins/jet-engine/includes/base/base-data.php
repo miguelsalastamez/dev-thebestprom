@@ -414,6 +414,47 @@ if ( ! class_exists( 'Jet_Engine_Base_Data' ) ) {
 					$field['options_source'] = 'glossary';
 					$meta_fields[ $key ] = $field;
 				}
+
+				if ( ! empty( $field['repeater-fields'] ) && is_array( $field['repeater-fields'] ) ) {
+					$field['repeater-fields'] = $this->sanitize_inner_repeater_fields( $field['repeater-fields'] );
+					$meta_fields[ $key ] = $field;
+				}
+			}
+
+			return $meta_fields;
+
+		}
+
+		public function sanitize_inner_repeater_fields( $meta_fields ) {
+
+			foreach ( $meta_fields as $key => $field ) {
+
+				// If name is empty - create it from title, else - santize it
+				if ( empty( $field['name'] ) && isset( $field['label'] ) ) {
+					$field['name'] = $this->sanitize_slug( $field['label'] );
+				} elseif ( empty( $field['name'] ) && isset( $field['title'] ) ) {
+					$field['name'] = $this->sanitize_slug( $field['title'] );
+				} else {
+					$field['name'] = $this->sanitize_slug( $field['name'] );
+				}
+
+				// If still empty - create random name
+				if ( empty( $field['name'] ) ) {
+					$field['name'] = '_field_' . rand( 10000, 99999 );
+				}
+
+				$meta_fields[ $key ]['name'] = $field['name'];
+
+				// migrate legacy options_from_glossary option to new options_source
+				if ( ! isset( $field['options_source'] ) && ! empty( $field['options_from_glossary'] ) ) {
+					$field['options_source'] = 'glossary';
+					$meta_fields[ $key ] = $field;
+				}
+
+				if ( ! empty( $field['repeater-fields'] ) && is_array( $field['repeater-fields'] ) ) {
+					$field['repeater-fields'] = $this->sanitize_inner_repeater_fields( $field['repeater-fields'] );
+					$meta_fields[ $key ] = $field;
+				}
 			}
 
 			return $meta_fields;

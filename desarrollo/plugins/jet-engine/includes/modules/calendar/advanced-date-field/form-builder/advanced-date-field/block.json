@@ -1,5 +1,5 @@
 {
-	"apiVersion": 2,
+	"apiVersion": 3,
 	"name": "jet-forms/advanced-date-field",
 	"category": "jet-form-builder-fields",
 	"description": "Allows to create complex date sets, using recurrence rules or by adding multiple dates manually.",

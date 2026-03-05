@@ -271,6 +271,9 @@ class AIOWPSecurity_Process_Renamed_Login_Page {
 		if (empty($_SERVER['REQUEST_URI'])) return false;
 	
 		$parsed_url_path = isset($_SERVER['REQUEST_URI']) ? wp_parse_url(sanitize_url(wp_unslash($_SERVER['REQUEST_URI'])), PHP_URL_PATH) : '';
+		
+		if (empty($parsed_url_path)) return false;
+		
 		$home_url_with_slug = home_url($login_slug, 'relative');
 
 		/*

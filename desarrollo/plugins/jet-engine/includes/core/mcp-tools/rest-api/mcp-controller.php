@@ -68,8 +68,6 @@ class MCP_Controller extends WP_REST_Controller {
 	 */
 	public function permissions_check( $request ) {
 
-		return true;
-
 		if ( ! current_user_can( 'manage_options' ) ) {
 			return new WP_Error(
 				'rest_forbidden',

@@ -212,6 +212,11 @@ trait AIOWPSecurity_File_Scan_Commands_Trait {
 			$extra_args['result'] = __('The scan has detected that there was a change in your website\'s files.', 'all-in-one-wp-security-and-firewall'). ' <a href="#" class="aiowps_view_last_fcd_results">' . __('View the file scan results', 'all-in-one-wp-security-and-firewall') . '</a>';
 		}
 
+		$last_fcd_scan_time = $aio_wp_security->configs->get_value('aiowps_last_scan_time');
+		$last_scan_time = AIOWPSecurity_Utility::convert_timestamp($last_fcd_scan_time, 'D, F j, Y H:i');
+		$last_scan = '<span class="aiowps_last_date_time">' . esc_html($last_scan_time) . '</span>';
+		$content['aiowps-last-scan-time-inner'] = $last_scan;
+
 		$args = array(
 			'extra_args' => $extra_args,
 			'content' => $content

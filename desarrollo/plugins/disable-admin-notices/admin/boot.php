@@ -16,16 +16,6 @@ if ( ! defined( 'ABSPATH' ) ) {
 }
 
 if ( ! defined( 'LOADING_DISABLE_ADMIN_NOTICES_AS_ADDON' ) ) {
-	add_filter( 'plugin_row_meta', function ( $links, $file ) {
-		if ( $file == WDN_PLUGIN_BASE ) {
-			$url     = 'https://clearfy.pro/disable-admin-notices/';
-			$url     .= '?utm_source=wordpress.org&utm_campaign=' . WDN_Plugin::app()->getPluginName();
-			$links[] = '<a href="' . $url . '" style="color: #FF5722;font-weight: bold;" target="_blank">' . __( 'Get premium plugin', 'disable-admin-notices' ) . '</a>';
-		}
-
-		return $links;
-	}, 10, 2 );
-
 	/**
 	 * Изменяем ссылку по умолчанию на собственную в виджете "Голосу за нас".
 	 *
@@ -42,7 +32,7 @@ if ( ! defined( 'LOADING_DISABLE_ADMIN_NOTICES_AS_ADDON' ) ) {
 	 */
 	add_filter( 'wbcr_factory_pages_480_imppage_rating_widget_url', function ( $page_url, $plugin_name ) {
 		if ( $plugin_name == WDN_Plugin::app()->getPluginName() ) {
-			return 'https://goo.gl/68ucHp';
+			return 'https://wordpress.org/support/plugin/disable-admin-notices/reviews/#new-post';
 		}
 
 		return $page_url;
@@ -81,36 +71,10 @@ if ( ! defined( 'LOADING_DISABLE_ADMIN_NOTICES_AS_ADDON' ) ) {
 		];
 		$options[] = [
 			'name'  => 'show_notices_in_adminbar',
-			'title' => __( 'Enable hidden notices in adminbar', 'disable-admin-notices' ),
+			'title' => __( 'Enable hidden notices in admin bar', 'disable-admin-notices' ),
 			'tags'  => []
 		];
 
 		return $options;
 	} );
 }
-
-/**
- * Print admin notice: "Would you like to send them for spam checking?"
- *
- * If user clicked button "Yes, do it", plugin will exec action,
- * that put all unapproved comments to spam check queue.
- */
-add_action( 'wbcr/factory/admin_notices', function ( $notices, $plugin_name ) {
-	if ( $plugin_name != WDN_Plugin::app()->getPluginName() || 'wbcr_clearfy' === $plugin_name ) {
-		return $notices;
-	}
-
-	$page_url = 'https://clearfy.pro/disable-admin-notices/';
-
-	$notice_text = sprintf( __( 'Thanks for using the Disable admin notices plugin! If you need support or all the features of the plugin, please buy the pro version <a class="button" href="%s">Get PRO</a>' ), $page_url );
-
-	$notices[] = [
-		'id'              => 'wdan_get_premium',
-		'type'            => 'success',
-		'dismissible'     => true,
-		'dismiss_expires' => 0,
-		'text'            => '<p><strong>Disable Admin Notices Individually:</strong><br>' . $notice_text . '</p>'
-	];
-
-	return $notices;
-}, 10, 2 );

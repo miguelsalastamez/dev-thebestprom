@@ -340,7 +340,7 @@ class Repeater_Query extends Base_Query {
 							if ( is_array( $item->$key ) ) { // for Checkbox, Select2 ... fields
 								$matched = in_array( $value, $item->$key );
 							} else {
-								$matched = false !== strpos( $item->$key, $value );
+								$matched = false !== stripos( $item->$key, $value );
 							}
 						}
 						break;
@@ -351,7 +351,7 @@ class Repeater_Query extends Base_Query {
 							if ( is_array( $item->$key ) ) { // for Checkbox, Select2 ... fields
 								$matched = ! in_array( $value, $item->$key );
 							} else {
-								$matched = false === strpos( $item->$key, $value );
+								$matched = false === stripos( $item->$key, $value );
 							}
 
 						} else {

@@ -21,6 +21,7 @@ const {
 
 const {
 	InspectorControls,
+	useBlockProps,
 } = wp.blockEditor;
 
 const Edit = function( props ) {
@@ -132,13 +133,15 @@ const Edit = function( props ) {
 				/>
 			</PanelBody>
 		</InspectorControls> }
-		<Disabled>
-			<ServerSideRender
-				block="jet-engine/profile-menu"
-				attributes={ attributes }
-				urlQueryArgs={ {} }
-			/>
-		</Disabled>
+		<div { ...useBlockProps() }>
+			<Disabled>
+				<ServerSideRender
+					block="jet-engine/profile-menu"
+					attributes={ attributes }
+					urlQueryArgs={ {} }
+				/>
+			</Disabled>
+		</div>
 	</Fragment>;
 }
 

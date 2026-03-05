@@ -371,6 +371,12 @@ if ( ! class_exists( 'Jet_Engine_Render_Dynamic_Field' ) ) {
 				return;
 			}
 
+			$use_kses = apply_filters( 'jet-engine/listings/dynamic-field/kses-output', false, $settings );
+
+			if ( $use_kses ) {
+				$result = wp_kses_post( $result );
+			}
+
 			echo $result; // phpcs:ignore
 		}
 

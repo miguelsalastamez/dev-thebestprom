@@ -19,6 +19,7 @@ trait AIOWPSecurity_Comment_Commands_Trait {
 		// Save settings
 		$options = array();
 		$info = array();
+		$response['values'] = array();
 
 		$options['aiowps_enable_spambot_detecting'] = isset($data["aiowps_enable_spambot_detecting"]) ? '1' : '';
 		$options['aiowps_spambot_detect_usecookies'] = isset($data["aiowps_spambot_detect_usecookies"]) ? '1' : '';
@@ -90,6 +91,31 @@ trait AIOWPSecurity_Comment_Commands_Trait {
 		$response['values']['aiowps_spam_ip_min_comments_block'] = absint($spam_ip_min_comments);
 
 		return $response;
+	}
+
+	/**
+	 * Saves all the specified comment spam settings from UDC.
+	 *
+	 * @param array $data - the request data contains the post data.
+	 *
+	 * @return array|WP_Error - The response array containing the status, message, and values.
+	 */
+	public function perform_save_spam_prevention_settings($data) {
+		if (AIOS_Helper::is_updraft_central_request()) {
+			if (!AIOWPSecurity_Utility_Permissions::has_manage_cap()) {
+				return new WP_Error(esc_html__('Sorry, you do not have enough privilege to execute the requested action.', 'all-in-one-wp-security-and-firewall'));
+			}
+		}
+
+		$spam_prevention_response = $this->perform_comment_spam_prevention($data);
+		$block_spam_response = $this->perform_auto_block_spam_ip($data);
+
+		return array(
+			'status' => 'success',
+			'info' => array_merge($spam_prevention_response['info'], $block_spam_response['info']),
+			'values' => array_merge($spam_prevention_response['values'], $block_spam_response['values']),
+			'message' => __('The settings were successfully updated.', 'all-in-one-wp-security-and-firewall')
+		);
 	}
 
 	/**
@@ -217,5 +243,33 @@ trait AIOWPSecurity_Comment_Commands_Trait {
 		}
 
 		return $block_comments_output;
+	}
+
+	/**
+	 * Retrieves data for comment spam data for UDC.
+	 *
+	 * @return array Array of settings data for comment spam data.
+	 */
+	public function get_comment_spam_data() {
+		global $aio_wp_security;
+
+		$aiowps_enable_spambot_detecting = $aio_wp_security->configs->get_value('aiowps_enable_spambot_detecting');
+		$aiowps_spambot_detect_usecookies = $aio_wp_security->configs->get_value('aiowps_spambot_detect_usecookies');
+		$aiowps_enable_trash_spam_comments = $aio_wp_security->configs->get_value('aiowps_enable_trash_spam_comments');
+		$aiowps_spam_comments_should = $aio_wp_security->configs->get_value('aiowps_spam_comments_should');
+		$aiowps_trash_spam_comments_after_days = $aio_wp_security->configs->get_value('aiowps_trash_spam_comments_after_days');
+
+		$aiowps_enable_autoblock_spam_ip = $aio_wp_security->configs->get_value('aiowps_enable_autoblock_spam_ip');
+		$aiowps_spam_ip_min_comments_block = $aio_wp_security->configs->get_value('aiowps_spam_ip_min_comments_block');
+
+		return array(
+			'aiowps_enable_spambot_detecting' => $aiowps_enable_spambot_detecting,
+			'aiowps_spambot_detect_usecookies' => $aiowps_spambot_detect_usecookies,
+			'aiowps_enable_trash_spam_comments' => $aiowps_enable_trash_spam_comments,
+			'aiowps_spam_comments_should' => $aiowps_spam_comments_should,
+			'aiowps_trash_spam_comments_after_days' => $aiowps_trash_spam_comments_after_days,
+			'aiowps_enable_autoblock_spam_ip' => $aiowps_enable_autoblock_spam_ip,
+			'aiowps_spam_ip_min_comments_block' => $aiowps_spam_ip_min_comments_block,
+		);
 	}
 }

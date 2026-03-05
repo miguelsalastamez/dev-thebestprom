@@ -1,0 +1,20 @@
+[07-Jun-2022 10:34:52 UTC] PHP Fatal error:  Uncaught Error: Class 'WP_Block_Supports' not found in /home/customer/www/thebestprom.com/public_html/wp-includes/block-supports/align.php:59
+Stack trace:
+#0 {main}
+  thrown in /home/customer/www/thebestprom.com/public_html/wp-includes/block-supports/align.php on line 59
+[01-Jul-2022 10:41:55 UTC] PHP Fatal error:  Uncaught Error: Call to undefined function add_filter() in /home/customer/www/thebestprom.com/public_html/wp-includes/block-supports/elements.php:138
+Stack trace:
+#0 {main}
+  thrown in /home/customer/www/thebestprom.com/public_html/wp-includes/block-supports/elements.php on line 138
+[01-Jul-2022 12:49:16 UTC] PHP Fatal error:  Uncaught Error: Class 'WP_Block_Supports' not found in /home/customer/www/thebestprom.com/public_html/wp-includes/block-supports/layout.php:207
+Stack trace:
+#0 {main}
+  thrown in /home/customer/www/thebestprom.com/public_html/wp-includes/block-supports/layout.php on line 207
+[01-Jul-2022 13:29:23 UTC] PHP Fatal error:  Uncaught Error: Class 'WP_Block_Supports' not found in /home/customer/www/thebestprom.com/public_html/wp-includes/block-supports/colors.php:152
+Stack trace:
+#0 {main}
+  thrown in /home/customer/www/thebestprom.com/public_html/wp-includes/block-supports/colors.php on line 152
+[01-Jul-2022 14:27:41 UTC] PHP Fatal error:  Uncaught Error: Class 'WP_Block_Supports' not found in /home/customer/www/thebestprom.com/public_html/wp-includes/block-supports/duotone.php:580
+Stack trace:
+#0 {main}
+  thrown in /home/customer/www/thebestprom.com/public_html/wp-includes/block-supports/duotone.php on line 580

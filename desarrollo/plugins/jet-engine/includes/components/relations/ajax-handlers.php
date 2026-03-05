@@ -337,7 +337,7 @@ class Ajax_Handlers {
 		// verify user access
 		$this->check_user_access();
 
-		$data = $this->get_data_from_request();
+		$data = $this->get_data_from_request( true );
 
 		$relation            = $data['relation'];
 		$parent_object_id    = $data['parent_object_id'];
@@ -420,14 +420,14 @@ class Ajax_Handlers {
 	 *
 	 * @return [type] [description]
 	 */
-	public function get_data_from_request() {
+	public function get_data_from_request( $allow_empty_related_id = false ) {
 
-		$related_object      = ! empty( $_REQUEST['relatedObjectID'] ) ? sanitize_text_field( $_REQUEST['relatedObjectID'] ) : false;
+		$related_object      = ! empty( $_REQUEST['relatedObjectID'] ) ? sanitize_text_field( $_REQUEST['relatedObjectID'] ) : 0;
 		$related_object_type = ! empty( $_REQUEST['relatedObjectType'] ) ? sanitize_text_field( $_REQUEST['relatedObjectType'] ) : false;
 		$related_object_name = ! empty( $_REQUEST['relatedObjectName'] ) ? sanitize_text_field( $_REQUEST['relatedObjectName'] ) : false;
 		$current_object      = ! empty( $_REQUEST['currentObjectID'] ) ? sanitize_text_field( $_REQUEST['currentObjectID'] ) : false;
 
-		if ( ! $related_object || ! $related_object_type || ! $current_object || ! $related_object_name ) {
+		if ( ( ! $allow_empty_related_id && ! $related_object ) || ! $related_object_type || ! $current_object || ! $related_object_name ) {
 			wp_send_json_error( __( 'Incomplete request', 'jet-engine' ) );
 		}
 

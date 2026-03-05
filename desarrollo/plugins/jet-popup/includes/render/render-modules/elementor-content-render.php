@@ -230,6 +230,12 @@ class Elementor_Content_Render extends Base_Render {
 			];
 		}
 
+		$is_elementor_css_exist = get_post_meta( $popup_id, '_elementor_css', true );
+
+		if ( empty( $is_elementor_css_exist ) && class_exists( '\Elementor\Core\Files\CSS\Post' ) ) {
+			\Elementor\Core\Files\CSS\Post::create( $popup_id )->update();
+		}
+
 		$data_cache = get_post_meta( $popup_id, '_is_style_deps', true );
 		$use_cache  = apply_filters( 'jet-popup/render/render-data/use-cache', true );
 

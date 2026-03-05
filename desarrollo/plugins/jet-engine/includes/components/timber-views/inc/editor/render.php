@@ -123,7 +123,7 @@ class Render {
 
 		wp_enqueue_script(
 			'jet-engine-frontend',
-			jet_engine()->plugin_url( 'assets/js/frontend.js' ),
+			jet_engine()->plugin_url( 'assets/js/frontend/frontend.js' ),
 			array( 'jquery', 'jet-plugins' ),
 			jet_engine()->get_version(),
 			true

@@ -212,7 +212,7 @@ class Blocks_Integration {
 
 		wp_enqueue_script(
 			'jet-engine-data-stores-blocks-editor',
-			jet_engine()->modules->modules_url( 'data-stores/inc/assets/js/admin/blocks/blocks.js' ),
+			jet_engine()->modules->modules_url( 'data-stores/inc/assets/js/admin/blocks/build/blocks.js' ),
 			array(),
 			jet_engine()->get_version(),
 			true

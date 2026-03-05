@@ -717,6 +717,10 @@ class Manager {
 				continue;
 			}
 
+			if ( ! get_post( $popup_id ) ) {
+				continue;
+			}
+
 			$check_list = [];
 
 			// for multi-language plugins

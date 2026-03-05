@@ -9,7 +9,7 @@ jQuery(function($) {
 	 */
 	function get_username_identifiers() {
 		// 'username' is used by WooCommerce and RegistrationMagic
-		return '[name="log"], [name="username"], #user_login, #affwp-login-user-login, #affwp-user-login, #gform_fields_login input[type="text"], .um-field-username input[type="text"]';
+		return '[name="log"], [name="username"], #user_login, #affwp-login-user-login, #affwp-user-login, #gform_fields_login input[type="text"], .um-field-username input[type="text"], [name="edd_user_login"]';
 	}
 	
 	/**

@@ -1,0 +1,12 @@
+[01-Jul-2022 07:18:08 UTC] PHP Fatal error:  Uncaught Error: Call to undefined function _x() in /home/customer/www/thebestprom.com/public_html/wp-includes/block-patterns/query-standard-posts.php:9
+Stack trace:
+#0 {main}
+  thrown in /home/customer/www/thebestprom.com/public_html/wp-includes/block-patterns/query-standard-posts.php on line 9
+[01-Jul-2022 10:47:57 UTC] PHP Fatal error:  Uncaught Error: Call to undefined function _x() in /home/customer/www/thebestprom.com/public_html/wp-includes/block-patterns/query-small-posts.php:9
+Stack trace:
+#0 {main}
+  thrown in /home/customer/www/thebestprom.com/public_html/wp-includes/block-patterns/query-small-posts.php on line 9
+[01-Jul-2022 13:24:58 UTC] PHP Fatal error:  Uncaught Error: Call to undefined function _x() in /home/customer/www/thebestprom.com/public_html/wp-includes/block-patterns/social-links-shared-background-color.php:9
+Stack trace:
+#0 {main}
+  thrown in /home/customer/www/thebestprom.com/public_html/wp-includes/block-patterns/social-links-shared-background-color.php on line 9

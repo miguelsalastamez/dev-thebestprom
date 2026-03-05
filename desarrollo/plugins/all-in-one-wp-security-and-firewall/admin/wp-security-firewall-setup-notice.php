@@ -203,7 +203,8 @@ class AIOWPSecurity_Firewall_Setup_Notice {
 	 * @return void
 	 */
 	public function handle_setup_form() {
-		$nonce = isset($_POST['_wpnonce']) ? $_POST['_wpnonce'] : '';
+		// phpcs:ignore WordPress.Security.NonceVerification.Missing -- Nonce check occurs here.
+		$nonce = isset($_POST['_wpnonce']) ? sanitize_key(wp_unslash($_POST['_wpnonce'])) : '';
 		$result = AIOWPSecurity_Utility_Permissions::check_nonce_and_user_cap($nonce, 'aiowpsec-firewall-setup');
 		if (!is_wp_error($result)) {
 			$this->do_setup();
@@ -217,7 +218,8 @@ class AIOWPSecurity_Firewall_Setup_Notice {
 	 * @return void
 	 */
 	public function handle_dismiss_form() {
-		$nonce = isset($_POST['_wpnonce']) ? $_POST['_wpnonce'] : '';
+		// phpcs:ignore WordPress.Security.NonceVerification.Missing -- Nonce check occurs here.
+		$nonce = isset($_POST['_wpnonce']) ? sanitize_key(wp_unslash($_POST['_wpnonce'])) : '';
 		$result = AIOWPSecurity_Utility_Permissions::check_nonce_and_user_cap($nonce, 'aiowpsec-firewall-setup-dismiss');
 		if (!is_wp_error($result)) {
 			$this->do_dismiss();
@@ -231,7 +233,8 @@ class AIOWPSecurity_Firewall_Setup_Notice {
 	 * @return void
 	 */
 	public function handle_downgrade_protection_form() {
-		$nonce = isset($_POST['_wpnonce']) ? $_POST['_wpnonce'] : '';
+		// phpcs:ignore WordPress.Security.NonceVerification.Missing -- Nonce check occurs here.
+		$nonce = isset($_POST['_wpnonce']) ? sanitize_key(wp_unslash($_POST['_wpnonce'])) : '';
 		$result = AIOWPSecurity_Utility_Permissions::check_nonce_and_user_cap($nonce, 'aiowpsec-firewall-downgrade');
 		if (!is_wp_error($result)) {
 			AIOWPSecurity_Utility_Firewall::remove_firewall();
@@ -247,10 +250,11 @@ class AIOWPSecurity_Firewall_Setup_Notice {
 	private function do_redirect() {
 
 		// Go back to the previous page and tab if set
-		if (isset($_POST['_wp_http_referer'])) {
+		if (isset($_POST['_wp_http_referer'])) { // phpcs:ignore WordPress.Security.NonceVerification.Missing -- No nonce.
 			
 			$matches = array();
-			if (preg_match('/\?page='.AIOWPSEC_MENU_SLUG_PREFIX.'(?<page>.*)(&tab=(?<tab>.*))?$/m', $_POST['_wp_http_referer'], $matches)) {
+			// phpcs:ignore WordPress.Security.NonceVerification.Missing -- No nonce.
+			if (preg_match('/\?page='.AIOWPSEC_MENU_SLUG_PREFIX.'(?<page>.*)(&tab=(?<tab>.*))?$/m', sanitize_url(wp_unslash($_POST['_wp_http_referer'])), $matches)) {
 					$url = 'admin.php?page='.AIOWPSEC_MENU_SLUG_PREFIX;
 
 					if (isset($matches['page'])) {
@@ -386,21 +390,21 @@ class AIOWPSecurity_Firewall_Setup_Notice {
 		?>
 			<div class="notice notice-error is-dismissible">
 				<p>
-					<strong><?php _e('All-In-One Security', 'all-in-one-wp-security-and-firewall'); ?></strong>
+					<strong><?php esc_html_e('All In One Security', 'all-in-one-wp-security-and-firewall'); ?></strong>
 				</p>
-				<p><?php _e('We were unable to create the file necessary to give you the highest level of protection.', 'all-in-one-wp-security-and-firewall');?></p>
-				<p><?php _e('Your firewall will have reduced protection which means some of your firewall\'s functionality will be unavailable.', 'all-in-one-wp-security-and-firewall');?></p>
-				<p><?php _e('If you would like to manually set up the necessary file, please follow these steps:', 'all-in-one-wp-security-and-firewall');?></p>
+				<p><?php esc_html_e('We were unable to create the file necessary to give you the highest level of protection.', 'all-in-one-wp-security-and-firewall');?></p>
+				<p><?php esc_html_e('Your firewall will have reduced protection which means some of your firewall\'s functionality will be unavailable.', 'all-in-one-wp-security-and-firewall');?></p>
+				<p><?php esc_html_e('If you would like to manually set up the necessary file, please follow these steps:', 'all-in-one-wp-security-and-firewall');?></p>
 				<p>
 					<?php
 						/* translators: %s Bootstrap file name. */
-						printf(__('1. Create a file with the name %s in the same directory as your WordPress install is in, i.e.:', 'all-in-one-wp-security-and-firewall'), pathinfo($this->bootstrap, PATHINFO_BASENAME));
+						printf(esc_html__('1. Create a file with the name %s in the same directory as your WordPress install is in, i.e.:', 'all-in-one-wp-security-and-firewall'), esc_html(pathinfo($this->bootstrap, PATHINFO_BASENAME)));
 					?>
 				</p>
 				<pre style='max-width: 100%;background-color: #f0f0f0;border:#ccc solid 1px;padding: 10px;white-space:pre-wrap;'><?php echo esc_html($this->bootstrap); ?></pre>
-				<p><?php _e('2. Paste in the following code:', 'all-in-one-wp-security-and-firewall');?></p>
-				<pre style='max-width: 100%;background-color: #f0f0f0;border:#ccc solid 1px;padding: 10px;white-space:pre-wrap;'><?php echo htmlentities($this->bootstrap->get_contents()); ?></pre>
-				<p><?php _e('3. Save the file and press the \'Try again\' button below:', 'all-in-one-wp-security-and-firewall');?></p>
+				<p><?php esc_html_e('2. Paste in the following code:', 'all-in-one-wp-security-and-firewall');?></p>
+				<pre style='max-width: 100%;background-color: #f0f0f0;border:#ccc solid 1px;padding: 10px;white-space:pre-wrap;'><?php echo esc_html(htmlentities($this->bootstrap->get_contents())); ?></pre>
+				<p><?php esc_html_e('3. Save the file and press the \'Try again\' button below:', 'all-in-one-wp-security-and-firewall');?></p>
 		<?php
 		$this->render_try_again_button();
 		$this->render_manual_notice_footer();
@@ -419,27 +423,27 @@ class AIOWPSecurity_Firewall_Setup_Notice {
 		$this->render_manual_notice_header();
 		?>
 			<p>
-				<?php _e('1. Open the following file:', 'all-in-one-wp-security-and-firewall'); ?>
+				<?php esc_html_e('1. Open the following file:', 'all-in-one-wp-security-and-firewall'); ?>
 			</p>
 			<p><code><?php echo esc_html($firewall_file); ?></code></p>
 
 			<?php if (empty($directive_value)) {?>
 				<p>
-					<?php _e('2. Look for the auto_prepend_file directive.', 'all-in-one-wp-security-and-firewall'); ?>
+					<?php esc_html_e('2. Look for the auto_prepend_file directive.', 'all-in-one-wp-security-and-firewall'); ?>
 				</p>
 			<?php } else {?>
 				<p>
-					<?php _e('2. Look for the following:', 'all-in-one-wp-security-and-firewall'); ?>
+					<?php esc_html_e('2. Look for the following:', 'all-in-one-wp-security-and-firewall'); ?>
 				</p>
 				<pre style='max-width: 100%;background-color: #f0f0f0;border:#ccc solid 1px;padding: 10px;white-space:pre-wrap;'><?php echo "auto_prepend_file='".esc_html($directive_value)."'";?></pre>
 			<?php } ?>
 			
 			<p>
-				<?php _e('3. Change it to the following:', 'all-in-one-wp-security-and-firewall'); ?>
+				<?php esc_html_e('3. Change it to the following:', 'all-in-one-wp-security-and-firewall'); ?>
 			</p>
 				<pre style='max-width: 100%;background-color: #f0f0f0;border:#ccc solid 1px;padding: 10px;white-space:pre-wrap;'><?php echo esc_html(AIOWPSecurity_Utility_Firewall::get_server_file()->get_contents()); ?></pre>
 			<p>
-				<?php echo __('4. Save the file  and press the \'Try again\' button below:', 'all-in-one-wp-security-and-firewall').' '.__('You may have to wait up to 5 minutes before the settings take effect.', 'all-in-one-wp-security-and-firewall'); ?>
+				<?php echo esc_html__('4. Save the file  and press the \'Try again\' button below:', 'all-in-one-wp-security-and-firewall').' '.esc_html__('You may have to wait up to 5 minutes before the settings take effect.', 'all-in-one-wp-security-and-firewall'); ?>
 			</p>
 		<?php
 		$this->render_try_again_button();
@@ -473,14 +477,14 @@ class AIOWPSecurity_Firewall_Setup_Notice {
 			$this->render_manual_notice_header();
 			?>
 				<p>
-					<?php _e('1. Open your php.ini file.', 'all-in-one-wp-security-and-firewall'); ?>
+					<?php esc_html_e('1. Open your php.ini file.', 'all-in-one-wp-security-and-firewall'); ?>
 				</p>
 				<p>
-					<?php _e('2. Set the auto_prepend_file directive like below:', 'all-in-one-wp-security-and-firewall'); ?>
+					<?php esc_html_e('2. Set the auto_prepend_file directive like below:', 'all-in-one-wp-security-and-firewall'); ?>
 				</p>
 					<pre style='max-width: 100%;background-color: #f0f0f0;border:#ccc solid 1px;padding: 10px;white-space:pre-wrap;'><?php echo "auto_prepend_file='".esc_html($bootstrap_path)."'";?></pre>
 				<p>
-					<?php echo __('3. Restart the webserver and refresh the page', 'all-in-one-wp-security-and-firewall').' '.__('You may have to wait up to 5 minutes before the settings take effect.', 'all-in-one-wp-security-and-firewall'); ?>
+					<?php echo esc_html__('3. Restart the webserver and refresh the page', 'all-in-one-wp-security-and-firewall') . ' ' . esc_html__('You may have to wait up to 5 minutes before the settings take effect.', 'all-in-one-wp-security-and-firewall'); ?>
 				</p>
 			<?php
 			$this->render_manual_notice_footer();
@@ -492,16 +496,16 @@ class AIOWPSecurity_Firewall_Setup_Notice {
 				<p>
 					<?php
 						/* translators: %s Firewall file name. */
-						printf(__('1. Create a file with the name %s in the same directory as your WordPress install is in, i.e.:', 'all-in-one-wp-security-and-firewall'), $firewall_file_name);
+						printf(esc_html__('1. Create a file with the name %s in the same directory as your WordPress install is in, i.e.:', 'all-in-one-wp-security-and-firewall'), esc_html($firewall_file_name));
 					?>
 					<p><code><?php echo esc_html($firewall_file); ?></code></p>
 				</p>
 				<p>
-					<?php _e('2. Paste in the following directives:', 'all-in-one-wp-security-and-firewall'); ?>
+					<?php esc_html_e('2. Paste in the following directives:', 'all-in-one-wp-security-and-firewall'); ?>
 				</p>
-					<pre style='max-width: 100%;background-color: #f0f0f0;border:#ccc solid 1px;padding: 10px;white-space:pre-wrap;'><?php echo htmlentities($firewall_file->get_contents()); ?></pre>
+					<pre style='max-width: 100%;background-color: #f0f0f0;border:#ccc solid 1px;padding: 10px;white-space:pre-wrap;'><?php echo esc_html(htmlentities($firewall_file->get_contents())); ?></pre>
 				<p>
-					<?php echo __('3. Save the file and press the \'Try again\' button below:', 'all-in-one-wp-security-and-firewall'); ?>
+					<?php echo esc_html__('3. Save the file and press the \'Try again\' button below:', 'all-in-one-wp-security-and-firewall'); ?>
 				</p>
 			<?php
 			$this->render_try_again_button();
@@ -518,15 +522,15 @@ class AIOWPSecurity_Firewall_Setup_Notice {
 		?>
 			<div class="notice notice-warning is-dismissible">
 			<p>
-				<strong><?php _e('All-In-One Security', 'all-in-one-wp-security-and-firewall'); ?></strong>
+				<strong><?php esc_html_e('All In OneSecurity', 'all-in-one-wp-security-and-firewall'); ?></strong>
 			</p>
 			<p>
-				<?php echo __('We were unable to set up your firewall with the highest level of protection.', 'all-in-one-wp-security-and-firewall').' '.
-						   __('Your firewall will have reduced functionality.', 'all-in-one-wp-security-and-firewall');
+				<?php echo esc_html__('We were unable to set up your firewall with the highest level of protection.', 'all-in-one-wp-security-and-firewall').' '.
+						   esc_html__('Your firewall will have reduced functionality.', 'all-in-one-wp-security-and-firewall');
 				?>
 			</p>
 			<p>
-				<?php _e('To give your site the highest level of protection, please follow these steps:', 'all-in-one-wp-security-and-firewall'); ?>
+				<?php esc_html_e('To give your site the highest level of protection, please follow these steps:', 'all-in-one-wp-security-and-firewall'); ?>
 			</p>
 		<?php
 	}
@@ -539,7 +543,7 @@ class AIOWPSecurity_Firewall_Setup_Notice {
 	private function render_manual_notice_footer() {
 		?>
 			<p>
-				<strong><?php _e('Note: if you\'re unable to perform any of the aforementioned steps, please ask your web hosting provider for further assistance.', 'all-in-one-wp-security-and-firewall'); ?></strong>
+				<strong><?php esc_html_e('Note: if you\'re unable to perform any of the aforementioned steps, please ask your web hosting provider for further assistance.', 'all-in-one-wp-security-and-firewall'); ?></strong>
 			</p>
 			</div>
 		<?php
@@ -556,7 +560,7 @@ class AIOWPSecurity_Firewall_Setup_Notice {
 			<?php wp_nonce_field('aiowpsec-firewall-setup'); ?>
 			<input type="hidden" name="action" value="aiowps_firewall_setup">
 			<div style="padding-top: 10px; padding-bottom: 10px;">
-					<input class="button button-primary" type="submit" name="btn_try_again" value="<?php _e('Try again', 'all-in-one-wp-security-and-firewall'); ?>">
+					<input class="button button-primary" type="submit" name="btn_try_again" value="<?php esc_html_e('Try again', 'all-in-one-wp-security-and-firewall'); ?>">
 			</div>
 		</form>
 		<?php
@@ -578,10 +582,10 @@ class AIOWPSecurity_Firewall_Setup_Notice {
 					<?php wp_nonce_field('aiowpsec-firewall-setup'); ?>
 					<input type="hidden" name="action" value="aiowps_firewall_setup">
 					<p>
-						<?php _e('We have detected that your AIOS firewall is not fully installed, and therefore does not have the highest level of protection.', 'all-in-one-wp-security-and-firewall');?>
-						<?php echo ' ' . __('Your firewall will have reduced functionality until it has been upgraded.', 'all-in-one-wp-security-and-firewall');?>
+						<?php esc_html_e('We have detected that your AIOS firewall is not fully installed, and therefore does not have the highest level of protection.', 'all-in-one-wp-security-and-firewall');?>
+						<?php echo ' ' . esc_html__('Your firewall will have reduced functionality until it has been upgraded.', 'all-in-one-wp-security-and-firewall');?>
 						<div style="padding-top: 10px;">
-							<input class="button button-primary" type="submit" name="btn_upgrade_now" value="<?php _e('Upgrade your protection now', 'all-in-one-wp-security-and-firewall'); ?>">
+							<input class="button button-primary" type="submit" name="btn_upgrade_now" value="<?php esc_html_e('Upgrade your protection now', 'all-in-one-wp-security-and-firewall'); ?>">
 						</div>
 					</p>
 				</form>

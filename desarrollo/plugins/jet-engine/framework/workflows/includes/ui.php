@@ -56,24 +56,24 @@ class UI {
 		echo '<div class="crocoblock-workflows-page">';
 
 		echo '<div class="crocoblock-workflows-page__title">';
-		
-			printf( 
+
+			printf(
 				'<h1 class="crocoblock-workflows-page__title">%s</h1>',
 				__( 'Available Interactive Tutorials', 'jet-engine' )
 			);
 
-			printf( 
+			printf(
 				'<a href="%1$s">%2$s</a>',
-				add_query_arg( [
+				esc_url( add_query_arg( [
 					$this->invalidate_trigger() => 'refresh',
 					'_nonce' => wp_create_nonce( 'crocoblock-workflows-ui' ),
-				] ),
+				] ) ),
 				__( 'Check for new tutorials', 'jet-engine' )
 			);
 
 		echo '</div>';
 
-		printf( 
+		printf(
 			'<p class="crocoblock-workflows-page__text">%s</p>',
 			__( 'These interactive tutorials will help you complete the most common tasks related to Crocoblock plugins easily.', 'jet-engine' )
 		);
@@ -127,7 +127,7 @@ class UI {
 			'activeWorkflow'    => $this->workflows->state()->get_prepared_active_workflow(),
 		] );
 
-		wp_enqueue_style( 
+		wp_enqueue_style(
 			'crocoblock-workflows',
 			$this->workflows->url . '/assets/css/workflows.css',
 			[],
@@ -138,7 +138,7 @@ class UI {
 	public function workflow_template( $workflow ) {
 
 		$workflow = $this->workflows->dependencies()->add_checked_dependencies( $workflow );
-		
+
 		$est_time = [
 			'min' => 0,
 			'max' => 0,

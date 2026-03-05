@@ -81,8 +81,14 @@ if ( ! class_exists( 'Jet_Engine_Frontend' ) ) {
 
 			wp_enqueue_script(
 				'jet-engine-frontend',
-				jet_engine()->plugin_url( 'assets/js/frontend.js' ),
-				array( 'jquery', 'jet-plugins' ),
+				jet_engine()->plugin_url( 'assets/js/frontend/frontend.js' ),
+				array_merge(
+					array( 'jquery', 'jet-plugins' ),
+					apply_filters(
+						'jet-engine/listings/frontend-scripts/dependencies',
+						array()
+					)
+				),
 				jet_engine()->get_version(),
 				true
 			);
@@ -103,6 +109,11 @@ if ( ! class_exists( 'Jet_Engine_Frontend' ) ) {
 				'hoverActionTimeout' => $hover_action_timeout,
 				'post_id' => $post_id,
 			) );
+
+			if ( is_object( $root_object ) ) {
+				$localize_data['queried_object_id']    = jet_engine()->listings->data->get_current_object_id( $root_object );
+				$localize_data['queried_object_class'] = get_class( $root_object );
+			}
 
 			wp_localize_script( 'jet-engine-frontend', 'JetEngineSettings', $localize_data );
 

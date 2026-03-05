@@ -56,6 +56,29 @@ class WDAN_Block_Ad_Redirects extends WDN_Page {
 		parent::__construct( $plugin );
 
 		$this->plugin = $plugin;
+
+		add_filter( 'wp_redirect', function ( $location ) {
+			$redirects = $this->getPopulateOption( 'blocked_redirects', [] );
+			if ( in_array( $location, $redirects ) ) {
+				return null;
+			}
+
+			return $location;
+		} );
+	}
+
+	public function unblockRedirectAction() {
+		$redirect_ID = $this->request()->get( 'redirect_id', null, 'sanitize_key' );
+		check_admin_referer( 'unblock_redirect_' . $redirect_ID );
+
+		$redirects = $this->getPopulateOption( 'blocked_redirects', [] );
+
+		if ( isset( $redirects[ $redirect_ID ] ) ) {
+			unset( $redirects[ $redirect_ID ] );
+			$this->updatePopulateOption( 'blocked_redirects', $redirects );
+		}
+
+		$this->redirectToAction( 'index' );
 	}
 
 	/**
@@ -74,88 +97,48 @@ class WDAN_Block_Ad_Redirects extends WDN_Page {
 		$this->styles->add( WDN_PLUGIN_URL . '/admin/assets/css/settings.css' );
 	}
 
-	public function get_break_redirects() {
-		return [];
-	}
-
 	public function showPageContent() {
-		$redirects = $this->get_break_redirects();
+		$redirects = $this->getPopulateOption( 'blocked_redirects', [] );
+
+		if ( isset( $_POST['wdan_add_block'] ) ) {
+			check_admin_referer( 'wdan_add_block_redirect' );
+			$url = $this->request()->post( 'wdan_redirect_url', null, 'sanitize_url' );
+
+			if ( ! empty( $url ) ) {
+				if ( ! in_array( $url, $redirects ) ) {
+					$redirects[ md5( $url ) ] = $url;
+					$this->updatePopulateOption( 'blocked_redirects', $redirects );
+				}
+	
+				$this->redirectToAction( 'index' );
+			}
+		}
 		?>
-
-		<div class="wrdan-premium-fake-content">
-			<div class="wdan-premium-info">
-				<h3>Block Ad redirects PRO</h3>
-				<p>This feature will be useful to you to break advertising redirects. Some plugins, when updating or
-					during
-					installation, may redirect you to their page with advertisements or news. If plugins do this too
-					often,
-					it can be a headache for you. Break these redirects with our premium features.</p>
-				<a class="wdan-button wdan-button-default wdan-button-go-pro" target="_blank" href="https://clearfy.pro/disable-admin-notices/">
-					Go Pro
-				</a>
-			</div>
-			<div class="wdan-premium-layer"></div>
-
-			<h4>Block ad redirects</h4>
+		<div style="padding:15px;">
+			<h4><?php esc_html_e( 'Block ad redirects', 'disable-admin-notices' ); ?></h4>
 			<form method="post">
-				<label for="wdnpro-redirect-url">Enter url for block:</label><br>
-				<input id="wdnpro-redirect-url" style="width:400px;" type="text" name="wdnpro_redirect_url">
-				<input type="submit" name="wdnpro_add_block" class="button" value="Add block">
+				<?php wp_nonce_field( 'wdan_add_block_redirect' ); ?>
+				<label for="wdan-redirect-url"><?php esc_html_e( 'Enter url for block', 'disable-admin-notices'); ?></label><br>
+				<input id="wdan-redirect-url" style="width:400px;" type="text" name="wdan_redirect_url">
+				<input type="submit" name="wdan_add_block" class="button" value="<?php esc_attr_e( 'Add block', 'disable-admin-notices' ); ?>">
 			</form>
+			<p class="wdan-redirect-url-description"><?php esc_html_e( 'Some plugins open a page automatically after installation or update to show announcements, promotions, or other information. Enter the URLs of those pages here to prevent them from opening automatically.', 'disable-admin-notices' ); ?></p>
 			<br>
 			<table class="wp-list-table widefat fixed striped">
 				<tr>
-					<th>Url</th>
-					<th style="width:200px;">Action</th>
+					<th><?php esc_html( 'Url', 'disable-admin-notices' ); ?></th>
+					<th style="width:200px;"><?php esc_html_e( 'Action', 'disable-admin-notices' ); ?></th>
 				</tr>
-				<tr>
-					<td>
-						https://site.com/wp-admin/?page=plugin-name&ads=redirect
-					</td>
-					<td>
-						<a style="color:#428bca;" href="#">Unblock</a>
-					</td>
-				</tr>
-				<tr>
-					<td>
-						https://site.com/wp-admin/?page=plugin-name&ads=redirect
-					</td>
-					<td>
-						<a style="color:#428bca;" href="#">Unblock</a>
-					</td>
-				</tr>
-				<tr>
-					<td>
-						https://site.com/wp-admin/?page=plugin-name&ads=redirect
-					</td>
-					<td>
-						<a style="color:#428bca;" href="#">Unblock</a>
-					</td>
-				</tr>
-				<tr>
-					<td>
-						https://site.com/wp-admin/?page=plugin-name&ads=redirect
-					</td>
-					<td>
-						<a style="color:#428bca;" href="#">Unblock</a>
-					</td>
-				</tr>
-				<tr>
-					<td>
-						https://site.com/wp-admin/?page=plugin-name&ads=redirect
-					</td>
-					<td>
-						<a style="color:#428bca;" href="#">Unblock</a>
-					</td>
-				</tr>
-				<tr>
-					<td>
-						https://site.com/wp-admin/?page=plugin-name&ads=redirect
-					</td>
-					<td>
-						<a style="color:#428bca;" href="#">Unblock</a>
-					</td>
-				</tr>
+				<?php foreach ( $redirects as $ID => $redirect ): ?>
+					<tr>
+						<td>
+							<?php echo esc_html( $redirect ); ?>
+						</td>
+						<td>
+							<a style="color:#428bca;" href="<?php echo wp_nonce_url( $this->getActionUrl( 'unblock-redirect', [ 'redirect_id' => $ID ] ), 'unblock_redirect_' . $ID ); ?>"><?php esc_html_e( 'Unblock', 'disable-admin-notices' ); ?></a>
+						</td>
+					</tr>
+				<?php endforeach; ?>
 			</table>
 		</div>
 		<?php

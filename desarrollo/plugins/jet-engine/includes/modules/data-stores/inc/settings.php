@@ -14,6 +14,7 @@ class Settings {
 		add_action( 'jet-engine/dashboard/assets', array( $this, 'register_stores_js' ) );
 
 		add_action( 'wp_ajax_jet_engine_data_stores_save', array( $this, 'save_stores' ) );
+		add_action( 'wp_ajax_jet_engine_data_store_clear', array( $this, 'clear_store' ) );
 
 	}
 
@@ -84,6 +85,36 @@ class Settings {
 
 	}
 
+	public function clear_store() {
+		if ( ! current_user_can( 'manage_options' ) ) {
+			wp_send_json_error( array( 'message' => __( 'Access denied', 'jet-engine' ) ) );
+		}
+
+		$nonce = ! empty( $_REQUEST['nonce'] ) ? $_REQUEST['nonce'] : false;
+
+		if ( ! $nonce || ! wp_verify_nonce( $nonce, 'jet-engine-data-stores' ) ) {
+			wp_send_json_error( array( 'message' => __( 'Nonce validation failed', 'jet-engine' ) ) );
+		}
+
+		$store_id = ! empty( $_REQUEST['store_id'] ) ? $_REQUEST['store_id'] : ''; // phpcs:ignore
+
+		$store_instance = Module::instance()->stores->get_store( $store_id );
+
+		if ( ! $store_instance ) {
+			wp_send_json_error( array( 'message' => __( 'Store not found', 'jet-engine' ) ) );
+		}
+
+		$store_type = $store_instance->get_type();
+
+		if ( ! $store_type || ! method_exists( $store_type, 'clear_store' ) ) {
+			wp_send_json_error( array( 'message' => __( 'Store type does not support clearing', 'jet-engine' ) ) );
+		}
+
+		$store_type->clear_store( $store_id );
+
+		wp_send_json_success( array( 'message' => __( 'Data cleared', 'jet-engine' ) ) );
+	}
+
 	/**
 	 * Register settings JS file
 	 *
@@ -111,10 +142,16 @@ class Settings {
 
 		$counts_allowed = array();
 
+		$types_caps = array();
+
 		foreach ( $stores as $store ) {
 			if ( ! $store->is_front_store() ) {
 				$counts_allowed[] = $store->type_id();
 			}
+
+			$types_caps[ $store->type_id() ] = array(
+				'supports_clearing' => (bool) $store->supports_clearing(),
+			);
 		}
 
 		wp_localize_script(
@@ -123,6 +160,7 @@ class Settings {
 			array(
 				'items'            => $this->get(),
 				'types'            => Module::instance()->stores->get_types_for_js(),
+				'types_caps'       => $types_caps,
 				'can_posts_counts' => $counts_allowed,
 				'post_types'       => \Jet_Engine_Tools::get_post_types_for_js(),
 				'_nonce'           => wp_create_nonce( 'jet-engine-data-stores' ),
@@ -276,6 +314,22 @@ class Settings {
 								:value="dataStores[ index ].on_post_type"
 								@input="setProp( index, 'on_post_type', $event )"
 							></cx-vui-f-select>
+							<div
+								v-if="storeSupportsClearing( dataStores[ index ].type )"
+								class="cx-vui-component cx-vui-component--equalwidth">
+								<div class="cx-vui-component__meta">
+									<label class="cx-vui-component__label" for="cx_pro_relations"><?php _e( 'Clear store data', 'jet-engine' ); ?></label>
+									<div class="cx-vui-component__desc"><?php _e( 'Remove all items stored in this data store', 'jet-engine' ); ?></div>
+								</div>
+								<div class="cx-vui-component__control">
+									<cx-vui-button
+										button-style="accent-border"
+										size="mini"
+										@click="clearData(dataStores[ index ].slug)">
+										<span slot="label"><?php _e( 'Clear Data', 'jet-engine' ); ?></span>
+									</cx-vui-button>
+								</div>
+							</div>
 							<?php do_action( 'jet-engine/data-stores/settings/custom-controls', $this ); ?>
 						</cx-vui-repeater-item>
 					</cx-vui-repeater>

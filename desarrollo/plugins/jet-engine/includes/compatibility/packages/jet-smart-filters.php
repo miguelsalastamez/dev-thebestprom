@@ -14,7 +14,9 @@ if ( ! class_exists( 'Jet_Engine_Smart_Filters_Package' ) ) {
 	 * Define Jet_Engine_Smart_Filters_Package class
 	 */
 	class Jet_Engine_Smart_Filters_Package {
-
+		
+		const FRONTEND_SCRIPT_HANDLE = 'jet-engine-jet-smart-filters-compatibility';
+		
 		public function __construct() {
 
 			add_filter(
@@ -61,6 +63,31 @@ if ( ! class_exists( 'Jet_Engine_Smart_Filters_Package' ) ) {
 				10, 3
 			);
 
+			add_action(
+				'jet-engine/listings/frontend-scripts',
+				array( $this, 'frontend_scripts' )
+			);
+
+			add_filter(
+				'jet-engine/listings/frontend-scripts/dependencies',
+				array( $this, 'add_frontend_scripts_dependency' )
+			);
+
+		}
+
+		public function add_frontend_scripts_dependency( $deps ) {
+			$deps[] = self::FRONTEND_SCRIPT_HANDLE;
+			return $deps;
+		}
+
+		public function frontend_scripts() {
+			wp_enqueue_script(
+				self::FRONTEND_SCRIPT_HANDLE,
+				jet_engine()->plugin_url( 'assets/js/frontend/modules/jet-smart-filters.js' ),
+				array( 'jquery', 'jet-plugins' ),
+				jet_engine()->get_version(),
+				true
+			);
 		}
 
 		public function is_filters_request() {

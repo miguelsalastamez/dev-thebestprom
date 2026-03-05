@@ -19,7 +19,7 @@ class Manager {
 
 		add_action( 'jet-engine/elementor-views/widgets/register', array( $this, 'register_widgets' ), 20, 2 );
 
-		add_action( 'enqueue_block_editor_assets', array( $this, 'register_blocks_assets' ), 9 );
+		add_action( 'jet-engine/blocks-views/editor-script/after', array( $this, 'register_blocks_assets' ), 9 );
 		add_action( 'init', array( $this, 'register_blocks_types' ), 999 );
 		add_action( 'jet-smart-filters/blocks/localized-data', array( $this, 'modify_filters_localized_data' ) );
 
@@ -168,7 +168,7 @@ class Manager {
 		wp_enqueue_script(
 			'jet-maps-listings-geolocation-blocks',
 			jet_engine()->plugin_url( 'includes/modules/maps-listings/assets/js/admin/blocks.js' ),
-			array( 'wp-blocks','wp-editor', 'wp-components', 'wp-i18n' ),
+			array( 'jet-engine-blocks-views' ),
 			jet_engine()->get_version(),
 			true
 		);

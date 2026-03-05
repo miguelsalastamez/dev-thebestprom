@@ -48,8 +48,8 @@ if ( ! class_exists( 'Jet_Engine_Misc_Settings' ) ) {
 					?></p>
 
 					<cx-vui-switcher
-						label="<?php _e( 'Disable legacy User Meta processing', 'jet-engine' ); ?>"
-						description="<?php _e( 'By default, if the meta key is a JetEngine User Meta key, the value will be taken from the current user, or from the listing object, if it is a user. To always get the meta from the object by context, enable this option.', 'jet-engine' ); ?>"
+						label="<?php _e( 'Disable legacy User Props / Meta processing', 'jet-engine' ); ?>"
+						description="<?php _e( 'By default, if the prop/meta key is a JetEngine User Prop/Meta key, the value will be taken from the current user, or from the listing object, if it is a user. To always get the prop/meta from the object by context, enable this option.', 'jet-engine' ); ?>"
 						:wrapper-css="[ 'equalwidth' ]"
 						@input="updateMiscSettings( $event, 'disable_legacy_user_meta' )"
 						:value="miscSettings.disable_legacy_user_meta"

@@ -35,13 +35,13 @@
 					<th scope="row"><?php esc_html_e('Enable auto block of spam comment IPs', 'all-in-one-wp-security-and-firewall'); ?>:</th>
 					<td>
 						<div class="aiowps_switch_container">
-							<?php AIOWPSecurity_Utility_UI::setting_checkbox(esc_html__('Enable this if you want this plugin to automatically block IP addresses which submit spam comments.', 'all-in-one-wp-security-and-firewall'), 'aiowps_enable_autoblock_spam_ip', '1' == $aio_wp_security->configs->get_value('aiowps_enable_autoblock_spam_ip')); ?>
+							<?php AIOWPSecurity_Utility_UI::setting_checkbox(esc_html__('Enable this if you want this plugin to automatically block IP addresses which submit spam comments.', 'all-in-one-wp-security-and-firewall'), 'aiowps_enable_autoblock_spam_ip', '1' == $comment_spam_data['aiowps_enable_autoblock_spam_ip']); ?>
 						</div>
 					</td>
 				</tr>
 				<tr valign="top">
 					<th scope="row"><label for="aiowps_spam_ip_min_comments_block"><?php esc_html_e('Minimum number of spam comments', 'all-in-one-wp-security-and-firewall'); ?>:</label></th>
-					<td><input id="aiowps_spam_ip_min_comments_block" type="text" size="5" name="aiowps_spam_ip_min_comments_block" value="<?php echo esc_attr($aio_wp_security->configs->get_value('aiowps_spam_ip_min_comments_block')); ?>" />
+					<td><input id="aiowps_spam_ip_min_comments_block" type="text" size="5" name="aiowps_spam_ip_min_comments_block" value="<?php echo esc_attr($comment_spam_data['aiowps_spam_ip_min_comments_block']); ?>" />
 						<span class="description"><?php esc_html_e('Specify the minimum number of spam comments for an IP address before it is permanently blocked.', 'all-in-one-wp-security-and-firewall'); ?></span>
 						<span class="aiowps_more_info_anchor"><span class="aiowps_more_info_toggle_char">+</span><span class="aiowps_more_info_toggle_text"><?php esc_html_e('More info', 'all-in-one-wp-security-and-firewall'); ?></span></span>
 						<div class="aiowps_more_info_body">

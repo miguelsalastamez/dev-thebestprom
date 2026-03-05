@@ -162,16 +162,15 @@ class User_Ip_Store extends Base_Store {
 	 * @param $expiration
 	 */
 	public function clear_store( $store_id = null, $expiration = null ) {
-
 		if ( empty( $store_id ) ) {
-			return;
+			return false;
 		}
 
 		$args = array(
 			'store_id' => $store_id,
 		);
 
-		if ( $expiration ) {
+		if ( null !== $expiration ) {
 			$args[] = array(
 				'field'    => 'created',
 				'operator' => '<',
@@ -179,7 +178,13 @@ class User_Ip_Store extends Base_Store {
 			);
 		}
 
-		$this->db->delete( $args );
+		return $this->db->delete( $args );
 	}
 
+	/**
+	 * Whether store supports clearing records
+	 */
+	public function supports_clearing() {
+		return true;
+	}
 }

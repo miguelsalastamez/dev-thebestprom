@@ -356,7 +356,7 @@ function jet_get_pretty_post_link( $value ) {
 		$result  = sprintf( '<a href="%1$s">%2$s</a>', get_permalink( $post_id ), get_the_title( $post_id ) );
 	}
 
-	return $result;
+	return wp_kses_post( $result );
 
 }
 
@@ -691,6 +691,45 @@ function jet_engine_custom_cb_date( $post_id = 0, $field = '', $format = '' ) {
 	} else {
 		return null;
 	}
+
+}
+
+/**
+ * Returns formatted number from post meta by post ID, field name and formatting options
+ *
+ * @param  integer $post_id              Post ID.
+ * @param  string  $field                Meta field key.
+ * @param  integer $decimal_places       Number of decimal places.
+ * @param  string  $decimals_separator   Decimal separator.
+ * @param  string  $thousands_separator  Thousands separator.
+ * @return string|null                   Formatted number or null if empty.
+ */
+function jet_engine_custom_cb_number( $post_id = 0, $field = '', $decimal_places = 2, $decimals_separator = '.', $thousands_separator = '' ) {
+
+	if ( ! $post_id || ! $field ) {
+		return null;
+	}
+
+	$value = get_post_meta( $post_id, $field, true );
+
+	if ( $value === '' || $value === null ) {
+		return null;
+	}
+
+	// Sanitize and normalize inputs
+	$decimal_places      = absint( $decimal_places );
+	$decimals_separator  = sanitize_text_field( $decimals_separator );
+	$thousands_separator = sanitize_text_field( $thousands_separator );
+
+	// Cast value to float
+	$value = floatval( $value );
+
+	return number_format(
+		$value,
+		$decimal_places,
+		$decimals_separator,
+		$thousands_separator
+	);
 
 }
 

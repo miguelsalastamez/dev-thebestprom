@@ -1,32 +1,5 @@
-#WBCR .factory-checkbox.wdanpro-checkbox-premium-label:after,
-#WBCR .wdanpro-radio-premium-label .factory-compact_panel:after {
-  display: inline-block;
-  position: relative;
-  content: 'PRO';
-  background: #ff5722;
-  border-radius: 4px;
-  color: #fff;
-  font-size: 10px;
-  line-height: 1;
-  font-style: normal;
-  padding: 4px 6px;
-  margin-left: 4px;
-  vertical-align: top;
-  top: -8px;
-  left: -10px;
-  right: auto;
-  z-index: 11;
-  cursor: pointer;
-}
-#WBCR .wdanpro-radio-premium-label .factory-compact_panel:after {
-  position: absolute;
-  top: -10px;
-  right: -10px;
-  left: auto;
-}
 #WBCR .factory-checkbox-disabled input,
-#WBCR .factory-checkbox-disabled button,
-#WBCR .wdanpro-radio-premium-label .factory-compact_panel {
+#WBCR .factory-checkbox-disabled button {
   pointer-events: none;
   cursor: not-allowed;
   opacity: 0.65;
@@ -189,9 +162,6 @@
   margin: 0.5em 0;
   padding: 2px;
 }
-.wdan-hidden-list-notice div.wdan-notice-p div {
-  width: 100%;
-}
 .wdan-hidden-list-table {
   border: 0;
 }
@@ -216,5 +186,8 @@
   background-size: contain;
   background-repeat: no-repeat;
   background-position: top;
+}
+#WBCR .wdan-redirect-url-description {
+  margin-top: 10px;
 }
 /*# sourceMappingURL=settings.css.map */

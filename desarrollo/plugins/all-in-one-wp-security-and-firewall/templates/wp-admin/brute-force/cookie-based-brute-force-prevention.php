@@ -42,16 +42,16 @@
 			</div>
 			<div id="aios-perform-cookie-test-div">
 				<?php
-					$cookie_test_value = $aio_wp_security->configs->get_value('aiowps_cookie_test_success');
+					$cookie_test_value = $aiowps_cookie_test_success;
 
 					$disable_brute_force_feature_input = true;
 					// If the cookie test is successful or if the feature is already enabled then go ahead as normal
-					if ('1' == $cookie_test_value || '1' == $aio_wp_security->configs->get_value('aiowps_enable_brute_force_attack_prevention')) {
+					if ('1' == $cookie_test_value || '1' == $aiowps_enable_brute_force_attack_prevention) {
 						$disable_brute_force_feature_input = false;
 					} else {
 						$aio_wp_security->include_template('wp-admin/brute-force/partials/cookie-test-container.php', false);
 					}
-					$disable_brute_force_sub_fields = !$aio_wp_security->configs->get_value('aiowps_enable_brute_force_attack_prevention');
+					$disable_brute_force_sub_fields = !$aiowps_enable_brute_force_attack_prevention;
 				?>
 			</div>
 			<table class="form-table">
@@ -59,7 +59,7 @@
 					<th scope="row"><?php esc_html_e('Enable brute force attack prevention', 'all-in-one-wp-security-and-firewall'); ?>:</th>
 					<td>
 						<div class="aiowps_switch_container">
-							<?php AIOWPSecurity_Utility_UI::setting_checkbox(esc_html__('Enable this if you want to protect your login page from a brute force attack.', 'all-in-one-wp-security-and-firewall'), 'aiowps_enable_brute_force_attack_prevention', $aio_wp_security->configs->get_value('aiowps_enable_brute_force_attack_prevention')); ?>
+							<?php AIOWPSecurity_Utility_UI::setting_checkbox(esc_html__('Enable this if you want to protect your login page from a brute force attack.', 'all-in-one-wp-security-and-firewall'), 'aiowps_enable_brute_force_attack_prevention', $aiowps_enable_brute_force_attack_prevention); ?>
 							<span class="aiowps_more_info_anchor"><span class="aiowps_more_info_toggle_char">+</span><span class="aiowps_more_info_toggle_text"><?php esc_html_e('More info', 'all-in-one-wp-security-and-firewall'); ?></span></span>
 							<div class="aiowps_more_info_body">
 								<p class="description">
@@ -85,13 +85,13 @@
 				</tr>
 				<tr valign="top">
 					<th scope="row"><label for="aiowps_brute_force_secret_word"><?php esc_html_e('Secret word', 'all-in-one-wp-security-and-firewall'); ?>:</label></th>
-					<td><input id="aiowps_brute_force_secret_word" type="text" size="40" name="aiowps_brute_force_secret_word" value="<?php echo esc_attr($aio_wp_security->configs->get_value('aiowps_brute_force_secret_word')); ?>"<?php disabled($disable_brute_force_sub_fields); ?>>
+					<td><input id="aiowps_brute_force_secret_word" type="text" size="40" name="aiowps_brute_force_secret_word" value="<?php echo esc_attr($aiowps_brute_force_secret_word); ?>"<?php disabled($disable_brute_force_sub_fields); ?>>
 					<span class="description"><?php echo esc_html__('Choose a secret word consisting of alphanumeric characters which you can use to access your special URL.', 'all-in-one-wp-security-and-firewall') . ' ' . esc_html__('You are highly encouraged to choose a word which will be difficult to guess.', 'all-in-one-wp-security-and-firewall'); ?></span>
 					</td>
 				</tr>
 				<tr valign="top">
 					<th scope="row"><label for="aiowps_cookie_based_brute_force_redirect_url"><?php esc_html_e('Re-direct URL', 'all-in-one-wp-security-and-firewall'); ?>:</label></th>
-					<td><input id="aiowps_cookie_based_brute_force_redirect_url" type="text" size="40" name="aiowps_cookie_based_brute_force_redirect_url" value="<?php echo esc_attr($aio_wp_security->configs->get_value('aiowps_cookie_based_brute_force_redirect_url')); ?>" <?php disabled($disable_brute_force_sub_fields); ?> />
+					<td><input id="aiowps_cookie_based_brute_force_redirect_url" type="text" size="40" name="aiowps_cookie_based_brute_force_redirect_url" value="<?php echo esc_attr($aiowps_cookie_based_brute_force_redirect_url); ?>" <?php disabled($disable_brute_force_sub_fields); ?> />
 					<span class="description">
 						<?php
 						esc_html_e('Specify a URL to redirect a hacker to when they try to access your WordPress login page.', 'all-in-one-wp-security-and-firewall');
@@ -119,7 +119,7 @@
 					<th scope="row"><?php esc_html_e('My site has posts or pages which are password protected', 'all-in-one-wp-security-and-firewall'); ?>:</th>
 					<td>
 						<div class="aiowps_switch_container">
-							<?php AIOWPSecurity_Utility_UI::setting_checkbox(esc_html__('Enable this if you are using the native WordPress password protection feature for some or all of your blog posts or pages.', 'all-in-one-wp-security-and-firewall'), 'aiowps_brute_force_attack_prevention_pw_protected_exception', '1' == $aio_wp_security->configs->get_value('aiowps_brute_force_attack_prevention_pw_protected_exception')); ?>
+							<?php AIOWPSecurity_Utility_UI::setting_checkbox(esc_html__('Enable this if you are using the native WordPress password protection feature for some or all of your blog posts or pages.', 'all-in-one-wp-security-and-firewall'), 'aiowps_brute_force_attack_prevention_pw_protected_exception', '1' == $aiowps_brute_force_attack_prevention_pw_protected_exception); ?>
 							<span class="aiowps_more_info_anchor"><span class="aiowps_more_info_toggle_char">+</span><span class="aiowps_more_info_toggle_text"><?php esc_html_e('More info', 'all-in-one-wp-security-and-firewall'); ?></span></span>
 							<div class="aiowps_more_info_body">
 								<p class="description">
@@ -141,7 +141,7 @@
 					<th scope="row"><?php esc_html_e('My site has a theme or plugins which use AJAX', 'all-in-one-wp-security-and-firewall'); ?>:</th>
 					<td>
 						<div class="aiowps_switch_container">
-							<?php AIOWPSecurity_Utility_UI::setting_checkbox(esc_html__('Enable this if your site uses AJAX functionality.', 'all-in-one-wp-security-and-firewall'), 'aiowps_brute_force_attack_prevention_ajax_exception', '1' == $aio_wp_security->configs->get_value('aiowps_brute_force_attack_prevention_ajax_exception')); ?>
+							<?php AIOWPSecurity_Utility_UI::setting_checkbox(esc_html__('Enable this if your site uses AJAX functionality.', 'all-in-one-wp-security-and-firewall'), 'aiowps_brute_force_attack_prevention_ajax_exception', '1' == $aiowps_brute_force_attack_prevention_ajax_exception); ?>
 							<span class="aiowps_more_info_anchor"><span class="aiowps_more_info_toggle_char">+</span><span class="aiowps_more_info_toggle_text"><?php esc_html_e('More info', 'all-in-one-wp-security-and-firewall'); ?></span></span>
 							<div class="aiowps_more_info_body">
 								<p class="description">

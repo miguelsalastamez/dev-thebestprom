@@ -3,7 +3,7 @@
  * Plugin Name: JetPopup
  * Plugin URI:  https://crocoblock.com/plugins/jetpopup/
  * Description: The advanced plugin for creating popups with Elementor
- * Version:     2.0.20.3
+ * Version:     2.0.21.1
  * Author:      Crocoblock
  * Author URI:  https://crocoblock.com/
  * Text Domain: jet-popup
@@ -45,7 +45,7 @@ if ( ! class_exists( 'Jet_Popup' ) ) {
 		 *
 		 * @var string
 		 */
-		private $version = '2.0.20.3';
+		private $version = '2.0.21.1';
 
 		/**
 		 * Holder for base plugin URL

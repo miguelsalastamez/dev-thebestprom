@@ -1,4 +1,5 @@
 <?php
+
 // phpcs:disable Yoast.NamingConventions.NamespaceName.TooLong -- Needed in the folder structure.
 namespace Yoast\WP\SEO\Task_List\Application\Tasks;
 
@@ -69,7 +70,7 @@ class Create_New_Content extends Abstract_Task {
 						'after' => '30 days ago',
 					],
 				],
-			]
+			],
 		);
 
 		return ! empty( $recent_posts );
@@ -93,7 +94,7 @@ class Create_New_Content extends Abstract_Task {
 		return new Call_To_Action_Entry(
 			\__( 'Create new post', 'wordpress-seo' ),
 			'add',
-			$this->get_link()
+			$this->get_link(),
 		);
 	}
 
@@ -106,7 +107,7 @@ class Create_New_Content extends Abstract_Task {
 		return new Copy_Set(
 			\__( 'Create new content', 'wordpress-seo' ),
 			\__( 'Long gaps without new content slow down your traffic growth. Publishing regularly gives search engines and visitors a reason to return.', 'wordpress-seo' ),
-			\__( 'Plan a topic, write your post, and use the SEO and Readability Analyses to refine it before publishing.', 'wordpress-seo' )
+			\__( 'Plan a topic, write your post, and use the SEO and Readability Analyses to refine it before publishing.', 'wordpress-seo' ),
 		);
 	}
 }

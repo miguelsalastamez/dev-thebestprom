@@ -1763,12 +1763,14 @@
 		},
 
 		initSlider: function( $slider, customOptions ) {
-			var $eWidget    = $slider.closest( '.elementor-widget' ),
+			var $eWidget  = $slider.closest( '.elementor-widget' ),
 				options     = $slider.data( 'slider_options' ),
 				windowWidth = $( window ).width(),
 				tabletBP    = 1025,
 				mobileBP    = 768,
 				tabletSlides, mobileSlides, defaultOptions, slickOptions;
+
+			let widgetID = null;
 
 			options = JetEngine.ensureJSON( options );
 
@@ -1876,6 +1878,12 @@
 				];
 			}
 
+			// Context Bricks
+			if ( ! $eWidget.length ) {
+				$eWidget = $slider.closest( '.brxe-jet-engine-listing-grid' );
+				widgetID = $eWidget.data( 'element-id' );
+			}
+
 			defaultOptions = {
 				customPaging: function( slider, i ) {
 					return $( '<span />' ).text( i + 1 ).attr( 'role', 'tab' );
@@ -1898,6 +1906,9 @@
 					}
 
 					JetEngine.initElementsHandlers( $clonedSlides );
+
+					// Re-init Bricks scripts
+					JetEngine.reinitBricksScripts( widgetID );
 
 					if ( $slider.find('.bricks-lazy-hidden').length ) {
 						bricksLazyLoad();

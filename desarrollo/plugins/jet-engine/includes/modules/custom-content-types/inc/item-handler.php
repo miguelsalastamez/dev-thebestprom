@@ -196,7 +196,8 @@ class Item_Handler {
 			wp_send_json_error( 'Your link is expired, please return to the previous page and try again' );
 		}
 
-		$itemarr     = $_POST['item_data'];
+		// Remove slashes added by wp_magic_quotes() to normalize $_POST data
+		$itemarr     = ! empty( $_POST['item_data'] ) ? wp_unslash( $_POST['item_data'] ) : array(); // phpcs:ignore
 		$old_itemarr = $this->factory->db->get_item( $item_id );
 
 		$fields = $this->factory->get_formatted_fields();
@@ -273,7 +274,7 @@ class Item_Handler {
 
 		// Remove slashes added by wp_magic_quotes() to normalize $_POST data
 		// https://github.com/Crocoblock/issues-tracker/issues/15447#issuecomment-2804553957
-		$itemarr = wp_unslash( $_POST );
+		$itemarr = ! empty( $_POST ) ? wp_unslash( $_POST ) : array(); // phpcs:ignore
 
 		if ( $item_id ) {
 			$itemarr['_ID'] = $item_id;

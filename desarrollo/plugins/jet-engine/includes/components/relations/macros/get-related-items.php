@@ -38,7 +38,12 @@ class Get_Related_Items extends \Jet_Engine_Base_Macros {
 	public function macros_callback( $args = array() ) {
 
 		$related_ids = $this->get_related_items( $args );
-		$related_ids = ! empty( $related_ids ) ? $related_ids : array( PHP_INT_MAX );
+		
+		if ( apply_filters( 'jet-engine/relations/macros/get-related/empty-if-no-object', false ) && ! is_array( $related_ids ) ) {
+			return '';
+		}
+
+		$related_ids = ! empty( $related_ids ) ? $related_ids : array( PHP_INT_MAX );	
 
 		do_action(
 			'jet-engine/relations/macros/get-related',

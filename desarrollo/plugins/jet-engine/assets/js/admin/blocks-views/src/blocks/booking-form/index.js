@@ -7,6 +7,7 @@ const {
 
 const {
 	InspectorControls,
+	useBlockProps,
 } = wp.blockEditor;
 
 const {
@@ -25,117 +26,117 @@ if ( -1 !== window.JetEngineListingData.activeModules.indexOf( 'booking-forms' )
 	const blockAttributes = window.JetEngineListingData.atts.bookingForm;
 
 	registerBlockType( 'jet-engine/booking-form', {
+		apiVersion: '3',
 		title: __( 'Form' ),
 		icon: GIcon,
 		category: 'jet-engine',
 		attributes: blockAttributes,
 		className: 'jet-form',
-		edit: class extends wp.element.Component {
-			render() {
+		edit: ( props ) => {
 
-				const props         = this.props;
-				const attributes    = props.attributes;
-				const formsOptions  = window.JetEngineListingData.formsOptions;
+			const attributes    = props.attributes;
+			const formsOptions  = window.JetEngineListingData.formsOptions;
 
-				return [
-					props.isSelected && (
-						<InspectorControls
-							key={ 'inspector' }
-						>
-							<PanelBody title={ __( 'General' ) }>
-								<SelectControl
-									label={ __( 'Select form' ) }
-									value={ attributes._form_id }
-									options={ formsOptions }
-									onChange={ newValue => {
-										props.setAttributes( { _form_id: newValue } );
-									} }
-								/>
-								<SelectControl
-									label={ __( 'Fields layout' ) }
-									value={ attributes.fields_layout }
-									options={ [
-										{
-											value: 'column',
-											label: __( 'Column' ),
-										},
-										{
-											value: 'row',
-											label: __( 'Row' ),
-										},
-									] }
-									onChange={ newValue => {
-										props.setAttributes( { fields_layout: newValue } );
-									} }
-								/>
-								<SelectControl
-									label={ __( 'Fields label HTML tag' ) }
-									value={ attributes.fields_label_tag }
-									options={ [
-										{
-											value: 'div',
-											label: __( 'DIV' ),
-										},
-										{
-											value: 'label',
-											label: __( 'LABEL' ),
-										},
-									] }
-									onChange={ newValue => {
-										props.setAttributes( { fields_label_tag: newValue } );
-									} }
-								/>
-								<SelectControl
-									label={ __( 'Submit type' ) }
-									value={ attributes.submit_type }
-									options={ [
-										{
-											value: 'reload',
-											label: __( 'Reload' ),
-										},
-										{
-											value: 'ajax',
-											label: __( 'AJAX' ),
-										},
-									] }
-									onChange={ newValue => {
-										props.setAttributes( { submit_type: newValue } );
-									} }
-								/>
-								<ToggleControl
-									label={ __( 'Cache form output' ) }
-									checked={ attributes.cache_form }
-									onChange={ () => {
-										props.setAttributes( { cache_form: ! attributes.cache_form } );
-									} }
-								/>
-								<hr/>
-								<ToggleControl
-									label={ __( 'Divider between rows' ) }
-									checked={ attributes.rows_divider }
-									onChange={ () => {
-										props.setAttributes( { rows_divider: ! attributes.rows_divider } );
-									} }
-								/>
-								<TextControl
-									type="text"
-									label={ __( 'Required mark' ) }
-									value={ attributes.required_mark }
-									onChange={ newValue => {
-										props.setAttributes( { required_mark: newValue } );
-									} }
-								/>
-							</PanelBody>
-						</InspectorControls>
-					),
+			return [
+				props.isSelected && (
+					<InspectorControls
+						key={ 'inspector' }
+					>
+						<PanelBody title={ __( 'General' ) }>
+							<SelectControl
+								label={ __( 'Select form' ) }
+								value={ attributes._form_id }
+								options={ formsOptions }
+								onChange={ newValue => {
+									props.setAttributes( { _form_id: newValue } );
+								} }
+							/>
+							<SelectControl
+								label={ __( 'Fields layout' ) }
+								value={ attributes.fields_layout }
+								options={ [
+									{
+										value: 'column',
+										label: __( 'Column' ),
+									},
+									{
+										value: 'row',
+										label: __( 'Row' ),
+									},
+								] }
+								onChange={ newValue => {
+									props.setAttributes( { fields_layout: newValue } );
+								} }
+							/>
+							<SelectControl
+								label={ __( 'Fields label HTML tag' ) }
+								value={ attributes.fields_label_tag }
+								options={ [
+									{
+										value: 'div',
+										label: __( 'DIV' ),
+									},
+									{
+										value: 'label',
+										label: __( 'LABEL' ),
+									},
+								] }
+								onChange={ newValue => {
+									props.setAttributes( { fields_label_tag: newValue } );
+								} }
+							/>
+							<SelectControl
+								label={ __( 'Submit type' ) }
+								value={ attributes.submit_type }
+								options={ [
+									{
+										value: 'reload',
+										label: __( 'Reload' ),
+									},
+									{
+										value: 'ajax',
+										label: __( 'AJAX' ),
+									},
+								] }
+								onChange={ newValue => {
+									props.setAttributes( { submit_type: newValue } );
+								} }
+							/>
+							<ToggleControl
+								label={ __( 'Cache form output' ) }
+								checked={ attributes.cache_form }
+								onChange={ () => {
+									props.setAttributes( { cache_form: ! attributes.cache_form } );
+								} }
+							/>
+							<hr/>
+							<ToggleControl
+								label={ __( 'Divider between rows' ) }
+								checked={ attributes.rows_divider }
+								onChange={ () => {
+									props.setAttributes( { rows_divider: ! attributes.rows_divider } );
+								} }
+							/>
+							<TextControl
+								type="text"
+								label={ __( 'Required mark' ) }
+								value={ attributes.required_mark }
+								onChange={ newValue => {
+									props.setAttributes( { required_mark: newValue } );
+								} }
+							/>
+						</PanelBody>
+					</InspectorControls>
+				),
+				<div { ...useBlockProps() }>
 					<Disabled key={ 'block_render' }>
 						<ServerSideRender
 							block="jet-engine/booking-form"
 							attributes={ attributes }
 						/>
 					</Disabled>
-				];
-			}
+				</div>
+			];
 		},
 		save: props => {
 			return null;

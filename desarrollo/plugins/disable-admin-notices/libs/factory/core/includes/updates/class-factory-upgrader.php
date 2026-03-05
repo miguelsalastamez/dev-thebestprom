@@ -167,7 +167,7 @@ class Upgrader {
 
 		add_action('wp_update_plugins', [$this, 'reset_check_update_timer'], 9); // WP Cron.
 		add_action('deleted_site_transient', [$this, 'reset_check_update_timer']);
-		add_action('setted_site_transient', [$this, 'reset_check_update_timer']);
+		add_action('set_site_transient', [$this, 'reset_check_update_timer']);
 	}
 
 

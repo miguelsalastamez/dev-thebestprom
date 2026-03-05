@@ -20,12 +20,10 @@ if( !defined('ABSPATH') ) {
 /**
  * Class Wbcr_FactoryPages480_ImpressiveThemplate
  *
- * @method string getInfoWidget() - get widget content information
  * @method string getRatingWidget(array $args = []) - get widget content rating
  * @method string getDonateWidget() - get widget content donate
  * @method string getSubscribeWidget()
  * @method string getBusinessSuggetionWidget()
- * @method string getSupportWidget
  */
 class PageBase extends \WBCR\Factory_Templates_134\Impressive {
 
@@ -130,13 +128,11 @@ class PageBase extends \WBCR\Factory_Templates_134\Impressive {
 			$this->styles->add(WCL_PLUGIN_URL . '/admin/assets/css/general.css');
 		}
 
-		if( !($this->plugin->has_premium() && $this->plugin->premium->is_active()) ) {
-			$this->scripts->add(FACTORY_TEMPLATES_134_URL . '/assets/js/clearfy-widgets.js', [
-				'jquery',
-				'wfactory-480-core-general',
-				'wbcr-factory-templates-134-global'
-			], 'wbcr-factory-templates-134-widgets');
-		}
+		$this->scripts->add(FACTORY_TEMPLATES_134_URL . '/assets/js/clearfy-widgets.js', [
+			'jquery',
+			'wfactory-480-core-general',
+			'wbcr-factory-templates-134-global'
+		], 'wbcr-factory-templates-134-widgets');
 
 		// Script for search form on plugin options
 		if( $this->show_search_options_form ) {
@@ -249,16 +245,13 @@ class PageBase extends \WBCR\Factory_Templates_134\Impressive {
 		$widgets = [];
 
 		if( $position == 'bottom' ) {
-			$widgets['info_widget'] = $this->getInfoWidget();
 			$widgets['rating_widget'] = $this->getRatingWidget();
-			$widgets['support_widget'] = $this->getSupportWidget();
 			//$widgets['donate_widget'] = $this->getDonateWidget();
-		} else if( $position == 'right' && !($this->plugin->has_premium() && $this->plugin->premium->is_activate()) ) {
+		} else if( $position == 'right' ) {
 			$widgets['business_suggetion'] = $this->getBusinessSuggetionWidget();
 			if( $this->plugin->getPluginInfoAttr('subscribe_widget') && !$this->plugin->getPopulateOption('factory_clearfy_user_subsribed') ) {
 				$widgets['subscribe'] = $this->getSubscribeWidget();
 			}
-			$widgets['info_widget'] = $this->getInfoWidget();
 			$widgets['rating_widget'] = $this->getRatingWidget();
 		}
 
@@ -290,7 +283,7 @@ class PageBase extends \WBCR\Factory_Templates_134\Impressive {
 	public function showBusinessSuggetionWidget()
 	{
 		$plugin_name = $this->plugin->getPluginName();
-		$upgrade_price = $this->plugin->has_premium() ? $this->plugin->premium->get_price() : 0;
+		$upgrade_price = 0;
 		$purchase_url = $this->plugin->get_support()->get_pricing_url(true, 'right_sidebar_ads');
 
 		$default_features = [
@@ -345,45 +338,6 @@ class PageBase extends \WBCR\Factory_Templates_134\Impressive {
 	}
 
 	/**
-	 * Создает html разметку виджета с информационными маркерами
-	 *
-	 * @author Alexander Kovalev <alex.kovalevv@gmail.com>
-	 * @since  2.0.0
-	 */
-	public function showInfoWidget()
-	{
-		?>
-		<div class="wbcr-factory-sidebar-widget">
-			<ul>
-				<li>
-						<span class="wbcr-factory-hint-icon-simple wbcr-factory-simple-red">
-							<img src="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAkAAAAJCAQAAABKmM6bAAAAUUlEQVQIHU3BsQ1AQABA0X/komIrnQHYwyhqQ1hBo9KZRKL9CBfeAwy2ri42JA4mPQ9rJ6OVt0BisFM3Po7qbEliru7m/FkY+TN64ZVxEzh4ndrMN7+Z+jXCAAAAAElFTkSuQmCC"
-							     alt=""/>
-						</span>
-					- <?php _e('A neutral setting that can not harm your site, but you must be sure that you need to use it.', 'wbcr_factory_templates_134'); ?>
-				</li>
-				<li>
-						<span class="wbcr-factory-hint-icon-simple wbcr-factory-simple-grey">
-							<img src="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAkAAAAJCAQAAABKmM6bAAAAUUlEQVQIHU3BsQ1AQABA0X/komIrnQHYwyhqQ1hBo9KZRKL9CBfeAwy2ri42JA4mPQ9rJ6OVt0BisFM3Po7qbEliru7m/FkY+TN64ZVxEzh4ndrMN7+Z+jXCAAAAAElFTkSuQmCC"
-							     alt=""/>
-						</span>
-					- <?php _e('When set this option, you must be careful. Plugins and themes may depend on this function. You must be sure that you can disable this feature for the site.', 'wbcr_factory_templates_134'); ?>
-				</li>
-				<li>
-						<span class="wbcr-factory-hint-icon-simple wbcr-factory-simple-green">
-							<img src="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAkAAAAJCAQAAABKmM6bAAAAUUlEQVQIHU3BsQ1AQABA0X/komIrnQHYwyhqQ1hBo9KZRKL9CBfeAwy2ri42JA4mPQ9rJ6OVt0BisFM3Po7qbEliru7m/FkY+TN64ZVxEzh4ndrMN7+Z+jXCAAAAAElFTkSuQmCC"
-							     alt=""/>
-						</span>
-					- <?php _e('Absolutely safe setting, We recommend to use.', 'wbcr_factory_templates_134'); ?>
-				</li>
-			</ul>
-			----------<br>
-			<p><?php _e('Hover to the icon to get help for the feature you selected.', 'wbcr_factory_templates_134'); ?></p>
-		</div>
-		<?php
-	}
-
-	/**
 	 * Создает html разметку виджета рейтинга
 	 *
 	 * @param array $args
@@ -404,17 +358,15 @@ class PageBase extends \WBCR\Factory_Templates_134\Impressive {
 
 		?>
 		<div class="wbcr-factory-sidebar-widget">
-			<p>
-				<strong><?php _e('Do you want the plugin to improved and update?', 'wbcr_factory_templates_134'); ?></strong>
-			</p>
-			<p><?php _e('Help the author, leave a review on wordpress.org. Thanks to feedback, I will know that the plugin is really useful to you and is needed.', 'wbcr_factory_templates_134'); ?></p>
-			<p><?php _e('And also write your ideas on how to extend or improve the plugin.', 'wbcr_factory_templates_134'); ?></p>
-			<p>
-				<i class="wbcr-factory-icon-5stars"></i>
-				<a href="<?php echo $page_url; ?>" title="Go rate us" target="_blank">
-					<strong><?php _e('Go rate us and push ideas', 'wbcr_factory_templates_134'); ?></strong>
+			<strong><?php _e( 'Leave a review:', 'wbcr_factory_templates_134' ); ?></strong>
+			<?php _e( 'Liking the plugin? A quick review would mean a lot and helps us make it even better.', 'wbcr_factory_templates_134' ); ?>
+
+			<span>
+				<i class="dashicons dashicons-star-filled"></i>
+				<a class="wbcr-leave-review-link" href="<?php echo $page_url; ?>" title="Go rate us" target="_blank">
+					<?php _e( 'Leave a Review', 'wbcr_factory_templates_134' ); ?>
 				</a>
-			</p>
+			</span>
 		</div>
 		<?php
 	}
@@ -450,48 +402,11 @@ class PageBase extends \WBCR\Factory_Templates_134\Impressive {
 		<?php
 	}
 
-	/**
-	 * Создает html разметку виджета поддержки
-	 *
-	 * @author Alexander Kovalev <alex.kovalevv@gmail.com>
-	 * @since  2.0.8
-	 */
-	public function showSupportWidget()
-	{
-        return;
-		$free_support_url = $this->plugin->get_support()->get_contacts_url();
-		$hot_support_url = $this->plugin->get_support()->get_site_url() . '/other-questions-support';
-
-		?>
-		<div id="wbcr-clr-support-widget" class="wbcr-factory-sidebar-widget">
-			<p><strong><?php _e('Having Issues?', 'wbcr_factory_templates_134'); ?></strong></p>
-			<div class="wbcr-clr-support-widget-body">
-				<p>
-					<?php _e('We provide free support for this plugin. If you are pushed with a problem, just create a new ticket. We will definitely help you!', 'wbcr_factory_templates_134'); ?>
-				</p>
-				<ul>
-					<li><span class="dashicons dashicons-sos"></span>
-						<a href="<?php echo $free_support_url; ?>" target="_blank"
-						   rel="noopener"><?php _e('Get starting free support', 'wbcr_factory_templates_134'); ?></a>
-					</li>
-					<li style="margin-top: 15px;background: #fff4f1;padding: 10px;color: #a58074;">
-						<span class="dashicons dashicons-warning"></span>
-						<?php printf(__('If you find a php error or a vulnerability in plugin, you can <a href="%s" target="_blank" rel="noopener">create ticket</a> in hot support that we responded instantly.', 'wbcr_factory_templates_134'), $hot_support_url); ?>
-					</li>
-				</ul>
-			</div>
-		</div>
-		<?php
-	}
-
     public function showSubscribeWidget()
     {
-        $widget_settings = $this->plugin->getPluginInfoAttr('subscribe_settings');
-        $group_id = isset($widget_settings['group_id']) ? $widget_settings['group_id'] : 0;
-        $terms = "https://themeisle.com/privacy-policy/";
         ?>
         <div id="wbcr-clr-subscribe-widget" class="wbcr-factory-sidebar-widget wbcr-factory-subscribe-widget">
-            <p><strong><?php _e('Subscribe to plugin’s newsletter', 'wbcr_factory_clearfy_246'); ?></strong></p>
+            <p><strong><?php esc_html_e('Stay connected for news & updates!', 'comments-plus'); ?></strong></p>
             <div class="wbcr-clr-subscribe-widget-body">
 
                 <div class="wbcr-factory-subscribe-widget__message-contanier">
@@ -504,14 +419,9 @@ class PageBase extends \WBCR\Factory_Templates_134\Impressive {
                 </div>
 
                 <form id="wbcr-factory-subscribe-widget__subscribe-form" method="post" data-nonce="<?php echo wp_create_nonce('clearfy_subscribe_for_' . $this->plugin->getPluginName()) ?>">
-                    <input id="wbcr-factory-subscribe-widget__email" class="wbcr-factory-subscribe-widget__field" type="email" name="email" placeholder="<?php _e('Enter your email address', 'wbcr_factory_clearfy_246'); ?>" required>
-                    <label class="wbcr-factory-subscribe-widget__checkbox-label">
-                        <input class="wbcr-factory-subscribe-widget__checkbox" type="checkbox" name="agree_terms" required>
-                        <?php echo sprintf(__("I confirm to subscribe to the Themeisle newsletter to receive the latest news. You can find how we use your information on our %s Privacy Policy %s", 'wbcr_factory_clearfy_246'), '<a href="' . $terms . '" target="_blank">', '</a>'); ?>
-                    </label>
-                    <input type="hidden" id="wbcr-factory-subscribe-widget__group-id" value="<?php echo esc_attr($group_id); ?>">
+                    <input id="wbcr-factory-subscribe-widget__email" class="wbcr-factory-subscribe-widget__field" type="email" name="email" placeholder="<?php _e('Your email address', 'comments-plus'); ?>" required>
                     <input type="hidden" id="wbcr-factory-subscribe-widget__plugin-name" value="<?php echo esc_attr($this->plugin->getPluginName()); ?>">
-                    <input type="submit" class="btn wbcr-factory-subscribe-widget__button" value="<?php _e('Subscribe', 'wbcr_factory_clearfy_246'); ?>">
+                    <input type="submit" class="btn wbcr-factory-subscribe-widget__button" value="<?php _e('Sign me up', 'comments-plus'); ?>">
                 </form>
             </div>
         </div>

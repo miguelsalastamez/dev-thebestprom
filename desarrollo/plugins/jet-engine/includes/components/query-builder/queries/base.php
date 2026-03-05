@@ -132,6 +132,15 @@ abstract class Base_Query {
 	 * @return mixed
 	 */
 	public function get_cached_data( $key = null ) {
+		/**
+		 * a substantial amount of code relied
+		 * on $this->setup_query() running each time this method runs;
+		 * therefore, we ensure this method is called even if cache is disabled for this query
+		 */
+		if ( ! $this->cache_query ) {
+			$this->setup_query();
+		}
+		
 		return $this->cache_query ? wp_cache_get( $this->get_query_hash( $key ), $this->cache_group ) : false;
 	}
 

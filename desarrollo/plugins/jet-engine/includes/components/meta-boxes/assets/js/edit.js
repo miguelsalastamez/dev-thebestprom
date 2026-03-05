@@ -188,6 +188,14 @@
 					this.$set( this.generalSettings, 'active_conditions', [] );
 				}
 
+				if ( ! this.generalSettings.position ) {
+					this.$set( this.generalSettings, 'position', 'normal' );
+				}
+
+				if ( ! this.generalSettings.priority ) {
+					this.$set( this.generalSettings, 'priority', 'high' );
+				}
+
 			},
 			newCondition: function( value ) {
 

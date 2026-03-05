@@ -257,10 +257,10 @@ class AIOWPSecurity_Debug {
 			'INSERT' => self::check_mysql_privilege('INSERT'),
 			'UPDATE' => self::check_mysql_privilege('UPDATE'),
 			'SELECT' => self::check_mysql_privilege('SELECT'),
-			'CREATE TABLE' => self::check_mysql_privilege('CREATE TABLE'),
-			'ALTER TABLE' => self::check_mysql_privilege('ALTER TABLE'),
+			'CREATE TABLE' => self::check_mysql_privilege('CREATE'),
+			'ALTER TABLE' => self::check_mysql_privilege('ALTER'),
 			'DROP' => self::check_mysql_privilege('DROP'),
-			'TRUNCATE' => self::check_mysql_privilege('TRUNCATE')
+			'TRUNCATE' => self::check_mysql_privilege('DROP')
 		);
 	
 		return apply_filters('aiowp_security_get_database_info', $database_info);

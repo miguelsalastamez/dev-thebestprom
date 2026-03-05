@@ -8,13 +8,13 @@
  * Author URI: https://woocommerce.com/
  * Text Domain: woocommerce-services
  * Domain Path: /i18n/languages/
- * Version: 3.3.0
+ * Version: 3.5.0
  * Requires Plugins: woocommerce
  * Requires PHP: 7.4
  * Requires at least: 6.7
  * Tested up to: 6.9
- * WC requires at least: 10.2
- * WC tested up to: 10.4
+ * WC requires at least: 10.3
+ * WC tested up to: 10.5
  *
  * Copyright (c) 2017-2023 Automattic
  *
@@ -69,10 +69,8 @@ if ( ! class_exists( 'WC_Connect_Loader' ) ) {
 	define( 'WCSERVICES_PLUGIN_DIST_URL', plugin_dir_url( WCSERVICES_PLUGIN_FILE ) . 'dist/' );
 	define( 'WCSERVICES_ASSETS_URL', WCSERVICES_PLUGIN_URL . 'assets/' );
 	define( 'WCSERVICES_STYLESHEETS_URL', WCSERVICES_ASSETS_URL . 'stylesheets/' );
-	define( 'WCSERVICES_JAVASCRIPT_URL', WCSERVICES_ASSETS_URL . 'javascript/' );
 	define( 'WCSERVICES_ASSETS_DIR', WCSERVICES_PLUGIN_DIR . '/assets/' );
 	define( 'WCSERVICES_STYLESHEETS_DIR', WCSERVICES_ASSETS_DIR . 'stylesheets/' );
-	define( 'WCSERVICES_JAVASCRIPT_DIR', WCSERVICES_ASSETS_URL . 'javascript/' );
 
 	class WC_Connect_Loader {
 
@@ -281,7 +279,8 @@ if ( ! class_exists( 'WC_Connect_Loader' ) ) {
 
 		protected static $wcs_version;
 
-		public const MIGRATION_DISMISSAL_COOKIE_KEY = 'wcst-wcshipping-migration-dismissed';
+		public const MIGRATION_DISMISSAL_COOKIE_KEY        = 'wcst-wcshipping-migration-dismissed';
+		private const SIFT_FETCH_IN_PROGRESS_TRANSIENT_KEY = 'wc_connect_sift_fetch_in_progress';
 
 		public static function plugin_deactivation() {
 			wp_clear_scheduled_hook( 'wc_connect_fetch_service_schemas' );
@@ -942,6 +941,8 @@ if ( ! class_exists( 'WC_Connect_Loader' ) ) {
 			add_filter( 'plugin_action_links_' . plugin_basename( __FILE__ ), array( $this, 'add_plugin_action_links' ) );
 
 			add_action( 'enqueue_wc_connect_script', array( $this, 'enqueue_wc_connect_script' ), 10, 2 );
+
+			add_action( 'wc_connect_fetch_sift_config', array( $this, 'background_fetch_sift_config' ) );
 
 			$tracks = $this->get_tracks();
 			$tracks->init();
@@ -1998,42 +1999,77 @@ if ( ! class_exists( 'WC_Connect_Loader' ) ) {
 		}
 
 		/**
-		 * Adds the Sift JS page tracker if needed. See the comments for the detailed logic.
+		 * Adds the Sift JS page tracker if needed.
 		 *
-		 * @return  void
+		 * @return void
 		 */
 		public function add_sift_js_tracker() {
 			$sift_configurations = $this->api_client->get_sift_configuration();
 
-			$connected_data = WC_Connect_Jetpack::get_connection_owner_wpcom_data();
-
-			if ( is_wp_error( $sift_configurations ) || empty( $sift_configurations->beacon_key ) || empty( $connected_data['ID'] ) ) {
-				// Don't add sift tracking if we can't have the parameters to initialize Sift
+			if ( is_wp_error( $sift_configurations ) ) {
+				$this->schedule_background_sift_fetch();
 				return;
 			}
 
-			$fraud_config = array(
-				'beacon_key' => $sift_configurations->beacon_key,
-				'user_id'    => $connected_data['ID'],
+			$connected_data = WC_Connect_Jetpack::get_connection_owner_wpcom_data();
+
+			if ( empty( $sift_configurations->beacon_key ) || empty( $connected_data['ID'] ) ) {
+				return;
+			}
+
+			wp_register_script(
+				'sift-science',
+				'https://cdn.sift.com/s.js',
+				array(),
+				null,
+				array(
+					'strategy'  => 'defer',
+					'in_footer' => true,
+				)
 			);
 
-			?>
-			<script type="text/javascript">
-				var src = 'https://cdn.sift.com/s.js';
+			$inline_script = sprintf(
+				'var _sift = window._sift = window._sift || [];' .
+				'_sift.push(["_setAccount", %s]);' .
+				'_sift.push(["_setUserId", %s]);' .
+				'_sift.push(["_trackPageview"]);',
+				wp_json_encode( $sift_configurations->beacon_key ),
+				wp_json_encode( $connected_data['ID'] )
+			);
 
-				var _sift = ( window._sift = window._sift || [] );
-				_sift.push( [ '_setAccount', '<?php echo esc_attr( $fraud_config['beacon_key'] ); ?>' ] );
-				_sift.push( [ '_setUserId', '<?php echo esc_attr( $fraud_config['user_id'] ); ?>' ] );
-				_sift.push( [ '_trackPageview' ] );
+			wp_add_inline_script( 'sift-science', $inline_script, 'after' );
 
-				if ( ! document.querySelector( '[src="' + src + '"]' ) ) {
-					var script = document.createElement( 'script' );
-					script.src = src;
-					script.async = true;
-					document.body.appendChild( script );
-				}
-			</script>
-			<?php
+			wp_enqueue_script( 'sift-science' );
+		}
+
+		/**
+		 * Schedule a background fetch for Sift configuration.
+		 *
+		 * @return void
+		 */
+		private function schedule_background_sift_fetch() {
+			if ( get_transient( self::SIFT_FETCH_IN_PROGRESS_TRANSIENT_KEY ) ) {
+				return;
+			}
+
+			set_transient( self::SIFT_FETCH_IN_PROGRESS_TRANSIENT_KEY, true, 5 * MINUTE_IN_SECONDS );
+
+			if ( ! wp_next_scheduled( 'wc_connect_fetch_sift_config' ) ) {
+				wp_schedule_single_event( time() + 1, 'wc_connect_fetch_sift_config' );
+			}
+		}
+
+		/**
+		 * Fetch Sift configuration in the background.
+		 *
+		 * @return void
+		 */
+		public function background_fetch_sift_config() {
+			$config = $this->api_client->get_sift_configuration( true );
+
+			if ( ! is_wp_error( $config ) ) {
+				delete_transient( self::SIFT_FETCH_IN_PROGRESS_TRANSIENT_KEY );
+			}
 		}
 
 		public function enqueue_wc_connect_script( $root_view, $extra_args = array() ) {

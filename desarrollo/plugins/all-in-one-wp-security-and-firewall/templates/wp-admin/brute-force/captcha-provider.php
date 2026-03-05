@@ -28,7 +28,7 @@
 						$output = '';
 						foreach ($supported_captchas as $key => $value) {
 							$output .= "<option value=\"".esc_attr($key)."\" ";
-							if ($key == $default_captcha) $output .= 'selected="selected"';
+							if ($key == $aiowps_default_captcha) $output .= 'selected="selected"';
 							$output .= ">".htmlspecialchars($value) ."</option>\n";
 						}
 						echo $output;
@@ -37,11 +37,11 @@
 				</td>
 			</tr>
 		</table>
-		<div id="aios-cloudflare-turnstile" class="aio_grey_box captcha_settings <?php if ('cloudflare-turnstile' !== $default_captcha) echo 'aio_hidden'; ?>">
+		<div id="aios-cloudflare-turnstile" class="aio_grey_box captcha_settings <?php if ('cloudflare-turnstile' !== $aiowps_default_captcha) echo 'aio_hidden'; ?>">
 			<table class="form-table">
 				<tr valign="top">
 					<th scope="row"><label for="aiowps_turnstile_site_key"><?php _e('Site key', 'all-in-one-wp-security-and-firewall'); ?>:</label></th>
-					<td><input id="aiowps_turnstile_site_key" type="text" size="50" name="aiowps_turnstile_site_key" value="<?php echo esc_attr($aio_wp_security->configs->get_value('aiowps_turnstile_site_key')); ?>" />
+					<td><input id="aiowps_turnstile_site_key" type="text" size="50" name="aiowps_turnstile_site_key" value="<?php echo esc_attr($aiowps_turnstile_site_key); ?>" />
 					</td>
 				</tr>
 				<tr valign="top">
@@ -49,7 +49,7 @@
 						<label for="aiowps_turnstile_secret_key"><?php _e('Secret key', 'all-in-one-wp-security-and-firewall'); ?>:</label>
 					</th>
 					<td>
-						<input id="aiowps_turnstile_secret_key" type="text" size="50" name="aiowps_turnstile_secret_key" value="<?php echo esc_attr(AIOWPSecurity_Utility::mask_string($aio_wp_security->configs->get_value('aiowps_turnstile_secret_key'))); ?>">
+						<input id="aiowps_turnstile_secret_key" type="text" size="50" name="aiowps_turnstile_secret_key" value="<?php echo esc_attr(AIOWPSecurity_Utility::mask_string($aiowps_turnstile_secret_key)); ?>">
 					</td>
 				</tr>
 				<tr valign="top">
@@ -72,11 +72,11 @@
 				</tr>
 			</table>
 		</div>
-		<div id="aios-google-recaptcha-v2" class="aio_grey_box captcha_settings <?php if ('google-recaptcha-v2' !== $default_captcha) echo 'aio_hidden'; ?>">
+		<div id="aios-google-recaptcha-v2" class="aio_grey_box captcha_settings <?php if ('google-recaptcha-v2' !== $aiowps_default_captcha) echo 'aio_hidden'; ?>">
 			<table class="form-table">
 				<tr valign="top">
 					<th scope="row"><label for="aiowps_recaptcha_site_key"><?php _e('Site key', 'all-in-one-wp-security-and-firewall'); ?>:</label></th>
-					<td><input id="aiowps_recaptcha_site_key" type="text" size="50" name="aiowps_recaptcha_site_key" value="<?php echo esc_attr($aio_wp_security->configs->get_value('aiowps_recaptcha_site_key')); ?>" />
+					<td><input id="aiowps_recaptcha_site_key" type="text" size="50" name="aiowps_recaptcha_site_key" value="<?php echo esc_attr($aiowps_recaptcha_site_key); ?>" />
 					</td>
 				</tr>
 				<tr valign="top">
@@ -84,7 +84,7 @@
 						<label for="aiowps_recaptcha_secret_key"><?php _e('Secret key', 'all-in-one-wp-security-and-firewall'); ?>:</label>
 					</th>
 					<td>
-						<input id="aiowps_recaptcha_secret_key" type="text" size="50" name="aiowps_recaptcha_secret_key" value="<?php echo esc_attr(AIOWPSecurity_Utility::mask_string($aio_wp_security->configs->get_value('aiowps_recaptcha_secret_key'))); ?>">
+						<input id="aiowps_recaptcha_secret_key" type="text" size="50" name="aiowps_recaptcha_secret_key" value="<?php echo esc_attr(AIOWPSecurity_Utility::mask_string($aiowps_recaptcha_secret_key)); ?>">
 					</td>
 				</tr>
 			</table>

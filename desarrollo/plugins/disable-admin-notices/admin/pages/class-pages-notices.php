@@ -70,22 +70,79 @@ class WDAN_Notices extends WDN_Page {
 		parent::assets( $scripts, $styles );
 
 		$this->styles->add( WDN_PLUGIN_URL . '/admin/assets/css/settings.css' );
+		$this->scripts->add( WDN_PLUGIN_URL . '/admin/assets/js/settings.js' );
 	}
 
 	public function showPageContent() {
-		?>
-        <div class="wrdan-premium-fake-content">
-            <div class="wdan-premium-info">
-                <h3>Hidden notices PRO</h3>
-                <p>This function allows you to disable annoying menu items in the admin bar. Some plugins take up space
-                    in
-                    the admin bar to insert their ads. Just get rid of this ad with the premium features of our
-                    plugin.</p>
-                <a class="wdan-button wdan-button-default wdan-button-go-pro" target="_blank"
-                   href="https://clearfy.pro/disable-admin-notices/">Go
-                    Pro</a>
+		$notifications_user = get_user_meta( get_current_user_id(), WDN_Plugin::app()->getOptionName( 'hidden_notices' ), true );
+		if ( ! is_array( $notifications_user ) ) {
+			$notifications_user = [];
+		}
+
+		$notifications_all = WDN_Plugin::app()->getPopulateOption( 'hidden_notices', [] );
+
+		if ( count( $notifications_user ) ) {
+			?>
+            <div class="wbcr-factory-page-group-header">
+                <strong><?php echo esc_html__( 'Hidden for you', 'disable-admin-notices' ); ?></strong>
+                <p>
+					<?php echo esc_html__( 'Notices that are hidden only for you', 'disable-admin-notices' ); ?>
+                </p>
             </div>
-        </div>
+            <div class="wdan-hidden-list">
+				<?php $this->notice_list_table( $notifications_user ); ?>
+            </div>
+			<?php
+		}
+		if ( count( $notifications_all ) ) {
+			?>
+            <div class="wbcr-factory-page-group-header">
+                <strong><?php echo esc_html__( 'Hidden for all', 'disable-admin-notices' ); ?></strong>
+                <p>
+					<?php echo esc_html__( 'Notices that are hidden for all users of the site', 'disable-admin-notices' ); ?>
+                </p>
+            </div>
+            <div class="wdan-hidden-list">
+				<?php $this->notice_list_table( $notifications_all ); ?>
+            </div>
+			<?php
+		}
+	}
+
+	/**
+	 * @param $notifications
+	 */
+	public function notice_list_table( $notifications ) {
+		?>
+        <table class="wdan-hidden-list-table">
+            <tbody>
+			<?php
+			foreach ( $notifications as $notice_id => $message ) {
+				$button = '<div class="wdan-hidden-list-notice-action">
+					<a href="#"
+					data-nonce="' . wp_create_nonce( $this->plugin->getPluginName() . '_ajax_restore_notice_nonce' ) . '"
+					data-notice-id="' . esc_attr( $notice_id ) . '" 
+					class="button wdan-page-restore-notice-link">' .
+				          __( 'Restore', 'disable-admin-notices' ) .
+					'</a>
+					<div class="wdan-page-restore-notice-link-loader" style="display: none;">&nbsp;</div>
+					</div>';
+				?>
+                <tr>
+                    <td>
+                        <div class="wdan-hidden-list-notice">
+                            <div class="wdan-notice-p"><?php echo $message; ?></div>
+                        </div>
+                    </td>
+                    <td>
+						<?= $button; ?>
+                    </td>
+                </tr>
+				<?php
+			}
+			?>
+            </tbody>
+        </table>
 		<?php
 	}
 }

@@ -60,6 +60,7 @@ class Jet_Engine_Rest_Edit_Options_Page extends Jet_Engine_Base_API_Endpoint {
 			'position'         => $this->safe_get( $params, 'general_settings', 'position' ),
 			'storage_type'     => $storage_type,
 			'option_prefix'    => $option_prefix,
+			'autoload_option'  => $this->safe_get( $params, 'general_settings', 'autoload_option' ),
 			'hide_field_names' => $this->safe_get( $params, 'general_settings', 'hide_field_names' ),
 			'fields'           => $fields,
 		) );

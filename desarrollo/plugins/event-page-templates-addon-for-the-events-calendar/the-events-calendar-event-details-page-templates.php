@@ -1,23 +1,24 @@
 <?php
 /*
-Plugin Name: Event Single Page Builder For The Event Calendar
+Plugin Name: Event Single Page Builder For The Events Calendar
 Plugin URI: https://eventscalendaraddons.com/plugin/event-single-page-builder-pro/?utm_source=epta_plugin&utm_medium=inside&utm_campaign=get_pro&utm_content=plugin_uri
 Description: <a href="http://wordpress.org/plugins/the-events-calendar/"><b>📅 The Events Calendar Addon</b></a> - Design The Event Calendar plugin event single page template with custom colors and fonts.
-Version: 1.7.13
+Version: 1.8.1
 Author:  Cool Plugins
 Author URI: https://coolplugins.net/?utm_source=epta_plugin&utm_medium=inside&utm_campaign=author_page&utm_content=plugins_list
 License:GPL2
-Text Domain:epta
+Domain Path: /languages
+Text Domain: event-page-templates-addon-for-the-events-calendar
 Requires Plugins: the-events-calendar
 */
 
 namespace EventPageTemplatesAddon;
-
+//phpcs:disable WordPress.Security.NonceVerification.Recommended
 if (!defined('ABSPATH')) {
     exit();
 }
 if (!defined('EPTA_PLUGIN_CURRENT_VERSION')) {
-    define('EPTA_PLUGIN_CURRENT_VERSION', '1.7.13');
+    define('EPTA_PLUGIN_CURRENT_VERSION', '1.8.1');
 }
 define('EPTA_PLUGIN_FILE', __FILE__);
 define('EPTA_PLUGIN_URL', plugin_dir_url(EPTA_PLUGIN_FILE));
@@ -57,8 +58,127 @@ if (!class_exists('EventPageTemplatesAddon')) {
             $this->epta_add_actions();
             add_action('cmb2_admin_init', array($this, 'cmb2_tecsbp_metaboxes'));
             add_action('save_post_epta', array($this, 'save_event_meta_data'), 1, 2);
+            add_action( 'admin_notices', array( $this, 'epta_display_header' ), 1 );
+            add_action('admin_print_scripts', [$this, 'ect_hide_unrelated_notices']);
         }
 
+        public function ect_hide_unrelated_notices(){ 
+			
+			// phpcs:ignore Generic.Metrics.CyclomaticComplexity.MaxExceeded, Generic.Metrics.NestingLevel.MaxExceeded
+            $events_pages = false;
+            // phpcs:ignore WordPress.Security.NonceVerification.Recommended -- Checking page parameter to conditionally hide notices, no data processing
+            if (isset($_GET['page'])) {
+				
+                // phpcs:ignore WordPress.Security.NonceVerification.Recommended -- Checking page parameter to conditionally hide notices, no data processing
+				$page_param = isset($_GET['page']) ? sanitize_key(wp_unslash($_GET['page'])) : '';
+
+				$allowed_pages = array(
+					'cool-plugins-events-addon',
+					'cool-events-registration',
+					'tribe-events-shortcode-template-settings',
+					'tribe_events-events-template-settings',
+					'countdown_for_the_events_calendar',
+					'esas-speaker-sponsor-settings',
+					'esas_speaker',
+					'esas_sponsor',
+					'ewpe',
+					'epta'
+				);
+
+				if (in_array($page_param, $allowed_pages, true)) {
+					$events_pages = true;
+				}
+            }
+            
+            $is_post_type_page = false;
+
+            $current_screen = get_current_screen();
+            
+            if ( $current_screen && ! empty( $current_screen->post_type ) ) {
+            
+                $allowed_post_types = array(
+                    'esas_speaker',
+					'esas_sponsor',
+					'epta',
+					'ewpe'
+                );
+            
+                if ( in_array( $current_screen->post_type, $allowed_post_types, true ) ) {
+                    $is_post_type_page = true;
+                }
+            }
+            if ($events_pages) {
+                global $wp_filter;
+                // Define rules to remove callbacks.
+                $rules = [
+                    'user_admin_notices' => [], // remove all callbacks.
+                    'admin_notices'      => [],
+                    'all_admin_notices'  => [],
+                    'admin_footer'       => [
+                        'render_delayed_admin_notices', // remove this particular callback.
+                    ],
+                ];
+                $notice_types = array_keys($rules);
+                foreach ($notice_types as $notice_type) {
+                    if (empty($wp_filter[$notice_type]) || empty($wp_filter[$notice_type]->callbacks) || ! is_array($wp_filter[$notice_type]->callbacks)) {
+                        continue;
+                    }
+                    $remove_all_filters = empty($rules[$notice_type]);
+                    foreach ($wp_filter[$notice_type]->callbacks as $priority => $hooks) {
+                        foreach ($hooks as $name => $arr) {
+                            if (is_object($arr['function']) && is_callable($arr['function'])) {
+                                if ($remove_all_filters) {
+                                    unset($wp_filter[$notice_type]->callbacks[$priority][$name]);
+                                }
+                                continue;
+                            }
+                            $class = ! empty($arr['function'][0]) && is_object($arr['function'][0]) ? strtolower(get_class($arr['function'][0])) : '';
+                            // Remove all callbacks except WPForms notices.
+                            if ($remove_all_filters && strpos($class, 'wpforms') === false) {
+                                unset($wp_filter[$notice_type]->callbacks[$priority][$name]);
+                                continue;
+                            }
+                            $cb = is_array($arr['function']) ? $arr['function'][1] : $arr['function'];
+                            // Remove a specific callback.
+                            if (! $remove_all_filters) {
+                                if (in_array($cb, $rules[$notice_type], true)) {
+                                    unset($wp_filter[$notice_type]->callbacks[$priority][$name]);
+                                }
+                                continue;
+                            }
+                        }
+                    }
+                }
+            }
+
+            // phpcs:disable WordPress.NamingConventions.PrefixAllGlobals.NonPrefixedHooknameFound, WordPress.NamingConventions.PrefixAllGlobals.NonPrefixedConstantFound
+			if (!$events_pages && !$is_post_type_page) {
+
+				// ✅ GLOBAL LOCK SYSTEM
+				if (!defined('ECT_ADMIN_NOTICE_HOOKED')) {
+
+					define('ECT_ADMIN_NOTICE_HOOKED', true);
+
+					add_action(
+						'admin_notices',
+						array($this, 'ect_dash_admin_notices'),
+						PHP_INT_MAX
+					);
+				}
+			}
+        }
+
+		public function ect_dash_admin_notices() {
+
+			// ✅ Double render protection
+			if (defined('ECT_ADMIN_NOTICE_RENDERED')) {
+				return;
+			}
+
+			define('ECT_ADMIN_NOTICE_RENDERED', true);
+
+			do_action('ect_display_admin_notices');
+		}
 
         /**
          * Initialize cron : MUST USE ON PLUGIN ACTIVATION
@@ -85,7 +205,7 @@ if (!class_exists('EventPageTemplatesAddon')) {
 
             $post_type = get_post_type();
             global $tec_registered_widgets;
-            $tec_registered_widgets = array(
+            $tec_registered_widgets = array(//phpcs:ignore WordPress.NamingConventions.PrefixAllGlobals.NonPrefixedVariableFound
                 'tec_events_elementor_widget_event_categories',
                 'tec_events_elementor_widget_event_calendar_link',
                 'tec_events_elementor_widget_event_cost',
@@ -190,9 +310,9 @@ if (!class_exists('EventPageTemplatesAddon')) {
         {
             $new_columns = array();
             $new_columns['cb'] = '<input type="checkbox" />';
-            $new_columns['title'] = __('Title', 'epta');
-            $new_columns['apply_on'] = __('Applied On', 'epta');
-            $new_columns['date'] = __('Date', 'epta');
+            $new_columns['title'] = __('Title', 'event-page-templates-addon-for-the-events-calendar');
+            $new_columns['apply_on'] = __('Applied On', 'event-page-templates-addon-for-the-events-calendar');
+            $new_columns['date'] = __('Date', 'event-page-templates-addon-for-the-events-calendar');
             return $new_columns;
         }
         public function epta_manage_columns($column, $post_id)
@@ -205,16 +325,16 @@ if (!class_exists('EventPageTemplatesAddon')) {
                 $epta_apply_on = get_post_meta($post_id, 'epta-apply-on', true);
                 if (!empty($epta_apply_on)) {
                     if ($epta_apply_on == 'specific-event') {
-                        $text = __('Specific Event', 'epta');
+                        $text = __('Specific Event', 'event-page-templates-addon-for-the-events-calendar');
                         $value = get_post_meta($post_id, 'epta-specific-event', true);
                     } elseif ($epta_apply_on == 'specific-tag') {
-                        $text = __('Specific Tag', 'epta');
+                        $text = __('Specific Tag', 'event-page-templates-addon-for-the-events-calendar');
                         $value = get_post_meta($post_id, 'epta-tag', true);
                     } elseif ($epta_apply_on == 'specific-cate') {
-                        $text = __('Specific Category', 'epta');
+                        $text = __('Specific Category', 'event-page-templates-addon-for-the-events-calendar');
                         $value = get_post_meta($post_id, 'epta-categoery', true);
                     } elseif ($epta_apply_on == 'all-event') {
-                        $text = __('All Event', 'epta');
+                        $text = __('All Event', 'event-page-templates-addon-for-the-events-calendar');
                     }
                     if (!empty($value)) {
                         $specifc_val = implode(',', $value);
@@ -223,7 +343,7 @@ if (!class_exists('EventPageTemplatesAddon')) {
                     if ($set_value == ':-') {
                         echo 'N/A';
                     } else {
-                        echo $set_value;
+                        echo esc_html($set_value);
                     }
                 } else {
                     echo 'N/A';
@@ -242,7 +362,7 @@ if (!class_exists('EventPageTemplatesAddon')) {
         public function eptaaddMetaLinks($links, $file)
         {
             if (strpos($file, basename(__FILE__))) {
-                $eptaanchor = esc_html__('Video Tutorials', 'epta');
+                $eptaanchor = esc_html__('Video Tutorials', 'event-page-templates-addon-for-the-events-calendar');
                 $eptavideourl = esc_url('https://youtu.be/50FBrcqoB-M?si=6pMuWooiNCv0aLkC');
                 $links[] = '<a href="' . $eptavideourl . '" target="_blank">' . $eptaanchor . '</a>';
             }
@@ -272,8 +392,8 @@ if (!class_exists('EventPageTemplatesAddon')) {
         {
             $epta_settings = esc_url(admin_url('edit.php?post_type=epta'));
             $plugin_visit_website = esc_url('https://eventscalendaraddons.com/plugin/event-single-page-builder-pro/?utm_source=epta_plugin&utm_medium=inside&utm_campaign=get_pro&utm_content=plugins_list');
-            $links[] = '<a  style="font-weight:bold" href="' . $epta_settings . '" target="_self">' . __('Template', 'epta') . '</a>';
-            $links[] = '<a  style="font-weight:bold" href="' . $plugin_visit_website . '" target="_blank">' . __('Get Pro', 'epta') . '</a>';
+            $links[] = '<a  style="font-weight:bold" href="' . $epta_settings . '" target="_self">' . __('Template', 'event-page-templates-addon-for-the-events-calendar') . '</a>';
+            $links[] = '<a  style="font-weight:bold" href="' . $plugin_visit_website . '" target="_blank">' . __('Get Pro', 'event-page-templates-addon-for-the-events-calendar') . '</a>';
             return $links;
 
         }
@@ -299,7 +419,7 @@ if (!class_exists('EventPageTemplatesAddon')) {
 
         public function epta_add_text_domain()
         {
-            load_plugin_textdomain('epta', false, basename(dirname(__FILE__)) . '/languages/');
+            load_plugin_textdomain('epta', false, basename(dirname(__FILE__)) . '/languages/');//phpcs:ignore PluginCheck.CodeAnalysis.DiscouragedFunctions.load_plugin_textdomainFound
 
              if (!get_option( 'epta_initial_save_version' ) ) {
                 add_option( 'epta_initial_save_version', EPTA_PLUGIN_CURRENT_VERSION );
@@ -314,7 +434,7 @@ if (!class_exists('EventPageTemplatesAddon')) {
         {
             // handle the case when the custom post is quick edited
             // otherwise all custom meta fields are cleared out
-            if (isset($_POST['_inline_edit']) && wp_verify_nonce(sanitize_text_field($_POST['_inline_edit']), 'inlineeditnonce')) {
+            if (isset($_POST['_inline_edit']) && wp_verify_nonce(sanitize_text_field(wp_unslash($_POST['_inline_edit'])), 'inlineeditnonce')) {
                 return;
             }
 
@@ -413,39 +533,73 @@ if (!class_exists('EventPageTemplatesAddon')) {
                 wp_clear_scheduled_hook('epta_extra_data_update');
             }
         }
+        /**
+         * Display header on epta post type admin pages
+         */
+        public function epta_display_header() {
+           $current_page = ( isset( $_SERVER['PHP_SELF'] ) && is_string( $_SERVER['PHP_SELF'] ) )? basename( sanitize_file_name( wp_unslash( $_SERVER['PHP_SELF'] ) ) ): '';
+            if ( $current_page === 'plugins.php' ) {
+                return;
+            }
+            global $current_screen;
+            
+            // Check if we're on epta post type pages
+            $is_epta_page = false;
+            
+            if ( $current_screen && isset( $current_screen->post_type ) && $current_screen->post_type === 'epta' ) {
+                $is_epta_page = true;
+            }
+            
+            if ( $is_epta_page ) {
+                // Add CSS to position header at top
+                ?>
+                <div class="ect-dashboard-wrapper">
+                <?php
+                // Include the header
+                $header_file = EPTA_PLUGIN_DIR . 'admin/events-addon-page/includes/dashboard-header.php';
+                if ( file_exists( $header_file ) ) {
+                    $prefix = 'ect';
+                    $show_wrapper = false;
+                    include $header_file;
+                }
+                ?>
+                </div>
+                <?php
+            }
+        }
 
         // Register Custom Post Type
         public function epta_post_type()
         {
             $labels = array(
-                'name' => _x('Event Page Template', 'Post Type General Name', 'tecspb2'),
-                'singular_name' => _x('Event Page Template', 'Post Type Singular Name', 'tecspb2'),
-                'menu_name' => __('Event Page Templates', 'tecspb2'),
-                'name_admin_bar' => __('Event Page Templates', 'tecspb2'),
-                'archives' => __('Item Archives', 'tecspb2'),
-                'attributes' => __('Item Attributes', 'tecspb2'),
-                'parent_item_colon' => __('Parent Item:', 'tecspb2'),
-                'all_items' => __('Event Page Template', 'tecspb2'),
+                'name' => _x('Event Page Template', 'Post Type General Name', 'event-page-templates-addon-for-the-events-calendar'),
+                'singular_name' => _x('Event Page Template', 'Post Type Singular Name', 'event-page-templates-addon-for-the-events-calendar'),
+                'menu_name' => __('Event Page Templates', 'event-page-templates-addon-for-the-events-calendar'),
+                'name_admin_bar' => __('Event Page Templates', 'event-page-templates-addon-for-the-events-calendar'),
+                'archives' => __('Item Archives', 'event-page-templates-addon-for-the-events-calendar'),
+                'attributes' => __('Item Attributes', 'event-page-templates-addon-for-the-events-calendar'),
+                'parent_item_colon' => __('Parent Item:', 'event-page-templates-addon-for-the-events-calendar'),
+                'all_items' => __('Event Page Template', 'event-page-templates-addon-for-the-events-calendar'),
 
-                'update_item' => __('Update Item', 'tecspb2'),
-                'view_item' => __('View Item', 'tecspb2'),
-                'view_items' => __('View Items', 'tecspb2'),
-                'search_items' => __('Search Item', 'tecspb2'),
-                'not_found' => __('Not found', 'tecspb2'),
-                'not_found_in_trash' => __('Not found in Trash', 'tecspb2'),
-                'featured_image' => __('Featured Image', 'tecspb2'),
-                'set_featured_image' => __('Set featured image', 'tecspb2'),
-                'remove_featured_image' => __('Remove featured image', 'tecspb2'),
-                'use_featured_image' => __('Use as featured image', 'tecspb2'),
-                'insert_into_item' => __('Insert into item', 'tecspb2'),
-                'uploaded_to_this_item' => __('Uploaded to this item', 'tecspb2'),
-                'items_list' => __('Items list', 'tecspb2'),
-                'items_list_navigation' => __('Items list navigation', 'tecspb2'),
-                'filter_items_list' => __('Filter items list', 'tecspb2'),
+                'update_item' => __('Update Item', 'event-page-templates-addon-for-the-events-calendar'),
+                'view_item' => __('View Item', 'event-page-templates-addon-for-the-events-calendar'),
+                'view_items' => __('View Items', 'event-page-templates-addon-for-the-events-calendar'),
+                'search_items' => __('Search Item', 'event-page-templates-addon-for-the-events-calendar'),
+                'not_found' => __('Not found', 'event-page-templates-addon-for-the-events-calendar'),
+                'not_found_in_trash' => __('Not found in Trash', 'event-page-templates-addon-for-the-events-calendar'),
+                'featured_image' => __('Featured Image', 'event-page-templates-addon-for-the-events-calendar'),
+                'set_featured_image' => __('Set featured image', 'event-page-templates-addon-for-the-events-calendar'),
+                'remove_featured_image' => __('Remove featured image', 'event-page-templates-addon-for-the-events-calendar'),
+                'use_featured_image' => __('Use as featured image', 'event-page-templates-addon-for-the-events-calendar'),
+                'insert_into_item' => __('Insert into item', 'event-page-templates-addon-for-the-events-calendar'),
+                'uploaded_to_this_item' => __('Uploaded to this item', 'event-page-templates-addon-for-the-events-calendar'),
+                'items_list' => __('Items list', 'event-page-templates-addon-for-the-events-calendar'),
+                'items_list_navigation' => __('Items list navigation', 'event-page-templates-addon-for-the-events-calendar'),
+                'filter_items_list' => __('Filter items list', 'event-page-templates-addon-for-the-events-calendar'),
             );
             $args = array(
-                'label' => __('', 'tecspb2'),
-                'description' => __('Post Type Description', 'tecspb2'),
+                'label' => __('Event Page Template', 'event-page-templates-addon-for-the-events-calendar'),
+                'description' => __('Post Type Description', 'event-page-templates-addon-for-the-events-calendar'),
                 'labels' => $labels,
                 'supports' => array('title'),
                 'taxonomies' => array(''),
@@ -520,8 +674,8 @@ if (!class_exists('EventPageTemplatesAddon')) {
                     return;
                 }
                 $notice = [
-                    'title' => __('Events Addons By Cool Plugins', 'epta'),
-                    'message' => __('Help us make this plugin more compatible with your site by sharing non-sensitive site data.', 'epta'),
+                    'title' => __('Events Addons By Cool Plugins', 'event-page-templates-addon-for-the-events-calendar'),
+                    'message' => __('Help us make this plugin more compatible with your site by sharing non-sensitive site data.', 'event-page-templates-addon-for-the-events-calendar'),
                     'pages' => ['cool-plugins-events-addon'],
                     'always_show_on' => ['cool-plugins-events-addon'], // This enables auto-show
                     'plugin_name'=>'epta',
@@ -529,12 +683,11 @@ if (!class_exists('EventPageTemplatesAddon')) {
                 ];
 
                 \CPFM_Feedback_Notice::cpfm_register_notice('cool_events', $notice);
-
                     if (!isset($GLOBALS['cool_plugins_feedback'])) {
-                        $GLOBALS['cool_plugins_feedback'] = [];
+                        $GLOBALS['cool_plugins_feedback'] = [];//phpcs:ignore WordPress.NamingConventions.PrefixAllGlobals.NonPrefixedVariableFound
                     }
                 
-                    $GLOBALS['cool_plugins_feedback']['cool_events'][] = $notice;
+                    $GLOBALS['cool_plugins_feedback']['cool_events'][] = $notice;//phpcs:ignore WordPress.NamingConventions.PrefixAllGlobals.NonPrefixedVariableFound
            
             });
             add_action('cpfm_after_opt_in_epta', function($category) {
@@ -562,7 +715,7 @@ if (!class_exists('EventPageTemplatesAddon')) {
             } elseif (isset($_REQUEST['post_type'])) {
                 return sanitize_key($_REQUEST['post_type']);
             } elseif (isset($_REQUEST['post'])) {
-                return get_post_type(sanitize_text_field($_REQUEST['post']));
+                return get_post_type(sanitize_text_field(wp_unslash($_REQUEST['post'])));
             }
             return null;
         }
@@ -600,21 +753,21 @@ if (!class_exists('EventPageTemplatesAddon')) {
          */
         public function epta_tc_css()
         {
-            wp_enqueue_style('tecset-sg-icon', plugins_url('/assets/css/epta-admin.css', __FILE__));
-            wp_enqueue_script('tecset-select-temp', plugins_url('/assets/js/epta-template-preview.js', __FILE__), array(), false, true);
+            wp_enqueue_style('tecset-sg-icon', plugins_url('/assets/css/epta-admin.css', __FILE__), array(), EPTA_PLUGIN_CURRENT_VERSION);
+            wp_enqueue_script('tecset-select-temp', plugins_url('/assets/js/epta-template-preview.js', __FILE__), array(), EPTA_PLUGIN_CURRENT_VERSION, true);
         }
         /**
          * register assets
          */
         public function epta_register_assets()
         {
-            wp_register_style('epta-frontend-css', EPTA_PLUGIN_URL . 'assets/css/epta-style.css', null, null, 'all');
-            wp_register_style('epta-template2-css', EPTA_PLUGIN_URL . 'assets/css/epta-template2-style.css', null, null, 'all');
-            wp_register_style('epta-bootstrap-css', EPTA_PLUGIN_URL . 'assets/css/epta-bootstrap.css', null, null, 'all');
+            wp_register_style('epta-frontend-css', EPTA_PLUGIN_URL . 'assets/css/epta-style.css', null, EPTA_PLUGIN_CURRENT_VERSION, 'all');
+            wp_register_style('epta-template2-css', EPTA_PLUGIN_URL . 'assets/css/epta-template2-style.css', null, EPTA_PLUGIN_CURRENT_VERSION, 'all');
+            wp_register_style('epta-bootstrap-css', EPTA_PLUGIN_URL . 'assets/css/epta-bootstrap.css', null, EPTA_PLUGIN_CURRENT_VERSION, 'all');
             $add_customcss = $this->epta_custom_css();
             wp_add_inline_style('epta-frontend-css', $add_customcss);
             wp_add_inline_style('epta-template2-css', $add_customcss);
-            wp_register_script('epta-events-countdown-widget', EPTA_PLUGIN_URL . 'assets/js/epta-widget-countdown.js', array('jquery'), '', true);
+            wp_register_script('epta-events-countdown-widget', EPTA_PLUGIN_URL . 'assets/js/epta-widget-countdown.js', array('jquery'), EPTA_PLUGIN_CURRENT_VERSION, true);
         }
         /**
          * Dynamic style

@@ -141,6 +141,16 @@
 					v-model="updateOptions"
 				></cx-vui-select>
 				<cx-vui-switcher
+					label="<?php _e( 'Automatically load options', 'jet-engine' ); ?>"
+					description="<?php echo sprintf(
+						'%1$s<br>%2$s',
+						esc_html__( 'Loads these options on every page. Disable to improve performance.', 'jet-engine' ),
+						esc_html__( 'Please note: if you change this setting after options have already been created, you need to resave them for the new behavior to apply.', 'jet-engine' )
+					); ?>"
+					:wrapper-css="[ 'equalwidth' ]"
+					v-model="generalSettings.autoload_option"
+				></cx-vui-switcher>
+				<cx-vui-switcher
 					label="<?php _e( 'Hide field names', 'jet-engine' ); ?>"
 					description="<?php _e( 'Hide field names on option page', 'jet-engine' ); ?>"
 					:wrapper-css="[ 'equalwidth' ]"

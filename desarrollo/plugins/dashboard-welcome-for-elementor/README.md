@@ -32,6 +32,19 @@ https://youtu.be/2wG1Jb0B7T4
 
 ### Changelog ###
 
+#### 1.0.9 - February 23, 2026 ####
+*	Enhancement: Improved plugin codebase to make the code more secure
+*	Fix: Fixed an issue with load_plugin_textdomain
+
+#### 1.0.8 - March 7, 2024 ####
+*	Security update
+
+#### 1.0.7 - December 14, 2022 ####
+* 	Security update
+
+#### 1.0.6 - February 9, 2022 ####
+* 	Fixed compatibility issues with WordPress 5.9
+
 #### 1.0.5 - April 20, 2020 ####
 * 	Tested compatibility with latest versions of WP and Elementor
 *	Added logic for usage analytics

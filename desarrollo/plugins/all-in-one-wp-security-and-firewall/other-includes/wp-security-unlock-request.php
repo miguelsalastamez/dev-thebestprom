@@ -21,40 +21,50 @@ $login_header_title = __('Powered by WordPress', 'all-in-one-wp-security-and-fir
 	
 <?php
 if (isset($_POST['aiowps_unlock_request'])) {
+	if (!(isset($_POST['_wpnonce']) && wp_verify_nonce(sanitize_text_field(wp_unslash($_POST['_wpnonce'])), 'aios-unlock-nonce'))) {
+		$aio_wp_security->debug_logger->log_debug("Nonce check failed for unlock.", 4);
+		die("Nonce check failed for unlock.");
+	}
+	
 	//This catches the $_POST from the "Request Unlock" button on the main WP login page
-	isset($_POST['aiowps-unlock-string-info']) ? ($unlock_encoded_info = strip_tags(trim($_POST['aiowps-unlock-string-info']))) : ($unlock_encoded_info = '');
+	$unlock_encoded_info = isset($_POST['aiowps-unlock-string-info']) ? sanitize_text_field(wp_unslash($_POST['aiowps-unlock-string-info'])) : '';
 	$unlock_secret_string = $aio_wp_security->configs->get_value('aiowps_unlock_request_secret_key');
-	$unlock_temp_string = isset($_POST['aiowps-unlock-temp-string']) ? strip_tags($_POST['aiowps-unlock-temp-string']) : '';
+	$unlock_temp_string = isset($_POST['aiowps-unlock-temp-string']) ? sanitize_text_field(wp_unslash($_POST['aiowps-unlock-temp-string'])) : '';
 	$submitted_encoded_string = base64_encode($unlock_temp_string.$unlock_secret_string);
 	if ($submitted_encoded_string !== $unlock_encoded_info) {
 		//Someone somehow landed on this page directly without clicking the unlock button on login form
-		echo '<div id="login_error">'.__('ERROR: Unable to process your request!', 'all-in-one-wp-security-and-firewall').'</div>';
+		echo '<div id="login_error">'.esc_html__('ERROR: Unable to process your request!', 'all-in-one-wp-security-and-firewall').'</div>';
 		die();
 	} elseif ($display_form) {
-		echo display_unlock_form();
+		echo display_unlock_form(); // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- pcp check ingore this
 	}
 } //End if block
 
 if (isset($_POST['aiowps_wp_submit_unlock_request'])) {
+	if (!(isset($_POST['_wpnonce']) && wp_verify_nonce(sanitize_text_field(wp_unslash($_POST['_wpnonce'])), 'aios-unlock-request-nonce'))) {
+		$aio_wp_security->debug_logger->log_debug("Nonce check failed for unlock request.", 4);
+		die("Nonce check failed for unlock request.");
+	}
+	
 	//This catches the $_POST when someone submits the form from our special unlock request page where visitor enters email address
 	$errors = '';
 
-	$email = trim($_POST['aiowps_unlock_request_email']);
+	$email = isset($_POST['aiowps_unlock_request_email']) ? sanitize_email(wp_unslash($_POST['aiowps_unlock_request_email'])) : '';
 	if (empty($email) || !is_email($email)) {
-		$errors .= '<p>'.__('Please enter a valid email address', 'all-in-one-wp-security-and-firewall').'</p>';
+		$errors .= __('Please enter a valid email address', 'all-in-one-wp-security-and-firewall');
 	}
 	
 	if ($errors) {
 		$display_form = true;
-		echo '<div id="login_error">'.$errors.'</div>';
+		echo '<div id="login_error"><p>'.esc_html($errors).'</p></div>';
 		$sanitized_email = sanitize_email($email);
-		echo display_unlock_form($sanitized_email);
+		echo display_unlock_form($sanitized_email); // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- pcp check ingore this
 	} else {
 		$locked_user = get_user_by('email', $email);
 		if (!$locked_user) {
 			//user with this email does not exist in the system
-			$errors .= '<p>'.__('User account not found!', 'all-in-one-wp-security-and-firewall').'</p>';
-			echo '<div id="login_error">'.$errors.'</div>';
+			$errors = __('User account not found.', 'all-in-one-wp-security-and-firewall');
+			echo '<div id="login_error"><p>'.esc_html($errors).'</p></div>';
 		} else {
 			//Process unlock request
 			//Generate a special code and unlock url
@@ -67,12 +77,12 @@ if (isset($_POST['aiowps_wp_submit_unlock_request'])) {
 
 			if (!$unlock_url) {
 				//No entry found in lockout table with this IP range
-				$error_msg = '<p>'.__('Error: No locked entry was found in the database with your IP address range.', 'all-in-one-wp-security-and-firewall').'</p>';
-				echo '<div id="login_error">'.$error_msg.'</div>';
+				$error_msg = __('Error: No locked entry was found in the database with your IP address range.', 'all-in-one-wp-security-and-firewall');
+				echo '<div id="login_error"><p>'.esc_html($error_msg).'</p></div>';
 			} else {
 				//Send an email to the user
 				AIOWPSecurity_User_Login::send_unlock_request_email($email, $unlock_url);
-				echo '<p class="message">' . __('An email has been sent to you with the unlock instructions.', 'all-in-one-wp-security-and-firewall') . '</p>';
+				echo '<p class="message">' . esc_html__('An email has been sent to you with the unlock instructions.', 'all-in-one-wp-security-and-firewall') . '</p>';
 			}
 		}
 		$display_form = false;
@@ -88,20 +98,21 @@ if (isset($_POST['aiowps_wp_submit_unlock_request'])) {
 function display_unlock_form($email = '') {
 	ob_start();
 	// Display the unlock request form
-	$unlock_form_msg
-		= '<p>' . __('You are here because you have been locked out due to too many incorrect login attempts.', 'all-in-one-wp-security-and-firewall') . '</p>'
-		. '<p>' . __('Please enter your email address and you will receive an email with instructions on how to unlock yourself.', 'all-in-one-wp-security-and-firewall') . '</p>';
 ?>
-<div class="message"><?php echo $unlock_form_msg; ?></div>
-<form name="loginform" id="loginform" action="<?php echo wp_login_url(); ?>" method="post">
+<div class="message">
+	<p><?php esc_html_e('You are here because you have been locked out due to too many incorrect login attempts.', 'all-in-one-wp-security-and-firewall');?></p>
+	<p><?php esc_html_e('Please enter your email address and you will receive an email with instructions on how to unlock yourself.', 'all-in-one-wp-security-and-firewall');?></p>
+</div>
+<form name="loginform" id="loginform" action="<?php echo esc_url(wp_login_url()); ?>" method="post">
+	<?php wp_nonce_field('aios-unlock-request-nonce'); ?>
 	<?php
-	if (isset($_POST['aiowps-woo-login'])) {
+	if (isset($_POST['aiowps-woo-login'])) { // phpcs:ignore WordPress.Security.NonceVerification.Missing -- pcp check ingore this
 		echo '<input type="hidden" name="aiowps-woo-login" id="aiowps-woo-login" value="1" />';
 	}
 	?>
 	<p>
-		<label for="aiowps_unlock_request_email"><?php _e('Email Address', 'all-in-one-wp-security-and-firewall'); ?><br>
-		<input type="text" name="aiowps_unlock_request_email" id="aiowps_unlock_request_email" class="input" value="<?php echo $email; ?>" size="20"></label>
+		<label for="aiowps_unlock_request_email"><?php esc_html_e('Email Address', 'all-in-one-wp-security-and-firewall'); ?><br>
+		<input type="text" name="aiowps_unlock_request_email" id="aiowps_unlock_request_email" class="input" value="<?php echo esc_attr($email); ?>" size="20"></label>
 	</p>
 		<p class="submit">
 			<input type="submit" name="aiowps_wp_submit_unlock_request" id="aiowps_wp_submit_unlock_request" class="button button-primary button-large" value="<?php esc_attr_e('Send unlock request', 'all-in-one-wp-security-and-firewall'); ?>">

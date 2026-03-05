@@ -1,0 +1,4 @@
+[07-Jun-2022 09:51:54 UTC] PHP Fatal error:  Uncaught Error: Class 'WP_HTTP_Response' not found in /home/customer/www/thebestprom.com/public_html/wp-includes/rest-api/class-wp-rest-response.php:17
+Stack trace:
+#0 {main}
+  thrown in /home/customer/www/thebestprom.com/public_html/wp-includes/rest-api/class-wp-rest-response.php on line 17

@@ -347,6 +347,7 @@ class Base {
 				'deleteItem'    => esc_html__( 'Delete Item', 'jet-engine' ),
 				'confirmText'   => esc_html__( 'Are you sure?', 'jet-engine' ),
 				'confirmDelete' => esc_html__( 'Are you sure? This item will be removed from your website.', 'jet-engine' ),
+				'removeInvalid' => esc_html__( 'Remove invalid records', 'jet-engine' ),
 			),
 		);
 

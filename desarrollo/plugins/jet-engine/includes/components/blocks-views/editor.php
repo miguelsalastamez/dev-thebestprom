@@ -27,7 +27,7 @@ if ( ! class_exists( 'Jet_Engine_Blocks_Views_Editor' ) ) {
 				return;
 			}
 
-			add_action( 'enqueue_block_editor_assets', array( $this, 'blocks_assets' ), -1 );
+			add_action( 'enqueue_block_assets', array( $this, 'blocks_assets' ), -1 );
 
 			require_once jet_engine()->plugin_path( 'includes/components/blocks-views/editor-meta-boxes.php' );
 			new Jet_Engine_Blocks_Views_Editor_Meta_Boxes();
@@ -293,7 +293,15 @@ if ( ! class_exists( 'Jet_Engine_Blocks_Views_Editor' ) ) {
 			wp_enqueue_script(
 				'jet-engine-blocks-views',
 				jet_engine()->plugin_url( 'assets/js/admin/blocks-views/blocks.js' ),
-				array( 'wp-components', 'wp-element', 'wp-blocks', 'wp-block-editor', 'lodash' ),
+				array(
+					'wp-plugins',
+					'wp-components',
+					'wp-element',
+					'wp-blocks',
+					'wp-block-editor',
+					'lodash',
+					'wp-edit-post',
+				),
 				jet_engine()->get_version(),
 				true
 			);

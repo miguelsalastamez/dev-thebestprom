@@ -344,13 +344,14 @@ if ( ! class_exists( 'Jet_Engine_Options_Pages' ) ) {
 		public function get_admin_page_config( $config = array() ) {
 
 			$default_settings = array(
-				'name'       => '',
-				'slug'       => '',
-				'menu_name'  => '',
-				'parent'     => '',
-				'icon'       => 'dashicons-admin-generic',
-				'capability' => 'manage_options',
-				'position'   => '',
+				'name'            => '',
+				'slug'            => '',
+				'menu_name'       => '',
+				'parent'          => '',
+				'icon'            => 'dashicons-admin-generic',
+				'capability'      => 'manage_options',
+				'position'        => '',
+				'autoload_option' => true,
 			);
 
 			$default = array(

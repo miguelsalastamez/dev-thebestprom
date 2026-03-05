@@ -320,6 +320,10 @@ class WC_Product_Query extends \Jet_Engine\Query_Builder\Queries\Base_Query {
 				$this->final_query['page'] = $value;
 				break;
 
+			case '_items_per_page':
+				$this->final_query['limit'] = $value;
+				break;
+
 			case 'post__in':
 
 				if ( ! empty( $this->final_query['include'] ) ) {

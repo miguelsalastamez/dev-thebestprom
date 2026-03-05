@@ -1,0 +1,60 @@
+[30-Jul-2020 21:55:48 CST6CDT] PHP Fatal error:  Uncaught Error: Class 'WP_Customize_Control' not found in /home/customer/www/thebestprom.com/public_html/wp-includes/customize/class-wp-customize-theme-control.php:17
+Stack trace:
+#0 {main}
+  thrown in /home/customer/www/thebestprom.com/public_html/wp-includes/customize/class-wp-customize-theme-control.php on line 17
+[31-Jul-2020 05:59:39 CST6CDT] PHP Fatal error:  Uncaught Error: Class 'WP_Customize_Control' not found in /home/customer/www/thebestprom.com/public_html/wp-includes/customize/class-wp-widget-form-customize-control.php:17
+Stack trace:
+#0 {main}
+  thrown in /home/customer/www/thebestprom.com/public_html/wp-includes/customize/class-wp-widget-form-customize-control.php on line 17
+[07-Jun-2022 08:15:18 UTC] PHP Fatal error:  Uncaught Error: Class 'WP_Customize_Control' not found in /home/customer/www/thebestprom.com/public_html/wp-includes/customize/class-wp-customize-nav-menu-locations-control.php:17
+Stack trace:
+#0 {main}
+  thrown in /home/customer/www/thebestprom.com/public_html/wp-includes/customize/class-wp-customize-nav-menu-locations-control.php on line 17
+[07-Jun-2022 08:59:19 UTC] PHP Fatal error:  Uncaught Error: Call to undefined function _deprecated_file() in /home/customer/www/thebestprom.com/public_html/wp-includes/customize/class-wp-customize-new-menu-control.php:11
+Stack trace:
+#0 {main}
+  thrown in /home/customer/www/thebestprom.com/public_html/wp-includes/customize/class-wp-customize-new-menu-control.php on line 11
+[07-Jun-2022 09:45:34 UTC] PHP Fatal error:  Uncaught Error: Class 'WP_Customize_Setting' not found in /home/customer/www/thebestprom.com/public_html/wp-includes/customize/class-wp-customize-nav-menu-setting.php:21
+Stack trace:
+#0 {main}
+  thrown in /home/customer/www/thebestprom.com/public_html/wp-includes/customize/class-wp-customize-nav-menu-setting.php on line 21
+[07-Jun-2022 10:03:36 UTC] PHP Fatal error:  Uncaught Error: Class 'WP_Customize_Control' not found in /home/customer/www/thebestprom.com/public_html/wp-includes/customize/class-wp-customize-theme-control.php:17
+Stack trace:
+#0 {main}
+  thrown in /home/customer/www/thebestprom.com/public_html/wp-includes/customize/class-wp-customize-theme-control.php on line 17
+[07-Jun-2022 10:04:58 UTC] PHP Fatal error:  Uncaught Error: Class 'WP_Customize_Control' not found in /home/customer/www/thebestprom.com/public_html/wp-includes/customize/class-wp-customize-nav-menu-location-control.php:19
+Stack trace:
+#0 {main}
+  thrown in /home/customer/www/thebestprom.com/public_html/wp-includes/customize/class-wp-customize-nav-menu-location-control.php on line 19
+[07-Jun-2022 11:15:30 UTC] PHP Fatal error:  Uncaught Error: Class 'WP_Customize_Control' not found in /home/customer/www/thebestprom.com/public_html/wp-includes/customize/class-wp-customize-background-position-control.php:17
+Stack trace:
+#0 {main}
+  thrown in /home/customer/www/thebestprom.com/public_html/wp-includes/customize/class-wp-customize-background-position-control.php on line 17
+[07-Jun-2022 11:42:30 UTC] PHP Fatal error:  Uncaught Error: Class 'WP_Customize_Control' not found in /home/customer/www/thebestprom.com/public_html/wp-includes/customize/class-wp-customize-nav-menu-auto-add-control.php:17
+Stack trace:
+#0 {main}
+  thrown in /home/customer/www/thebestprom.com/public_html/wp-includes/customize/class-wp-customize-nav-menu-auto-add-control.php on line 17
+[07-Jun-2022 12:05:45 UTC] PHP Fatal error:  Uncaught Error: Class 'WP_Customize_Media_Control' not found in /home/customer/www/thebestprom.com/public_html/wp-includes/customize/class-wp-customize-upload-control.php:17
+Stack trace:
+#0 {main}
+  thrown in /home/customer/www/thebestprom.com/public_html/wp-includes/customize/class-wp-customize-upload-control.php on line 17
+[07-Jun-2022 13:47:53 UTC] PHP Fatal error:  Uncaught Error: Class 'WP_Customize_Control' not found in /home/customer/www/thebestprom.com/public_html/wp-includes/customize/class-wp-widget-form-customize-control.php:17
+Stack trace:
+#0 {main}
+  thrown in /home/customer/www/thebestprom.com/public_html/wp-includes/customize/class-wp-widget-form-customize-control.php on line 17
+[07-Jun-2022 14:21:14 UTC] PHP Fatal error:  Uncaught Error: Class 'WP_Customize_Setting' not found in /home/customer/www/thebestprom.com/public_html/wp-includes/customize/class-wp-customize-nav-menu-item-setting.php:20
+Stack trace:
+#0 {main}
+  thrown in /home/customer/www/thebestprom.com/public_html/wp-includes/customize/class-wp-customize-nav-menu-item-setting.php on line 20
+[01-Jul-2022 09:27:50 UTC] PHP Fatal error:  Uncaught Error: Class 'WP_Customize_Control' not found in /home/customer/www/thebestprom.com/public_html/wp-includes/customize/class-wp-customize-color-control.php:17
+Stack trace:
+#0 {main}
+  thrown in /home/customer/www/thebestprom.com/public_html/wp-includes/customize/class-wp-customize-color-control.php on line 17
+[01-Jul-2022 11:16:29 UTC] PHP Fatal error:  Uncaught Error: Class 'WP_Customize_Panel' not found in /home/customer/www/thebestprom.com/public_html/wp-includes/customize/class-wp-customize-themes-panel.php:17
+Stack trace:
+#0 {main}
+  thrown in /home/customer/www/thebestprom.com/public_html/wp-includes/customize/class-wp-customize-themes-panel.php on line 17
+[01-Jul-2022 11:43:57 UTC] PHP Fatal error:  Uncaught Error: Class 'WP_Customize_Control' not found in /home/customer/www/thebestprom.com/public_html/wp-includes/customize/class-wp-customize-nav-menu-item-control.php:17
+Stack trace:
+#0 {main}
+  thrown in /home/customer/www/thebestprom.com/public_html/wp-includes/customize/class-wp-customize-nav-menu-item-control.php on line 17

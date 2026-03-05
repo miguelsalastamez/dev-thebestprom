@@ -47,6 +47,7 @@ abstract class Base {
 		register_block_type(
 			$this->namespace . $this->get_name(),
 			array(
+				'apiVersion'      => 3,
 				'attributes'      => $attributes,
 				'render_callback' => [ $this, 'render_callback' ],
 				'script'          => $this->get_script_depends(),

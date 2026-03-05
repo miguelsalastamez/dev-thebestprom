@@ -1,0 +1,8 @@
+[07-Jun-2022 13:31:11 UTC] PHP Fatal error:  Uncaught Error: Class 'ParagonIE_Sodium_Core_Curve25519_Fe' not found in /home/customer/www/thebestprom.com/public_html/wp-includes/sodium_compat/namespaced/Core/Curve25519/Fe.php:4
+Stack trace:
+#0 {main}
+  thrown in /home/customer/www/thebestprom.com/public_html/wp-includes/sodium_compat/namespaced/Core/Curve25519/Fe.php on line 4
+[01-Jul-2022 12:47:20 UTC] PHP Fatal error:  Uncaught Error: Class 'ParagonIE_Sodium_Core_Curve25519_H' not found in /home/customer/www/thebestprom.com/public_html/wp-includes/sodium_compat/namespaced/Core/Curve25519/H.php:4
+Stack trace:
+#0 {main}
+  thrown in /home/customer/www/thebestprom.com/public_html/wp-includes/sodium_compat/namespaced/Core/Curve25519/H.php on line 4

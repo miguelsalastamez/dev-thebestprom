@@ -6,7 +6,8 @@ import { getCallbackArgs } from "utils/utility.js";
 import { isIdUnique } from "common/functions";
 
 import {
-	clone
+	clone,
+	getCustomControlsSection,
 } from '../../utils/utility';
 
 const { __ } = wp.i18n;
@@ -18,6 +19,7 @@ const {
 	InspectorControls,
 	MediaUpload,
 	ColorPaletteControl,
+	useBlockProps,
 } = wp.blockEditor;
 
 const {
@@ -65,477 +67,646 @@ if ( -1 !== window.JetEngineListingData.activeModules.indexOf( 'maps-listings' )
 	</>;
 
 	registerBlockType( 'jet-engine/maps-listing', {
+		apiVersion: '3',
 		title: __( 'Map Listing' ),
 		icon: GIcon,
 		category: 'jet-engine',
 		attributes: blockAttributes,
 		className: 'jet-map-listing',
-		edit: class extends wp.element.Component {
+		edit: ( props ) => {
+			const blockProps = useBlockProps();
 
-			constructor( props ) {
+			if ( ! props.attributes._block_id || ! isIdUnique( props ) ) {
+				props.setAttributes( { _block_id: props.clientId } );
+			}
+		
+			const attributes          = props.attributes;
+			const listingOptions      = window.JetEngineListingData.listingOptions;
+			const hideOptions         = window.JetEngineListingData.hideOptions;
+			const metaFields          = window.JetEngineListingData.metaFields;
+			const filterCallbacks     = window.JetEngineListingData.filterCallbacks;
+			const markerTypes         = window.JetEngineListingData.mapsListingConfig.markerTypes;
+			const markerLabelTypes    = window.JetEngineListingData.mapsListingConfig.markerLabelTypes;
+			const filterCallbacksArgs = window.JetEngineListingData.filterCallbacksArgs;
 
-				if ( ! props.attributes._block_id || ! isIdUnique( props ) ) {
-					props.setAttributes( { _block_id: props.clientId } );
+			let taxonomies = [];
+
+			if ( window.JetEngineListingData.taxonomies.length ) {
+				for ( var i = 0; i < window.JetEngineListingData.taxonomies.length; i++ ) {
+					for ( var j = 0; j < window.JetEngineListingData.taxonomies[i].values.length; j++ ) {
+						taxonomies.push( window.JetEngineListingData.taxonomies[i].values[j] );
+					}
 				}
-
-				super( props );
 			}
 
-			getCustomControlsSection( section ) {
+			const metaTypes = [
+				{
+					value: 'CHAR',
+					label: 'CHAR'
+				},
+				{
+					value: 'NUMERIC',
+					label: 'NUMERIC'
+				},
+				{
+					value: 'BINARY',
+					label: 'BINARY'
+				},
+				{
+					value: 'DATE',
+					label: 'DATE'
+				},
+				{
+					value: 'DATETIME',
+					label: 'DATETIME'
+				},
+				{
+					value: 'DECIMAL',
+					label: 'DECIMAL'
+				},
+				{
+					value: 'SIGNED',
+					label: 'SIGNED'
+				},
+				{
+					value: 'UNSIGNED',
+					label: 'UNSIGNED'
+				}
+			];
 
-				const providerControls = window.JetEngineListingData.mapsListingConfig.providerControls;
-				const props            = this.props;
-				const attributes       = props.attributes;
+			const updateItem = function( item, key, value, prop ) {
 
-				if ( ! providerControls || ! providerControls[ section ] ) {
+				prop = prop || 'posts_query';
+
+				const query = clone( props.attributes[ prop ] );
+				const index = getItemIndex( item );
+				const currentItem = query[ getItemIndex( item, prop ) ];
+
+				if ( ! currentItem ) {
 					return;
 				}
 
-				return providerControls[ section ].map( ( data ) => {
-
-					const control = data.control;
-
-					control.name = data.key;
-
-					return <CustomControl
-						control={ control }
-						value={ attributes[ control.name ] }
-						onChange={ newValue => {
-							props.setAttributes( { [ control.name ]: newValue } );
-						} }
-					/>
-				} );
-
-			}
-
-			render() {
-
-				const props               = this.props;
-				const attributes          = props.attributes;
-				const listingOptions      = window.JetEngineListingData.listingOptions;
-				const hideOptions         = window.JetEngineListingData.hideOptions;
-				const metaFields          = window.JetEngineListingData.metaFields;
-				const filterCallbacks     = window.JetEngineListingData.filterCallbacks;
-				const markerTypes         = window.JetEngineListingData.mapsListingConfig.markerTypes;
-				const markerLabelTypes    = window.JetEngineListingData.mapsListingConfig.markerLabelTypes;
-				const filterCallbacksArgs = window.JetEngineListingData.filterCallbacksArgs;
-
-				let taxonomies = [];
-
-				if ( window.JetEngineListingData.taxonomies.length ) {
-					for ( var i = 0; i < window.JetEngineListingData.taxonomies.length; i++ ) {
-						for ( var j = 0; j < window.JetEngineListingData.taxonomies[i].values.length; j++ ) {
-							taxonomies.push( window.JetEngineListingData.taxonomies[i].values[j] );
-						}
+				if ( 'object' === typeof key ) {
+					for ( var _key in key ) {
+						currentItem[_key] = key[_key];
 					}
+				} else {
+					currentItem[ key ] = value;
 				}
 
-				const metaTypes = [
-					{
-						value: 'CHAR',
-						label: 'CHAR'
-					},
-					{
-						value: 'NUMERIC',
-						label: 'NUMERIC'
-					},
-					{
-						value: 'BINARY',
-						label: 'BINARY'
-					},
-					{
-						value: 'DATE',
-						label: 'DATE'
-					},
-					{
-						value: 'DATETIME',
-						label: 'DATETIME'
-					},
-					{
-						value: 'DECIMAL',
-						label: 'DECIMAL'
-					},
-					{
-						value: 'SIGNED',
-						label: 'SIGNED'
-					},
-					{
-						value: 'UNSIGNED',
-						label: 'UNSIGNED'
-					}
-				];
+				query[ index ] = currentItem;
 
-				const updateItem = function( item, key, value, prop ) {
+				props.setAttributes( { [ prop ]: query } );
 
-					prop = prop || 'posts_query';
+			};
 
-					const query = clone( props.attributes[ prop ] );
-					const index = getItemIndex( item );
-					const currentItem = query[ getItemIndex( item, prop ) ];
+			const getItemIndex = function( item, prop ) {
 
-					if ( ! currentItem ) {
-						return;
-					}
+				prop = prop || 'posts_query';
 
-					if ( 'object' === typeof key ) {
-						for ( var _key in key ) {
-							currentItem[_key] = key[_key];
-						}
-					} else {
-						currentItem[ key ] = value;
-					}
+				return props.attributes[ prop ].findIndex( queryItem => {
+					return queryItem == item;
+				} );
+			};
 
-					query[ index ] = currentItem;
-
-					props.setAttributes( { [ prop ]: query } );
-
-				};
-
-				const getItemIndex = function( item, prop ) {
-
-					prop = prop || 'posts_query';
-
-					return props.attributes[ prop ].findIndex( queryItem => {
-						return queryItem == item;
-					} );
-				};
-
-				return [
-					props.isSelected && (
-						<InspectorControls
-							key={ 'inspector' }
+			return [
+				props.isSelected && (
+					<InspectorControls
+						key={ 'inspector' }
+					>
+						<PanelBody title={ __( 'General' ) }>
+							<SelectControl
+								label={ __( 'Listing' ) }
+								value={ attributes.lisitng_id }
+								options={ listingOptions }
+								onChange={ newValue => {
+									props.setAttributes( { lisitng_id: newValue } );
+								} }
+							/>
+							<TextControl
+								type="text"
+								label={ __( 'Address Meta Field' ) }
+								help={ __( 'Set meta field key to get address from (for human-readable addresses). To get address from multiple meta fields, combine these fields names with "+" sign. For example: state+city+street' ) }
+								value={ attributes.address_field }
+								onChange={ newValue => {
+									props.setAttributes( { address_field: newValue } );
+								} }
+							/>
+							<ToggleControl
+								label={ __( 'Use Lat Lng Address Meta Field' ) }
+								help={ __( 'Check this if you want to get item address for the map by latitude and longitude stored directly in the meta field' ) }
+								checked={ attributes.add_lat_lng }
+								onChange={ () => {
+									props.setAttributes( { add_lat_lng: ! attributes.add_lat_lng } );
+								} }
+							/>
+							{ attributes.add_lat_lng && <TextControl
+								type="text"
+								label={ __( 'Lat Lng Address Meta Field' ) }
+								help={ __( 'Set meta field key to get latitude and longitude from. To get address from latitude and longitude meta fields, combine these fields names with "+" sign. For example: _lat+_lng. Latitude field always should be first' ) }
+								value={ attributes.lat_lng_address_field }
+								onChange={ newValue => {
+									props.setAttributes( { lat_lng_address_field: newValue } );
+								} }
+							/> }
+							<TextControl
+								type="number"
+								label={ __( 'Map Height' ) }
+								value={ attributes.map_height }
+								min={ `100` }
+								max={ `1000` }
+								onChange={ newValue => {
+									props.setAttributes( { map_height: Number(newValue) } );
+								} }
+							/>
+							<TextControl
+								type="number"
+								label={ __( 'Posts number' ) }
+								value={ attributes.posts_num }
+								min={ `1` }
+								max={ `1000` }
+								onChange={ newValue => {
+									props.setAttributes( { posts_num: Number(newValue) } );
+								} }
+							/>
+							<ToggleControl
+								label={ __( 'Automatically detect map center' ) }
+								checked={ attributes.auto_center }
+								onChange={ () => {
+									props.setAttributes( { auto_center: ! attributes.auto_center } );
+								} }
+							/>
+							{ ! attributes.auto_center && <TextareaControl
+								type="text"
+								label={ __( 'Map Center' ) }
+								value={ attributes.custom_center }
+								onChange={ newValue => {
+									props.setAttributes( { custom_center: newValue } );
+								} }
+							/> }
+							{ ! attributes.auto_center && <TextControl
+								type="number"
+								label={ __( 'Custom Zoom' ) }
+								value={ attributes.custom_zoom }
+								min={ `1` }
+								max={ `20` }
+								onChange={ newValue => {
+									props.setAttributes( { custom_zoom: Number(newValue) } );
+								} }
+							/> }
+							<TextControl
+								type="number"
+								label={ __( 'Max Zoom' ) }
+								value={ attributes.max_zoom }
+								min={ `1` }
+								max={ `20` }
+								onChange={ newValue => {
+									props.setAttributes( { max_zoom: Number(newValue) } );
+								} }
+							/>
+							<TextControl
+								type="number"
+								label={ __( 'Min Zoom' ) }
+								value={ attributes.min_zoom }
+								min={ `1` }
+								max={ `10` }
+								onChange={ newValue => {
+									props.setAttributes( { min_zoom: Number(newValue) } );
+								} }
+							/>
+							{ getCustomControlsSection( 'section_general', props ) }
+							<hr/>
+							<ToggleControl
+								label={ __( 'Centering Map when click on marker' ) }
+								checked={ attributes.centering_on_open }
+								onChange={ () => {
+									props.setAttributes( { centering_on_open: ! attributes.centering_on_open } );
+								} }
+							/>
+							{ attributes.centering_on_open && <TextControl
+								type="number"
+								label={ __( 'Zoom Map' ) }
+								value={ attributes.zoom_on_open }
+								min={ `1` }
+								max={ `20` }
+								onChange={ newValue => {
+									props.setAttributes( { zoom_on_open: Number(newValue) } );
+								} }
+							/> }
+						</PanelBody>
+						{ window.JetEngineListingData.legacy.is_disabled && <PanelBody
+							title={ __( 'Custom Query' ) }
+							initialOpen={ false }
 						>
-							<PanelBody title={ __( 'General' ) }>
-								<SelectControl
-									label={ __( 'Listing' ) }
-									value={ attributes.lisitng_id }
-									options={ listingOptions }
-									onChange={ newValue => {
-										props.setAttributes( { lisitng_id: newValue } );
+							<ToggleControl
+								label={ __( 'Use Custom Query' ) }
+								checked={ attributes.custom_query }
+								onChange={ () => {
+									props.setAttributes({ custom_query: ! attributes.custom_query });
+								} }
+							/>
+							{ attributes.custom_query && <SelectControl
+								multiple={false}
+								label={ __( 'Custom Query' ) }
+								value={ attributes.custom_query_id }
+								options={ window.JetEngineListingData.queriesList }
+								onChange={ newValue => {
+									props.setAttributes( { custom_query_id: newValue } );
+								}}
+							/> }
+						</PanelBody> }
+						<PanelBody
+							title={ __( 'Marker' ) }
+							initialOpen={ false }
+						>
+							<SelectControl
+								label={ __( 'Marker Type' ) }
+								value={ attributes.marker_type }
+								options={ markerTypes }
+								onChange={ newValue => {
+									props.setAttributes( { marker_type: newValue } );
+								} }
+							/>
+							{ 'icon' === attributes.marker_type &&
+							<div className="jet-media-control components-base-control">
+								<div className="components-base-control__label">{ __( 'Image/Icon' ) }</div>
+								{ attributes.marker_icon_url && <img src={ attributes.marker_icon_url } width="100%" height="auto"/> }
+								<MediaUpload
+									onSelect={ media => {
+										props.setAttributes( {
+											marker_icon:     media.id,
+											marker_icon_url: media.url,
+										} );
 									} }
+									type="image"
+									value={ attributes.marker_icon }
+									render={ ( { open } ) => (
+										<Button
+											isSecondary
+											icon="edit"
+											onClick={ open }
+										>{ __( 'Select Image/Icon' ) }</Button>
+									) }
 								/>
-								<TextControl
-									type="text"
-									label={ __( 'Address Meta Field' ) }
-									help={ __( 'Set meta field key to get address from (for human-readable addresses). To get address from multiple meta fields, combine these fields names with "+" sign. For example: state+city+street' ) }
-									value={ attributes.address_field }
-									onChange={ newValue => {
-										props.setAttributes( { address_field: newValue } );
+								{ attributes.marker_icon_url &&
+								<Button
+									onClick={ () => {
+										props.setAttributes( {
+											marker_icon: 0,
+											marker_icon_url: '',
+										} )
 									} }
-								/>
-								<ToggleControl
-									label={ __( 'Use Lat Lng Address Meta Field' ) }
-									help={ __( 'Check this if you want to get item address for the map by latitude and longitude stored directly in the meta field' ) }
-									checked={ attributes.add_lat_lng }
-									onChange={ () => {
-										props.setAttributes( { add_lat_lng: ! attributes.add_lat_lng } );
-									} }
-								/>
-								{ attributes.add_lat_lng && <TextControl
-									type="text"
-									label={ __( 'Lat Lng Address Meta Field' ) }
-									help={ __( 'Set meta field key to get latitude and longitude from. To get address from latitude and longitude meta fields, combine these fields names with "+" sign. For example: _lat+_lng. Latitude field always should be first' ) }
-									value={ attributes.lat_lng_address_field }
-									onChange={ newValue => {
-										props.setAttributes( { lat_lng_address_field: newValue } );
-									} }
-								/> }
-								<TextControl
-									type="number"
-									label={ __( 'Map Height' ) }
-									value={ attributes.map_height }
-									min={ `100` }
-									max={ `1000` }
-									onChange={ newValue => {
-										props.setAttributes( { map_height: Number(newValue) } );
-									} }
-								/>
-								<TextControl
-									type="number"
-									label={ __( 'Posts number' ) }
-									value={ attributes.posts_num }
-									min={ `1` }
-									max={ `1000` }
-									onChange={ newValue => {
-										props.setAttributes( { posts_num: Number(newValue) } );
-									} }
-								/>
-								<ToggleControl
-									label={ __( 'Automatically detect map center' ) }
-									checked={ attributes.auto_center }
-									onChange={ () => {
-										props.setAttributes( { auto_center: ! attributes.auto_center } );
-									} }
-								/>
-								{ ! attributes.auto_center && <TextareaControl
-									type="text"
-									label={ __( 'Map Center' ) }
-									value={ attributes.custom_center }
-									onChange={ newValue => {
-										props.setAttributes( { custom_center: newValue } );
-									} }
-								/> }
-								{ ! attributes.auto_center && <TextControl
-									type="number"
-									label={ __( 'Custom Zoom' ) }
-									value={ attributes.custom_zoom }
-									min={ `1` }
-									max={ `20` }
-									onChange={ newValue => {
-										props.setAttributes( { custom_zoom: Number(newValue) } );
-									} }
-								/> }
-								<TextControl
-									type="number"
-									label={ __( 'Max Zoom' ) }
-									value={ attributes.max_zoom }
-									min={ `1` }
-									max={ `20` }
-									onChange={ newValue => {
-										props.setAttributes( { max_zoom: Number(newValue) } );
-									} }
-								/>
-								<TextControl
-									type="number"
-									label={ __( 'Min Zoom' ) }
-									value={ attributes.min_zoom }
-									min={ `1` }
-									max={ `10` }
-									onChange={ newValue => {
-										props.setAttributes( { min_zoom: Number(newValue) } );
-									} }
-								/>
-								{ this.getCustomControlsSection( 'section_general' ) }
-								<hr/>
-								<ToggleControl
-									label={ __( 'Centering Map when click on marker' ) }
-									checked={ attributes.centering_on_open }
-									onChange={ () => {
-										props.setAttributes( { centering_on_open: ! attributes.centering_on_open } );
-									} }
-								/>
-								{ attributes.centering_on_open && <TextControl
-									type="number"
-									label={ __( 'Zoom Map' ) }
-									value={ attributes.zoom_on_open }
-									min={ `1` }
-									max={ `20` }
-									onChange={ newValue => {
-										props.setAttributes( { zoom_on_open: Number(newValue) } );
-									} }
-								/> }
-							</PanelBody>
-							{ window.JetEngineListingData.legacy.is_disabled && <PanelBody
-								title={ __( 'Custom Query' ) }
-								initialOpen={ false }
-							>
-								<ToggleControl
-									label={ __( 'Use Custom Query' ) }
-									checked={ attributes.custom_query }
-									onChange={ () => {
-										props.setAttributes({ custom_query: ! attributes.custom_query });
-									} }
-								/>
-								{ attributes.custom_query && <SelectControl
-									multiple={false}
-									label={ __( 'Custom Query' ) }
-									value={ attributes.custom_query_id }
-									options={ window.JetEngineListingData.queriesList }
-									onChange={ newValue => {
-										props.setAttributes( { custom_query_id: newValue } );
-									}}
-								/> }
-							</PanelBody> }
-							<PanelBody
-								title={ __( 'Marker' ) }
-								initialOpen={ false }
-							>
-								<SelectControl
-									label={ __( 'Marker Type' ) }
-									value={ attributes.marker_type }
-									options={ markerTypes }
-									onChange={ newValue => {
-										props.setAttributes( { marker_type: newValue } );
-									} }
-								/>
-								{ 'icon' === attributes.marker_type &&
-								<div className="jet-media-control components-base-control">
-									<div className="components-base-control__label">{ __( 'Image/Icon' ) }</div>
-									{ attributes.marker_icon_url && <img src={ attributes.marker_icon_url } width="100%" height="auto"/> }
-									<MediaUpload
-										onSelect={ media => {
-											props.setAttributes( {
-												marker_icon:     media.id,
-												marker_icon_url: media.url,
-											} );
-										} }
-										type="image"
-										value={ attributes.marker_icon }
-										render={ ( { open } ) => (
-											<Button
-												isSecondary
-												icon="edit"
-												onClick={ open }
-											>{ __( 'Select Image/Icon' ) }</Button>
-										) }
-									/>
-									{ attributes.marker_icon_url &&
-									<Button
-										onClick={ () => {
-											props.setAttributes( {
-												marker_icon: 0,
-												marker_icon_url: '',
-											} )
-										} }
-										isLink
-										isDestructive
-									>
-										{ __( 'Remove Image/Icon' ) }
-									</Button>
-									}
-								</div>
+									isLink
+									isDestructive
+								>
+									{ __( 'Remove Image/Icon' ) }
+								</Button>
 								}
-								{ 'dynamic_image' === attributes.marker_type && <GroupedSelectControl
-									label={ __( 'Meta Field' ) }
-									value={ attributes.marker_image_field }
-									options={ metaFields }
-									onChange={ newValue => {
-										props.setAttributes( { marker_image_field: newValue } );
-									} }
-								/> }
-								{ 'dynamic_image' === attributes.marker_type && <TextControl
+							</div>
+							}
+							{ 'dynamic_image' === attributes.marker_type && <GroupedSelectControl
+								label={ __( 'Meta Field' ) }
+								value={ attributes.marker_image_field }
+								options={ metaFields }
+								onChange={ newValue => {
+									props.setAttributes( { marker_image_field: newValue } );
+								} }
+							/> }
+							{ 'dynamic_image' === attributes.marker_type && <TextControl
+								type="text"
+								label={ __( 'Or enter meta field key' ) }
+								help={ __( 'Note: this field will override Meta Field value' ) }
+								value={ attributes.marker_image_field_custom }
+								onChange={ newValue => {
+									props.setAttributes( { marker_image_field_custom: newValue } );
+								} }
+							/> }
+							{ 'text' === attributes.marker_type && <SelectControl
+								label={ __( 'Marker Label' ) }
+								value={ attributes.marker_label_type }
+								options={ markerLabelTypes }
+								onChange={ newValue => {
+									props.setAttributes( { marker_label_type: newValue } );
+								} }
+							/> }
+							{ 'text' === attributes.marker_type && 'meta_field' === attributes.marker_label_type && <GroupedSelectControl
+								label={ __( 'Meta Field' ) }
+								value={ attributes.marker_label_field }
+								options={ metaFields }
+								onChange={ newValue => {
+									props.setAttributes( { marker_label_field: newValue } );
+								} }
+							/> }
+							{ 'text' === attributes.marker_type && 'meta_field' === attributes.marker_label_type && <TextControl
+								type="text"
+								label={ __( 'Or enter meta field key' ) }
+								help={ __( 'Note: this field will override Meta Field value' ) }
+								value={ attributes.marker_label_field_custom }
+								onChange={ newValue => {
+									props.setAttributes( { marker_label_field_custom: newValue } );
+								} }
+							/> }
+							{ 'text' === attributes.marker_type && 'static_text' === attributes.marker_label_type && <TextControl
+								type="text"
+								label={ __( 'Marker Label' ) }
+								value={ attributes.marker_label_text }
+								onChange={ newValue => {
+									props.setAttributes( { marker_label_text: newValue } );
+								} }
+							/> }
+							<SelectControl
+								label={ __( 'Image Size' ) }
+								value={ attributes.marker_image_size }
+								help={ __( 'Applies to the main marker if it is of image type, and to conditional image markers.' ) }
+								options={ JetEngineListingData.imageSizes || [] }
+								onChange={ newValue => {
+									props.setAttributes( { marker_image_size: newValue } );
+								} }
+							/>
+							{ window.jetSmBlockControl && <SelectControl
+								label={ __( 'Icon color source' ) }
+								value={ attributes.marker_icon_color_apply_to }
+								help={ __( 'Set to \'Original SVG colors\' if you have an icon that should not have its colors overridden by JetStyleManager' ) }
+								options={
+									[
+										{
+											'value': 'keep_jsm',
+											'label': __( 'JetStyleManager', 'jet-engine' ),
+										},
+										{
+											'value': 'keep',
+											'label': __( 'Original SVG colors', 'jet-engine' ),
+										},
+									]
+								}
+								onChange={ newValue => {
+									props.setAttributes( { marker_icon_color_apply_to: newValue } );
+								} }
+							/> }
+							{ -1 !== window.JetEngineListingData.activeModules.indexOf( 'custom-content-types' ) &&
+								( ( 'text' === attributes.marker_type && 'cct_field' === attributes.marker_label_type ) || 'dynamic_image_cct' === attributes.marker_type )  &&
+								<TextControl
 									type="text"
-									label={ __( 'Or enter meta field key' ) }
-									help={ __( 'Note: this field will override Meta Field value' ) }
-									value={ attributes.marker_image_field_custom }
+									label={ __( 'Field' ) }
+									value={ attributes.marker_cct_field }
 									onChange={ newValue => {
-										props.setAttributes( { marker_image_field_custom: newValue } );
-									} }
-								/> }
-								{ 'text' === attributes.marker_type && <SelectControl
-									label={ __( 'Marker Label' ) }
-									value={ attributes.marker_label_type }
-									options={ markerLabelTypes }
-									onChange={ newValue => {
-										props.setAttributes( { marker_label_type: newValue } );
-									} }
-								/> }
-								{ 'text' === attributes.marker_type && 'meta_field' === attributes.marker_label_type && <GroupedSelectControl
-									label={ __( 'Meta Field' ) }
-									value={ attributes.marker_label_field }
-									options={ metaFields }
-									onChange={ newValue => {
-										props.setAttributes( { marker_label_field: newValue } );
-									} }
-								/> }
-								{ 'text' === attributes.marker_type && 'meta_field' === attributes.marker_label_type && <TextControl
-									type="text"
-									label={ __( 'Or enter meta field key' ) }
-									help={ __( 'Note: this field will override Meta Field value' ) }
-									value={ attributes.marker_label_field_custom }
-									onChange={ newValue => {
-										props.setAttributes( { marker_label_field_custom: newValue } );
-									} }
-								/> }
-								{ 'text' === attributes.marker_type && 'static_text' === attributes.marker_label_type && <TextControl
-									type="text"
-									label={ __( 'Marker Label' ) }
-									value={ attributes.marker_label_text }
-									onChange={ newValue => {
-										props.setAttributes( { marker_label_text: newValue } );
-									} }
-								/> }
-								<SelectControl
-									label={ __( 'Image Size' ) }
-									value={ attributes.marker_image_size }
-									help={ __( 'Applies to the main marker if it is of image type, and to conditional image markers.' ) }
-									options={ JetEngineListingData.imageSizes || [] }
-									onChange={ newValue => {
-										props.setAttributes( { marker_image_size: newValue } );
+										props.setAttributes( { marker_cct_field: newValue } );
 									} }
 								/>
-								{ window.jetSmBlockControl && <SelectControl
-									label={ __( 'Icon color source' ) }
-									value={ attributes.marker_icon_color_apply_to }
-									help={ __( 'Set to \'Original SVG colors\' if you have an icon that should not have its colors overridden by JetStyleManager' ) }
-									options={
-										[
-											{
-												'value': 'keep_jsm',
-												'label': __( 'JetStyleManager', 'jet-engine' ),
-											},
-											{
-												'value': 'keep',
-												'label': __( 'Original SVG colors', 'jet-engine' ),
-											},
-										]
-									}
+							}
+							{ 'text' === attributes.marker_type && <SelectControl
+								label={ __( 'Callback' ) }
+								value={ attributes.marker_label_format_cb }
+								options={ filterCallbacks }
+								onChange={ newValue => {
+									props.setAttributes( { marker_label_format_cb: newValue } );
+								} }
+							/> }
+
+							{ 'text' === attributes.marker_type && getCallbackArgs( attributes.marker_label_format_cb ).map( ( control ) => {
+								return <CustomControl
+									control={ control }
+									value={ attributes[control.name] }
 									onChange={ newValue => {
-										props.setAttributes( { marker_icon_color_apply_to: newValue } );
+										props.setAttributes( { [control.name]: newValue } );
 									} }
-								/> }
-								{ -1 !== window.JetEngineListingData.activeModules.indexOf( 'custom-content-types' ) &&
-									( ( 'text' === attributes.marker_type && 'cct_field' === attributes.marker_label_type ) || 'dynamic_image_cct' === attributes.marker_type )  &&
+								/>
+							} ) }
+
+							{ 'text' === attributes.marker_type && <ToggleControl
+								label={ __( 'Customize output' ) }
+								checked={ attributes.marker_label_custom }
+								onChange={ () => {
+									props.setAttributes( { marker_label_custom: ! attributes.marker_label_custom } );
+								} }
+							/> }
+							{ 'text' === attributes.marker_type && attributes.marker_label_custom && <TextareaControl
+								type="text"
+								label={ __( 'Label format' ) }
+								help={ __( '%s will be replaced with field value' ) }
+								value={ attributes.marker_label_custom_output }
+								onChange={ newValue => {
+									props.setAttributes( { marker_label_custom_output: newValue } );
+								} }
+							/> }
+							<ToggleControl
+								label={ __( 'Use different markers by conditions' ) }
+								help={ __( 'Previously set marker will be used as default if conditions not met' ) }
+								checked={ attributes.multiple_marker_types }
+								onChange={ () => {
+									props.setAttributes( { multiple_marker_types: ! attributes.multiple_marker_types } );
+								} }
+							/>
+							{ attributes.multiple_marker_types &&
+							<JetEngineRepeater
+								data={ attributes.multiple_markers }
+								default={ {
+									apply_type: 'meta_field',
+								} }
+								onChange={ newData => {
+									props.setAttributes( { multiple_markers: newData } );
+								} }
+							>
+								{
+									( item ) =>
+										<div>
+											<div className="jet-media-control components-base-control">
+												<div className="components-base-control__label">{ __( 'Image/Icon' ) }</div>
+												{ item.marker_icon_url && <img src={ item.marker_icon_url } width="100%" height="auto"/> }
+												<MediaUpload
+													onSelect={ media => {
+														updateItem( item, {
+															marker_icon: media.id,
+															marker_icon_url: media.url,
+														}, null, 'multiple_markers' );
+													} }
+													type="image"
+													value={ item.marker_icon }
+													render={ ( { open } ) => (
+														<Button
+															isSecondary
+															icon="edit"
+															onClick={ open }
+														>{ __( 'Select Image/Icon' ) }</Button>
+													) }
+												/>
+												{ item.marker_icon_url &&
+												<Button
+													onClick={ () => {
+														updateItem( item, {
+															marker_icon: 0,
+															marker_icon_url:'',
+														}, null, 'multiple_markers' );
+													} }
+													isLink
+													isDestructive
+												>
+													{ __( 'Remove Image/Icon' ) }
+												</Button>
+												}
+											</div>
+											<SelectControl
+												label={ __( 'Apply Icon Color to' ) }
+												value={ item.marker_icon_color_apply_to }
+
+												options={ [
+													{
+														value: 'apply-fill',
+														label: __( 'Fill' ),
+													},
+													{
+														value: 'apply-stroke_unset-fill',
+														label: __( 'Stroke' ),
+													},
+													{
+														value: 'apply-fill_apply-stroke',
+														label: __( 'Both' ),
+													},
+													{
+														value: 'keep',
+														label: __( 'Keep SVG colors' ),
+													},
+												] }
+												onChange={ newValue => {
+													updateItem( item, 'marker_icon_color_apply_to', newValue, 'multiple_markers' )
+												} }
+											/>
+											{ item.marker_icon_color_apply_to !== 'keep' && <ColorPaletteControl
+												label={ __( 'Icon Color' ) }
+												colors={ paletteColors }
+												value={ item.marker_icon_color }
+												onChange={ newValue => {
+													updateItem( item, 'marker_icon_color', newValue, 'multiple_markers' )
+												} }
+											/> }
+											<TextControl
+												type="text"
+												label={ __( 'Dynamic Icon Color' ) }
+												help={ dynamicColorHelp }
+												value={ item.marker_icon_color_dynamic }
+												onChange={ newValue => {
+													updateItem( item, 'marker_icon_color_dynamic', newValue, 'multiple_markers' )
+												} }
+											/>
+											<SelectControl
+												label={ __( 'Apply this marker if' ) }
+												value={ item.apply_type }
+												options={ [
+													{
+														value: 'meta_field',
+														label: __( 'Meta field is equal to value' ),
+													},
+													{
+														value: 'post_term',
+														label: __( 'Post has term' ),
+													},
+													{
+														value: 'has_dynamic_color',
+														label: __( 'Dynamic color not empty' ),
+													},
+												] }
+												onChange={ newValue => {
+													updateItem( item, 'apply_type', newValue, 'multiple_markers' )
+												} }
+											/>
+											{ 'meta_field' === item.apply_type && <GroupedSelectControl
+												label={ __( 'Meta Field' ) }
+												value={ item.field_name }
+												options={ metaFields }
+												onChange={ newValue => {
+													updateItem( item, 'field_name', newValue, 'multiple_markers' )
+												} }
+											/> }
+											{ 'meta_field' === item.apply_type && <TextControl
+												type="text"
+												label={ __( 'Or enter meta field key' ) }
+												help={ __( 'Note: this field will override Meta Field value' ) }
+												value={ item.field_name_custom }
+												onChange={ newValue => {
+													updateItem( item, 'field_name_custom', newValue, 'multiple_markers' )
+												} }
+											/> }
+											{ 'meta_field' === item.apply_type && <TextControl
+												type="text"
+												label={ __( 'Field value' ) }
+												help={ __( 'You may use shortcodes/macros here.' ) }
+												value={ item.field_value }
+												onChange={ newValue => {
+													updateItem( item, 'field_value', newValue, 'multiple_markers' )
+												} }
+											/> }
+											{ 'post_term' === item.apply_type && <TextControl
+												type="text"
+												label={ __( 'Taxonomy slug' ) }
+												help={ __( 'You can find this slug in the address bar of taxonomy edit page' ) }
+												value={ item.tax_name }
+												onChange={ newValue => {
+													updateItem( item, 'tax_name', newValue, 'multiple_markers' )
+												} }
+											/> }
+											{ 'post_term' === item.apply_type && <TextControl
+												type="text"
+												label={ __( 'Term name, slug or ID' ) }
+												value={ item.term_name }
+												onChange={ newValue => {
+													updateItem( item, 'term_name', newValue, 'multiple_markers' )
+												} }
+											/> }
+										</div>
+								}
+							</JetEngineRepeater> }
+
+							<hr/>
+							<ToggleControl
+								label={ __( 'Marker Clustering' ) }
+								checked={ attributes.marker_clustering }
+								onChange={ () => {
+									props.setAttributes( { marker_clustering: ! attributes.marker_clustering } );
+								} }
+							/>
+							{ attributes.marker_clustering &&
+								<div>
 									<TextControl
-										type="text"
-										label={ __( 'Field' ) }
-										value={ attributes.marker_cct_field }
+										type="number"
+										label={ __( 'Cluster Max Zoom' ) }
+										help={ __( 'Maximum zoom level that a marker can be part of a cluster' ) }
+										value={ attributes.cluster_max_zoom }
+										min={ `1` }
+										max={ `20` }
 										onChange={ newValue => {
-											props.setAttributes( { marker_cct_field: newValue } );
+											props.setAttributes( { cluster_max_zoom: Number(newValue) } );
 										} }
 									/>
-								}
-								{ 'text' === attributes.marker_type && <SelectControl
-									label={ __( 'Callback' ) }
-									value={ attributes.marker_label_format_cb }
-									options={ filterCallbacks }
-									onChange={ newValue => {
-										props.setAttributes( { marker_label_format_cb: newValue } );
-									} }
-								/> }
-
-								{ 'text' === attributes.marker_type && getCallbackArgs( attributes.marker_label_format_cb ).map( ( control ) => {
-									return <CustomControl
-										control={ control }
-										value={ attributes[control.name] }
+									<TextControl
+										type="number"
+										label={ __( 'Cluster Radius' ) }
+										help={ __( 'Radius of each cluster when clustering markers in px' ) }
+										value={ attributes.cluster_radius }
+										min={ `10` }
 										onChange={ newValue => {
-											props.setAttributes( { [control.name]: newValue } );
+											props.setAttributes( { cluster_radius: Number(newValue) } );
 										} }
 									/>
-								} ) }
-
-								{ 'text' === attributes.marker_type && <ToggleControl
-									label={ __( 'Customize output' ) }
-									checked={ attributes.marker_label_custom }
-									onChange={ () => {
-										props.setAttributes( { marker_label_custom: ! attributes.marker_label_custom } );
-									} }
-								/> }
-								{ 'text' === attributes.marker_type && attributes.marker_label_custom && <TextareaControl
-									type="text"
-									label={ __( 'Label format' ) }
-									help={ __( '%s will be replaced with field value' ) }
-									value={ attributes.marker_label_custom_output }
-									onChange={ newValue => {
-										props.setAttributes( { marker_label_custom_output: newValue } );
-									} }
-								/> }
+								</div>
+							}
+							{ ( JetEngineListingData?.mapsListingConfig?.providerId === 'google' ||
+								JetEngineListingData?.mapsListingConfig?.providerId === 'leaflet' ) &&
+								<div>
 								<ToggleControl
-									label={ __( 'Use different markers by conditions' ) }
-									help={ __( 'Previously set marker will be used as default if conditions not met' ) }
-									checked={ attributes.multiple_marker_types }
+									label={ __( 'Set Custom Marker Images' ) }
+									checked={ attributes.is_custom_marker_cluster_images }
 									onChange={ () => {
-										props.setAttributes( { multiple_marker_types: ! attributes.multiple_marker_types } );
+										props.setAttributes( { is_custom_marker_cluster_images: ! attributes.is_custom_marker_cluster_images } );
 									} }
 								/>
-								{ attributes.multiple_marker_types &&
+								</div> }
+							{ ( JetEngineListingData?.mapsListingConfig?.providerId === 'google' ||
+								JetEngineListingData?.mapsListingConfig?.providerId === 'leaflet' ) && attributes.is_custom_marker_cluster_images &&
 								<JetEngineRepeater
-									data={ attributes.multiple_markers }
-									default={ {
-										apply_type: 'meta_field',
-									} }
+									data={ attributes.marker_cluster_images }
+									default={ {} }
 									onChange={ newData => {
-										props.setAttributes( { multiple_markers: newData } );
+										props.setAttributes( { marker_cluster_images: newData } );
 									} }
 								>
 									{
@@ -543,13 +714,13 @@ if ( -1 !== window.JetEngineListingData.activeModules.indexOf( 'maps-listings' )
 											<div>
 												<div className="jet-media-control components-base-control">
 													<div className="components-base-control__label">{ __( 'Image/Icon' ) }</div>
-													{ item.marker_icon_url && <img src={ item.marker_icon_url } width="100%" height="auto"/> }
+													{ item.cluster_image_url && <img src={ item.cluster_image_url } width="100%" height="auto"/> }
 													<MediaUpload
 														onSelect={ media => {
 															updateItem( item, {
-																marker_icon: media.id,
-																marker_icon_url: media.url,
-															}, null, 'multiple_markers' );
+																cluster_image: media.id,
+																cluster_image_url: media.url,
+															}, null, 'marker_cluster_images' );
 														} }
 														type="image"
 														value={ item.marker_icon }
@@ -561,13 +732,13 @@ if ( -1 !== window.JetEngineListingData.activeModules.indexOf( 'maps-listings' )
 															>{ __( 'Select Image/Icon' ) }</Button>
 														) }
 													/>
-													{ item.marker_icon_url &&
+													{ item.cluster_image_url &&
 													<Button
 														onClick={ () => {
 															updateItem( item, {
-																marker_icon: 0,
-																marker_icon_url:'',
-															}, null, 'multiple_markers' );
+																cluster_image: 0,
+																cluster_image_url:'',
+															}, null, 'marker_cluster_images' );
 														} }
 														isLink
 														isDestructive
@@ -576,1032 +747,831 @@ if ( -1 !== window.JetEngineListingData.activeModules.indexOf( 'maps-listings' )
 													</Button>
 													}
 												</div>
-												<SelectControl
-													label={ __( 'Apply Icon Color to' ) }
-													value={ item.marker_icon_color_apply_to }
-
-													options={ [
-														{
-															value: 'apply-fill',
-															label: __( 'Fill' ),
-														},
-														{
-															value: 'apply-stroke_unset-fill',
-															label: __( 'Stroke' ),
-														},
-														{
-															value: 'apply-fill_apply-stroke',
-															label: __( 'Both' ),
-														},
-														{
-															value: 'keep',
-															label: __( 'Keep SVG colors' ),
-														},
-													] }
-													onChange={ newValue => {
-														updateItem( item, 'marker_icon_color_apply_to', newValue, 'multiple_markers' )
-													} }
-												/>
-												{ item.marker_icon_color_apply_to !== 'keep' && <ColorPaletteControl
-													label={ __( 'Icon Color' ) }
-													colors={ paletteColors }
-													value={ item.marker_icon_color }
-													onChange={ newValue => {
-														updateItem( item, 'marker_icon_color', newValue, 'multiple_markers' )
-													} }
-												/> }
 												<TextControl
-													type="text"
-													label={ __( 'Dynamic Icon Color' ) }
-													help={ dynamicColorHelp }
-													value={ item.marker_icon_color_dynamic }
+													type="number"
+													label={ __( 'Marker Cluster Width' ) }
+													value={ item.cluster_width }
+													min={ `0` }
+													max={ `1000` }
 													onChange={ newValue => {
-														updateItem( item, 'marker_icon_color_dynamic', newValue, 'multiple_markers' )
+														updateItem( item, 'cluster_width', newValue, 'marker_cluster_images' )
 													} }
 												/>
-												<SelectControl
-													label={ __( 'Apply this marker if' ) }
-													value={ item.apply_type }
-													options={ [
-														{
-															value: 'meta_field',
-															label: __( 'Meta field is equal to value' ),
-														},
-														{
-															value: 'post_term',
-															label: __( 'Post has term' ),
-														},
-														{
-															value: 'has_dynamic_color',
-															label: __( 'Dynamic color not empty' ),
-														},
-													] }
-													onChange={ newValue => {
-														updateItem( item, 'apply_type', newValue, 'multiple_markers' )
-													} }
-												/>
-												{ 'meta_field' === item.apply_type && <GroupedSelectControl
-													label={ __( 'Meta Field' ) }
-													value={ item.field_name }
-													options={ metaFields }
-													onChange={ newValue => {
-														updateItem( item, 'field_name', newValue, 'multiple_markers' )
-													} }
-												/> }
-												{ 'meta_field' === item.apply_type && <TextControl
-													type="text"
-													label={ __( 'Or enter meta field key' ) }
-													help={ __( 'Note: this field will override Meta Field value' ) }
-													value={ item.field_name_custom }
-													onChange={ newValue => {
-														updateItem( item, 'field_name_custom', newValue, 'multiple_markers' )
-													} }
-												/> }
-												{ 'meta_field' === item.apply_type && <TextControl
-													type="text"
-													label={ __( 'Field value' ) }
-													help={ __( 'You may use shortcodes/macros here.' ) }
-													value={ item.field_value }
-													onChange={ newValue => {
-														updateItem( item, 'field_value', newValue, 'multiple_markers' )
-													} }
-												/> }
-												{ 'post_term' === item.apply_type && <TextControl
-													type="text"
-													label={ __( 'Taxonomy slug' ) }
-													help={ __( 'You can find this slug in the address bar of taxonomy edit page' ) }
-													value={ item.tax_name }
-													onChange={ newValue => {
-														updateItem( item, 'tax_name', newValue, 'multiple_markers' )
-													} }
-												/> }
-												{ 'post_term' === item.apply_type && <TextControl
-													type="text"
-													label={ __( 'Term name, slug or ID' ) }
-													value={ item.term_name }
-													onChange={ newValue => {
-														updateItem( item, 'term_name', newValue, 'multiple_markers' )
-													} }
-												/> }
 											</div>
 									}
-								</JetEngineRepeater> }
-
-								<hr/>
-								<ToggleControl
-									label={ __( 'Marker Clustering' ) }
-									checked={ attributes.marker_clustering }
-									onChange={ () => {
-										props.setAttributes( { marker_clustering: ! attributes.marker_clustering } );
+								</JetEngineRepeater>	
+							}
+						</PanelBody>
+						<PanelBody
+							title={ __( 'User Location' ) }
+							initialOpen={ false }
+						>
+							<ToggleControl
+								label={ __( 'Enable User Location Marker' ) }
+								checked={ attributes.user_location_enabled }
+								onChange={ () => {
+									props.setAttributes( { user_location_enabled: ! attributes.user_location_enabled } );
+								} }
+							/>
+							{ attributes.user_location_enabled && <SelectControl
+								label={ __( 'Marker Type' ) }
+								value={ attributes.user_location_marker_type }
+								options={ markerTypes.filter( i => [ 'icon', 'text' ].includes( i.value ) ) }
+								onChange={ newValue => {
+									props.setAttributes( { user_location_marker_type: newValue } );
+								} }
+							/> }
+							{ attributes.user_location_enabled && 'icon' === attributes.user_location_marker_type &&
+							<div className="jet-media-control components-base-control">
+								<div className="components-base-control__label">{ __( 'Image/Icon' ) }</div>
+								{ attributes.user_location_enabled && attributes.user_location_marker_icon_url && <img src={ attributes.user_location_marker_icon_url } width="100%" height="auto"/> }
+								<MediaUpload
+									onSelect={ media => {
+										props.setAttributes( {
+											user_location_marker_icon:     media.id,
+											user_location_marker_icon_url: media.url,
+										} );
 									} }
+									type="image"
+									value={ attributes.user_location_marker_icon }
+									render={ ( { open } ) => (
+										<Button
+											isSecondary
+											icon="edit"
+											onClick={ open }
+										>{ __( 'Select Image/Icon' ) }</Button>
+									) }
 								/>
-								{ attributes.marker_clustering &&
-									<div>
-										<TextControl
-											type="number"
-											label={ __( 'Cluster Max Zoom' ) }
-											help={ __( 'Maximum zoom level that a marker can be part of a cluster' ) }
-											value={ attributes.cluster_max_zoom }
-											min={ `1` }
-											max={ `20` }
-											onChange={ newValue => {
-												props.setAttributes( { cluster_max_zoom: Number(newValue) } );
-											} }
-										/>
-										<TextControl
-											type="number"
-											label={ __( 'Cluster Radius' ) }
-											help={ __( 'Radius of each cluster when clustering markers in px' ) }
-											value={ attributes.cluster_radius }
-											min={ `10` }
-											onChange={ newValue => {
-												props.setAttributes( { cluster_radius: Number(newValue) } );
-											} }
-										/>
-									</div>
-								}
-								{ ( JetEngineListingData?.mapsListingConfig?.providerId === 'google' ||
-								  JetEngineListingData?.mapsListingConfig?.providerId === 'leaflet' ) &&
-								  <div>
-									<ToggleControl
-										label={ __( 'Set Custom Marker Images' ) }
-										checked={ attributes.is_custom_marker_cluster_images }
-										onChange={ () => {
-											props.setAttributes( { is_custom_marker_cluster_images: ! attributes.is_custom_marker_cluster_images } );
-										} }
-									/>
-								  </div> }
-								{ ( JetEngineListingData?.mapsListingConfig?.providerId === 'google' ||
-									JetEngineListingData?.mapsListingConfig?.providerId === 'leaflet' ) && attributes.is_custom_marker_cluster_images &&
-									<JetEngineRepeater
-										data={ attributes.marker_cluster_images }
-										default={ {} }
-										onChange={ newData => {
-											props.setAttributes( { marker_cluster_images: newData } );
-										} }
-									>
-										{
-											( item ) =>
-												<div>
-													<div className="jet-media-control components-base-control">
-														<div className="components-base-control__label">{ __( 'Image/Icon' ) }</div>
-														{ item.cluster_image_url && <img src={ item.cluster_image_url } width="100%" height="auto"/> }
-														<MediaUpload
-															onSelect={ media => {
-																updateItem( item, {
-																	cluster_image: media.id,
-																	cluster_image_url: media.url,
-																}, null, 'marker_cluster_images' );
-															} }
-															type="image"
-															value={ item.marker_icon }
-															render={ ( { open } ) => (
-																<Button
-																	isSecondary
-																	icon="edit"
-																	onClick={ open }
-																>{ __( 'Select Image/Icon' ) }</Button>
-															) }
-														/>
-														{ item.cluster_image_url &&
-														<Button
-															onClick={ () => {
-																updateItem( item, {
-																	cluster_image: 0,
-																	cluster_image_url:'',
-																}, null, 'marker_cluster_images' );
-															} }
-															isLink
-															isDestructive
-														>
-															{ __( 'Remove Image/Icon' ) }
-														</Button>
-														}
-													</div>
-													<TextControl
-														type="number"
-														label={ __( 'Marker Cluster Width' ) }
-														value={ item.cluster_width }
-														min={ `0` }
-														max={ `1000` }
-														onChange={ newValue => {
-															updateItem( item, 'cluster_width', newValue, 'marker_cluster_images' )
-														} }
-													/>
-												</div>
-										}
-									</JetEngineRepeater>	
-								}
-							</PanelBody>
-							<PanelBody
-								title={ __( 'User Location' ) }
-								initialOpen={ false }
-							>
-								<ToggleControl
-									label={ __( 'Enable User Location Marker' ) }
-									checked={ attributes.user_location_enabled }
-									onChange={ () => {
-										props.setAttributes( { user_location_enabled: ! attributes.user_location_enabled } );
+								{ attributes.user_location_enabled && attributes.user_location_marker_icon_url &&
+								<Button
+									onClick={ () => {
+										props.setAttributes( {
+											user_location_marker_icon: 0,
+											user_location_marker_icon_url: '',
+										} )
 									} }
-								/>
-								{ attributes.user_location_enabled && <SelectControl
-									label={ __( 'Marker Type' ) }
-									value={ attributes.user_location_marker_type }
-									options={ markerTypes.filter( i => [ 'icon', 'text' ].includes( i.value ) ) }
-									onChange={ newValue => {
-										props.setAttributes( { user_location_marker_type: newValue } );
-									} }
-								/> }
-								{ attributes.user_location_enabled && 'icon' === attributes.user_location_marker_type &&
-								<div className="jet-media-control components-base-control">
-									<div className="components-base-control__label">{ __( 'Image/Icon' ) }</div>
-									{ attributes.user_location_enabled && attributes.user_location_marker_icon_url && <img src={ attributes.user_location_marker_icon_url } width="100%" height="auto"/> }
-									<MediaUpload
-										onSelect={ media => {
-											props.setAttributes( {
-												user_location_marker_icon:     media.id,
-												user_location_marker_icon_url: media.url,
-											} );
-										} }
-										type="image"
-										value={ attributes.user_location_marker_icon }
-										render={ ( { open } ) => (
-											<Button
-												isSecondary
-												icon="edit"
-												onClick={ open }
-											>{ __( 'Select Image/Icon' ) }</Button>
-										) }
-									/>
-									{ attributes.user_location_enabled && attributes.user_location_marker_icon_url &&
-									<Button
-										onClick={ () => {
-											props.setAttributes( {
-												user_location_marker_icon: 0,
-												user_location_marker_icon_url: '',
-											} )
-										} }
-										isLink
-										isDestructive
-									>
-										{ __( 'Remove Image/Icon' ) }
-									</Button>
-									}
-								</div>
-								}
-								{ attributes.user_location_enabled && 'text' === attributes.user_location_marker_type && <TextControl
-									type="text"
-									label={ __( 'Marker Label' ) }
-									value={ attributes.user_location_marker_label_text }
-									onChange={ newValue => {
-										props.setAttributes( { user_location_marker_label_text: newValue } );
-									} }
-								/> }
-								{ attributes.user_location_enabled && 'icon' === attributes.user_location_marker_type && <SelectControl
-									label={ __( 'Image Size' ) }
-									value={ attributes.user_location_marker_image_size }
-									options={ JetEngineListingData.imageSizes || [] }
-									onChange={ newValue => {
-										props.setAttributes( { user_location_marker_image_size: newValue } );
-									} }
-								/> }
-								{ attributes.user_location_enabled
-								  && 'icon' === attributes.user_location_marker_type
-								  && attributes.user_location_marker_icon_url
-								  && <SelectControl
-									label={ __( 'Icon color apply to' ) }
-									value={ attributes.user_location_marker_icon_color_apply_to }
-									help={ __( '' ) }
-									options={ [
-										{
-											value: 'apply-fill',
-											label: __( 'Fill' ),
-										},
-										{
-											value: 'apply-stroke_unset-fill',
-											label: __( 'Stroke' ),
-										},
-										{
-											value: 'apply-fill_apply-stroke',
-											label: __( 'Both' ),
-										},
-										{
-											value: 'keep',
-											label: __( 'Keep SVG colors' ),
-										},
-									] }
-									onChange={ newValue => {
-										props.setAttributes( { user_location_marker_icon_color_apply_to: newValue } );
-									} }
-								/> }
-							</PanelBody>
-							<PanelBody
-								title={ __( 'Popup' ) }
-								initialOpen={ false }
-							>
-								<TextControl
-									type="number"
-									label={ __( 'Marker Popup Width' ) }
-									help={ __( 'Set marker popup width in pixels' ) }
-									value={ attributes.popup_width }
-									min={ `150` }
-									max={ `600` }
-									onChange={ newValue => {
-										props.setAttributes( { popup_width: Number(newValue) } );
-									} }
-								/>
-								<TextControl
-									type="number"
-									label={ __( 'Vertical Offset' ) }
-									help={ __( 'Set vertical popup offset in pixels' ) }
-									value={ attributes.popup_offset }
-									min={ `0` }
-									max={ `200` }
-									onChange={ newValue => {
-										props.setAttributes( { popup_offset: Number(newValue) } );
-									} }
-								/>
-								<ToggleControl
-									label={ __( 'Add popup preloader' ) }
-									help={ __( 'Add box with loading animation while popup data is fetching from the server' ) }
-									checked={ attributes.popup_preloader }
-									onChange={ () => {
-										props.setAttributes( { popup_preloader: ! attributes.popup_preloader } );
-									} }
-								/>
-								{ this.getCustomControlsSection( 'section_popup_settings' ) }
-								<SelectControl
-									label={ __( 'Open On') }
-									value={ attributes.popup_open_on }
-									options={ [
-										{
-											label: __( 'Click' ),
-											value: 'click',
-										},
-										{
-											label: __( 'Hover' ),
-											value: 'hover',
-										}
-									] }
-									onChange={ newValue => {
-										props.setAttributes( { popup_open_on: newValue } );
-									}}
-								></SelectControl>
-							</PanelBody>
-							{ ! window.JetEngineListingData.legacy.is_disabled && <PanelBody
-								title={ __( 'Custom Query' ) }
-								initialOpen={ false }
-							>
-								<ToggleControl
-									label={ __( 'Use Custom Query' ) }
-									checked={ attributes.custom_query }
-									onChange={ () => {
-										props.setAttributes({ custom_query: ! attributes.custom_query });
-									} }
-								/>
-								{ attributes.custom_query && <SelectControl
-									multiple={false}
-									label={ __( 'Custom Query' ) }
-									value={ attributes.custom_query_id }
-									options={ window.JetEngineListingData.queriesList }
-									onChange={ newValue => {
-										props.setAttributes( { custom_query_id: newValue } );
-									}}
-								/> }
-							</PanelBody> }
-							{ ! window.JetEngineListingData.legacy.is_disabled && <PanelBody
-								title={ __( 'Posts Query' ) }
-								initialOpen={ false }
-							>
-								<JetEngineRepeater
-									data={ attributes.posts_query }
-									default={{
-										type: '',
-									}}
-									onChange={ newData => {
-										props.setAttributes({ posts_query: newData });
-									} }
+									isLink
+									isDestructive
 								>
+									{ __( 'Remove Image/Icon' ) }
+								</Button>
+								}
+							</div>
+							}
+							{ attributes.user_location_enabled && 'text' === attributes.user_location_marker_type && <TextControl
+								type="text"
+								label={ __( 'Marker Label' ) }
+								value={ attributes.user_location_marker_label_text }
+								onChange={ newValue => {
+									props.setAttributes( { user_location_marker_label_text: newValue } );
+								} }
+							/> }
+							{ attributes.user_location_enabled && 'icon' === attributes.user_location_marker_type && <SelectControl
+								label={ __( 'Image Size' ) }
+								value={ attributes.user_location_marker_image_size }
+								options={ JetEngineListingData.imageSizes || [] }
+								onChange={ newValue => {
+									props.setAttributes( { user_location_marker_image_size: newValue } );
+								} }
+							/> }
+							{ attributes.user_location_enabled
+								&& 'icon' === attributes.user_location_marker_type
+								&& attributes.user_location_marker_icon_url
+								&& <SelectControl
+								label={ __( 'Icon color apply to' ) }
+								value={ attributes.user_location_marker_icon_color_apply_to }
+								help={ __( '' ) }
+								options={ [
 									{
-										( item ) =>
+										value: 'apply-fill',
+										label: __( 'Fill' ),
+									},
+									{
+										value: 'apply-stroke_unset-fill',
+										label: __( 'Stroke' ),
+									},
+									{
+										value: 'apply-fill_apply-stroke',
+										label: __( 'Both' ),
+									},
+									{
+										value: 'keep',
+										label: __( 'Keep SVG colors' ),
+									},
+								] }
+								onChange={ newValue => {
+									props.setAttributes( { user_location_marker_icon_color_apply_to: newValue } );
+								} }
+							/> }
+						</PanelBody>
+						<PanelBody
+							title={ __( 'Popup' ) }
+							initialOpen={ false }
+						>
+							<TextControl
+								type="number"
+								label={ __( 'Marker Popup Width' ) }
+								help={ __( 'Set marker popup width in pixels' ) }
+								value={ attributes.popup_width }
+								min={ `150` }
+								max={ `600` }
+								onChange={ newValue => {
+									props.setAttributes( { popup_width: Number(newValue) } );
+								} }
+							/>
+							<TextControl
+								type="number"
+								label={ __( 'Vertical Offset' ) }
+								help={ __( 'Set vertical popup offset in pixels' ) }
+								value={ attributes.popup_offset }
+								min={ `0` }
+								max={ `200` }
+								onChange={ newValue => {
+									props.setAttributes( { popup_offset: Number(newValue) } );
+								} }
+							/>
+							<ToggleControl
+								label={ __( 'Add popup preloader' ) }
+								help={ __( 'Add box with loading animation while popup data is fetching from the server' ) }
+								checked={ attributes.popup_preloader }
+								onChange={ () => {
+									props.setAttributes( { popup_preloader: ! attributes.popup_preloader } );
+								} }
+							/>
+							{ getCustomControlsSection( 'section_popup_settings', props ) }
+							<SelectControl
+								label={ __( 'Open On') }
+								value={ attributes.popup_open_on }
+								options={ [
+									{
+										label: __( 'Click' ),
+										value: 'click',
+									},
+									{
+										label: __( 'Hover' ),
+										value: 'hover',
+									}
+								] }
+								onChange={ newValue => {
+									props.setAttributes( { popup_open_on: newValue } );
+								}}
+							></SelectControl>
+						</PanelBody>
+						{ ! window.JetEngineListingData.legacy.is_disabled && <PanelBody
+							title={ __( 'Custom Query' ) }
+							initialOpen={ false }
+						>
+							<ToggleControl
+								label={ __( 'Use Custom Query' ) }
+								checked={ attributes.custom_query }
+								onChange={ () => {
+									props.setAttributes({ custom_query: ! attributes.custom_query });
+								} }
+							/>
+							{ attributes.custom_query && <SelectControl
+								multiple={false}
+								label={ __( 'Custom Query' ) }
+								value={ attributes.custom_query_id }
+								options={ window.JetEngineListingData.queriesList }
+								onChange={ newValue => {
+									props.setAttributes( { custom_query_id: newValue } );
+								}}
+							/> }
+						</PanelBody> }
+						{ ! window.JetEngineListingData.legacy.is_disabled && <PanelBody
+							title={ __( 'Posts Query' ) }
+							initialOpen={ false }
+						>
+							<JetEngineRepeater
+								data={ attributes.posts_query }
+								default={{
+									type: '',
+								}}
+								onChange={ newData => {
+									props.setAttributes({ posts_query: newData });
+								} }
+							>
+								{
+									( item ) =>
+										<div>
+											<SelectControl
+												label={ __( 'Type' ) }
+												value={ item.type }
+												options={ [
+													{
+														value: '',
+														label: __( 'Select...' ),
+													},
+													{
+														value: 'posts_params',
+														label: __( 'Posts & Author Parameters' ),
+													},
+													{
+														value: 'order_offset',
+														label: __( 'Order & Offset' ),
+													},
+													{
+														value: 'tax_query',
+														label: __( 'Tax Query' ),
+													},
+													{
+														value: 'meta_query',
+														label: __( 'Meta Query' ),
+													},
+													{
+														value: 'date_query',
+														label: __( 'Date Query' ),
+													},
+												] }
+												onChange={newValue => {
+													updateItem( item, 'type', newValue )
+												}}
+											/>
+											{ 'date_query' === item.type &&
 											<div>
 												<SelectControl
-													label={ __( 'Type' ) }
-													value={ item.type }
+													label={ __( 'Column' ) }
+													value={ item.date_query_column }
 													options={ [
 														{
-															value: '',
-															label: __( 'Select...' ),
+															value: 'post_date',
+															label: __( 'Post date' ),
 														},
 														{
-															value: 'posts_params',
-															label: __( 'Posts & Author Parameters' ),
+															value: 'post_date_gmt',
+															label: __( 'Post date GMT' ),
 														},
 														{
-															value: 'order_offset',
-															label: __( 'Order & Offset' ),
+															value: 'post_modified',
+															label: __( 'Post modified' ),
 														},
 														{
-															value: 'tax_query',
-															label: __( 'Tax Query' ),
-														},
-														{
-															value: 'meta_query',
-															label: __( 'Meta Query' ),
-														},
-														{
-															value: 'date_query',
-															label: __( 'Date Query' ),
+															value: 'post_modified_gmt',
+															label: __( 'Post modified GMT' ),
 														},
 													] }
 													onChange={newValue => {
-														updateItem( item, 'type', newValue )
+														updateItem( item, 'date_query_column', newValue )
 													}}
 												/>
-												{ 'date_query' === item.type &&
+												<TextControl
+													type="text"
+													label={ __( 'After' ) }
+													help={ __( 'Date to retrieve posts after. Accepts strtotime()-compatible string' ) }
+													value={ item.date_query_after }
+													onChange={newValue => {
+														updateItem( item, 'date_query_after', newValue )
+													}}
+												/>
+												<TextControl
+													type="text"
+													label={ __( 'Before' ) }
+													help={ __( 'Date to retrieve posts before. Accepts strtotime()-compatible string' ) }
+													value={ item.date_query_before }
+													onChange={newValue => {
+														updateItem( item, 'date_query_before', newValue )
+													}}
+												/>
+											</div>
+											}
+											{ 'posts_params' === item.type &&
+											<div>
+												<TextControl
+													type="text"
+													label={ __( 'Include posts by IDs' ) }
+													help={ __( 'Eg. 12, 24, 33' ) }
+													value={ item.posts_in }
+													onChange={newValue => {
+														updateItem( item, 'posts_in', newValue )
+													}}
+												/>
+												<TextControl
+													type="text"
+													label={ __( 'Exclude posts by IDs' ) }
+													help={ __( 'Eg. 12, 24, 33. If this is used in the same query as Include posts by IDs, it will be ignored' ) }
+													value={ item.posts_not_in }
+													onChange={newValue => {
+														updateItem( item, 'posts_not_in', newValue )
+													}}
+												/>
+												<TextControl
+													type="text"
+													label={ __( 'Get child of' ) }
+													help={ __( 'Eg. 12, 24, 33' ) }
+													value={ item.posts_parent }
+													onChange={newValue => {
+														updateItem( item, 'posts_parent', newValue )
+													}}
+												/>
+												<SelectControl
+													label={ __( 'Post status' ) }
+													value={ item.posts_status }
+													options={ [
+														{
+															value: 'publish',
+															label: __( 'Publish' ),
+														},
+														{
+															value: 'pending',
+															label: __( 'Pending' ),
+														},
+														{
+															value: 'draft',
+															label: __( 'Draft' ),
+														},
+														{
+															value: 'auto-draft',
+															label: __( 'Auto draft' ),
+														},
+														{
+															value: 'future',
+															label: __( 'Future' ),
+														},
+														{
+															value: 'private',
+															label: __( 'Private' ),
+														},
+														{
+															value: 'trash',
+															label: __( 'Trash' ),
+														},
+														{
+															value: 'any',
+															label: __( 'Any' ),
+														},
+													] }
+													onChange={newValue => {
+														updateItem( item, 'posts_status', newValue )
+													}}
+												/>
+												<SelectControl
+													label={ __( 'Posts by author' ) }
+													value={ item.posts_author }
+													options={ [
+														{
+															value: 'any',
+															label: __( 'Any author' ),
+														},
+														{
+															value: 'current',
+															label: __( 'Current User' ),
+														},
+														{
+															value: 'id',
+															label: __( 'Specific Author ID' ),
+														},
+														{
+															value: 'queried',
+															label: __( 'Queried User' ),
+														},
+													] }
+													onChange={newValue => {
+														updateItem( item, 'posts_author', newValue )
+													}}
+												/>
+												{
+													'id' === item.posts_author &&
+													<TextControl
+														type="text"
+														label={ __( 'Author ID' ) }
+														value={ item.posts_author_id }
+														onChange={newValue => {
+															updateItem( item, 'posts_author_id', newValue )
+														}}
+													/>
+												}
+												<TextControl
+													type="text"
+													label={ __( 'Search Query' ) }
+													value={ item.search_query }
+													onChange={newValue => {
+														updateItem( item, 'search_query', newValue )
+													}}
+												/>
+											</div>
+											}
+											{ 'order_offset' === item.type &&
+											<div>
+												<TextControl
+													type="number"
+													label={ __( 'Posts offset' ) }
+													value={ item.offset }
+													min="0"
+													max="100"
+													step="1"
+													onChange={newValue => {
+														updateItem( item, 'offset', newValue )
+													}}
+												/>
+												<SelectControl
+													label={ __( 'Order' ) }
+													value={ item.order }
+													options={ [
+														{
+															value: 'ASC',
+															label: __( 'ASC' ),
+														},
+														{
+															value: 'DESC',
+															label: __( 'DESC' ),
+														},
+													] }
+													onChange={newValue => {
+														updateItem( item, 'order', newValue )
+													}}
+												/>
+												<SelectControl
+													label={ __( 'Order' ) }
+													value={ item.order_by }
+													options={ [
+														{
+															value: 'none',
+															label: __( 'None' ),
+														},
+														{
+															value: 'ID',
+															label: __( 'ID' ),
+														},
+														{
+															value: 'author',
+															label: __( 'Author' ),
+														},
+														{
+															value: 'title',
+															label: __( 'Title' ),
+														},
+														{
+															value: 'name',
+															label: __( 'Name' ),
+														},
+														{
+															value: 'type',
+															label: __( 'Type' ),
+														},
+														{
+															value: 'date',
+															label: __( 'Date' ),
+														},
+														{
+															value: 'modified',
+															label: __( 'Modified' ),
+														},
+														{
+															value: 'parent',
+															label: __( 'Parent' ),
+														},
+														{
+															value: 'rand',
+															label: __( 'Random' ),
+														},
+														{
+															value: 'comment_count',
+															label: __( 'Comment Count' ),
+														},
+														{
+															value: 'relevance',
+															label: __( 'Relevance' ),
+														},
+														{
+															value: 'menu_order',
+															label: __( 'Menu Order' ),
+														},
+														{
+															value: 'meta_value',
+															label: __( 'Meta Value' ),
+														},
+														{
+															value: 'meta_clause',
+															label: __( 'Meta Clause' ),
+														},
+														{
+															value: 'post__in',
+															label: __( 'Preserve post ID order given in the "Include posts by IDs" option' ),
+														},
+													] }
+													onChange={newValue => {
+														updateItem( item, 'order_by', newValue )
+													}}
+												/>
+												{ 'meta_value' === item.order_by &&
 												<div>
+													<TextControl
+														type="text"
+														label={ __( 'Meta key to order' ) }
+														help={ __( 'Set meta field name to order by' ) }
+														value={ item.meta_key }
+														onChange={newValue => {
+															updateItem( item, 'meta_key', newValue )
+														}}
+													/>
 													<SelectControl
-														label={ __( 'Column' ) }
-														value={ item.date_query_column }
+														label={ __( 'Meta type' ) }
+														value={ item.meta_type }
 														options={ [
 															{
-																value: 'post_date',
-																label: __( 'Post date' ),
+																value: 'CHAR',
+																label: 'CHAR',
 															},
 															{
-																value: 'post_date_gmt',
-																label: __( 'Post date GMT' ),
+																value: 'NUMERIC',
+																label: 'NUMERIC',
 															},
 															{
-																value: 'post_modified',
-																label: __( 'Post modified' ),
+																value: 'DATE',
+																label: 'DATE',
 															},
 															{
-																value: 'post_modified_gmt',
-																label: __( 'Post modified GMT' ),
+																value: 'DATETIME',
+																label: 'DATETIME',
+															},
+															{
+																value: 'DECIMAL',
+																label: 'DECIMAL',
 															},
 														] }
 														onChange={newValue => {
-															updateItem( item, 'date_query_column', newValue )
-														}}
-													/>
-													<TextControl
-														type="text"
-														label={ __( 'After' ) }
-														help={ __( 'Date to retrieve posts after. Accepts strtotime()-compatible string' ) }
-														value={ item.date_query_after }
-														onChange={newValue => {
-															updateItem( item, 'date_query_after', newValue )
-														}}
-													/>
-													<TextControl
-														type="text"
-														label={ __( 'Before' ) }
-														help={ __( 'Date to retrieve posts before. Accepts strtotime()-compatible string' ) }
-														value={ item.date_query_before }
-														onChange={newValue => {
-															updateItem( item, 'date_query_before', newValue )
+															updateItem( item, 'meta_type', newValue )
 														}}
 													/>
 												</div>
 												}
-												{ 'posts_params' === item.type &&
-												<div>
-													<TextControl
-														type="text"
-														label={ __( 'Include posts by IDs' ) }
-														help={ __( 'Eg. 12, 24, 33' ) }
-														value={ item.posts_in }
-														onChange={newValue => {
-															updateItem( item, 'posts_in', newValue )
-														}}
-													/>
-													<TextControl
-														type="text"
-														label={ __( 'Exclude posts by IDs' ) }
-														help={ __( 'Eg. 12, 24, 33. If this is used in the same query as Include posts by IDs, it will be ignored' ) }
-														value={ item.posts_not_in }
-														onChange={newValue => {
-															updateItem( item, 'posts_not_in', newValue )
-														}}
-													/>
-													<TextControl
-														type="text"
-														label={ __( 'Get child of' ) }
-														help={ __( 'Eg. 12, 24, 33' ) }
-														value={ item.posts_parent }
-														onChange={newValue => {
-															updateItem( item, 'posts_parent', newValue )
-														}}
-													/>
-													<SelectControl
-														label={ __( 'Post status' ) }
-														value={ item.posts_status }
-														options={ [
-															{
-																value: 'publish',
-																label: __( 'Publish' ),
-															},
-															{
-																value: 'pending',
-																label: __( 'Pending' ),
-															},
-															{
-																value: 'draft',
-																label: __( 'Draft' ),
-															},
-															{
-																value: 'auto-draft',
-																label: __( 'Auto draft' ),
-															},
-															{
-																value: 'future',
-																label: __( 'Future' ),
-															},
-															{
-																value: 'private',
-																label: __( 'Private' ),
-															},
-															{
-																value: 'trash',
-																label: __( 'Trash' ),
-															},
-															{
-																value: 'any',
-																label: __( 'Any' ),
-															},
-														] }
-														onChange={newValue => {
-															updateItem( item, 'posts_status', newValue )
-														}}
-													/>
-													<SelectControl
-														label={ __( 'Posts by author' ) }
-														value={ item.posts_author }
-														options={ [
-															{
-																value: 'any',
-																label: __( 'Any author' ),
-															},
-															{
-																value: 'current',
-																label: __( 'Current User' ),
-															},
-															{
-																value: 'id',
-																label: __( 'Specific Author ID' ),
-															},
-															{
-																value: 'queried',
-																label: __( 'Queried User' ),
-															},
-														] }
-														onChange={newValue => {
-															updateItem( item, 'posts_author', newValue )
-														}}
-													/>
-													{
-														'id' === item.posts_author &&
-														<TextControl
-															type="text"
-															label={ __( 'Author ID' ) }
-															value={ item.posts_author_id }
-															onChange={newValue => {
-																updateItem( item, 'posts_author_id', newValue )
-															}}
-														/>
-													}
-													<TextControl
-														type="text"
-														label={ __( 'Search Query' ) }
-														value={ item.search_query }
-														onChange={newValue => {
-															updateItem( item, 'search_query', newValue )
-														}}
-													/>
-												</div>
-												}
-												{ 'order_offset' === item.type &&
-												<div>
-													<TextControl
-														type="number"
-														label={ __( 'Posts offset' ) }
-														value={ item.offset }
-														min="0"
-														max="100"
-														step="1"
-														onChange={newValue => {
-															updateItem( item, 'offset', newValue )
-														}}
-													/>
-													<SelectControl
-														label={ __( 'Order' ) }
-														value={ item.order }
-														options={ [
-															{
-																value: 'ASC',
-																label: __( 'ASC' ),
-															},
-															{
-																value: 'DESC',
-																label: __( 'DESC' ),
-															},
-														] }
-														onChange={newValue => {
-															updateItem( item, 'order', newValue )
-														}}
-													/>
-													<SelectControl
-														label={ __( 'Order' ) }
-														value={ item.order_by }
-														options={ [
-															{
-																value: 'none',
-																label: __( 'None' ),
-															},
-															{
-																value: 'ID',
-																label: __( 'ID' ),
-															},
-															{
-																value: 'author',
-																label: __( 'Author' ),
-															},
-															{
-																value: 'title',
-																label: __( 'Title' ),
-															},
-															{
-																value: 'name',
-																label: __( 'Name' ),
-															},
-															{
-																value: 'type',
-																label: __( 'Type' ),
-															},
-															{
-																value: 'date',
-																label: __( 'Date' ),
-															},
-															{
-																value: 'modified',
-																label: __( 'Modified' ),
-															},
-															{
-																value: 'parent',
-																label: __( 'Parent' ),
-															},
-															{
-																value: 'rand',
-																label: __( 'Random' ),
-															},
-															{
-																value: 'comment_count',
-																label: __( 'Comment Count' ),
-															},
-															{
-																value: 'relevance',
-																label: __( 'Relevance' ),
-															},
-															{
-																value: 'menu_order',
-																label: __( 'Menu Order' ),
-															},
-															{
-																value: 'meta_value',
-																label: __( 'Meta Value' ),
-															},
-															{
-																value: 'meta_clause',
-																label: __( 'Meta Clause' ),
-															},
-															{
-																value: 'post__in',
-																label: __( 'Preserve post ID order given in the "Include posts by IDs" option' ),
-															},
-														] }
-														onChange={newValue => {
-															updateItem( item, 'order_by', newValue )
-														}}
-													/>
-													{ 'meta_value' === item.order_by &&
-													<div>
-														<TextControl
-															type="text"
-															label={ __( 'Meta key to order' ) }
-															help={ __( 'Set meta field name to order by' ) }
-															value={ item.meta_key }
-															onChange={newValue => {
-																updateItem( item, 'meta_key', newValue )
-															}}
-														/>
-														<SelectControl
-															label={ __( 'Meta type' ) }
-															value={ item.meta_type }
-															options={ [
-																{
-																	value: 'CHAR',
-																	label: 'CHAR',
-																},
-																{
-																	value: 'NUMERIC',
-																	label: 'NUMERIC',
-																},
-																{
-																	value: 'DATE',
-																	label: 'DATE',
-																},
-																{
-																	value: 'DATETIME',
-																	label: 'DATETIME',
-																},
-																{
-																	value: 'DECIMAL',
-																	label: 'DECIMAL',
-																},
-															] }
-															onChange={newValue => {
-																updateItem( item, 'meta_type', newValue )
-															}}
-														/>
-													</div>
-													}
-													{ 'meta_clause' === item.order_by &&
-													<TextControl
-														type="text"
-														label={ __( 'Meta clause to order' ) }
-														help={ __( 'Meta clause name to order by. Clause with this name should be created in Meta Query parameters' ) }
-														value={ item.meta_clause_key }
-														onChange={newValue => {
-															updateItem( item, 'meta_clause_key', newValue )
-														}}
-													/>
-													}
-												</div>
-												}
-												{ 'tax_query' === item.type &&
-												<div>
-													<SelectControl
-														label={ __( 'Taxonomy' ) }
-														value={ item.tax_query_taxonomy }
-														options={ taxonomies }
-														onChange={newValue => {
-															updateItem( item, 'tax_query_taxonomy', newValue )
-														}}
-													/>
-													<SelectControl
-														label={ __( 'Operator' ) }
-														value={ item.tax_query_compare }
-														options={ [
-															{
-																value: 'IN',
-																label: 'IN',
-															},
-															{
-																value: 'NOT IN',
-																label: 'NOT IN',
-															},
-															{
-																value: 'AND',
-																label: 'AND',
-															},
-															{
-																value: 'EXISTS',
-																label: 'EXISTS',
-															},
-															{
-																value: 'NOT EXISTS',
-																label: 'NOT EXISTS',
-															},
-														] }
-														onChange={newValue => {
-															updateItem( item, 'tax_query_compare', newValue )
-														}}
-													/>
-													<SelectControl
-														label={ __( 'Field' ) }
-														value={ item.tax_query_field }
-														options={ [
-															{
-																value: 'term_id',
-																label: __( 'Term ID' ),
-															},
-															{
-																value: 'slug',
-																label: __( 'Slug' ),
-															},
-															{
-																value: 'name',
-																label: __( 'Name' ),
-															},
-														] }
-														onChange={newValue => {
-															updateItem( item, 'tax_query_field', newValue )
-														}}
-													/>
-													<TextControl
-														type="text"
-														label={ __( 'Terms' ) }
-														value={ item.tax_query_terms }
-														onChange={newValue => {
-															updateItem( item, 'tax_query_terms', newValue )
-														}}
-													/>
-													<TextControl
-														type="text"
-														label={ __( 'Terms from meta field' ) }
-														help={ __( 'Get terms IDs from current page meta field' ) }
-														value={ item.tax_query_terms_meta }
-														onChange={newValue => {
-															updateItem( item, 'tax_query_terms_meta', newValue )
-														}}
-													/>
-												</div>
-												}
-												{ 'meta_query' === item.type &&
-												<div>
-													<TextControl
-														label={ __( 'Key (name/ID)' ) }
-														value={ item.meta_query_key }
-														onChange={newValue => {
-															updateItem( item, 'meta_query_key', newValue )
-														}}
-													/>
-													<SelectControl
-														label={ __( 'Operator' ) }
-														value={ item.meta_query_compare }
-														options={ [
-															{
-																value: '=',
-																label: 'Equal',
-															},
-															{
-																value: '!=',
-																label: 'Not equal',
-															},
-															{
-																value: '>',
-																label: 'Greater than',
-															},
-															{
-																value: '>=',
-																label: 'Greater or equal',
-															},
-															{
-																value: '<',
-																label: 'Less than',
-															},
-															{
-																value: '<=',
-																label: 'Equal or less',
-															},
-															{
-																value: 'LIKE',
-																label: 'LIKE',
-															},
-															{
-																value: 'NOT LIKE',
-																label: 'NOT LIKE',
-															},
-															{
-																value: 'IN',
-																label: 'IN',
-															},
-															{
-																value: 'NOT IN',
-																label: 'NOT IN',
-															},
-															{
-																value: 'BETWEEN',
-																label: 'BETWEEN',
-															},
-															{
-																value: 'NOT BETWEEN',
-																label: 'NOT BETWEEN',
-															},
-															{
-																value: 'EXISTS',
-																label: 'EXISTS',
-															},
-															{
-																value: 'NOT EXISTS',
-																label: 'NOT EXISTS',
-															},
-															{
-																value: 'REGEXP',
-																label: 'REGEXP',
-															},
-															{
-																value: 'NOT REGEXP',
-																label: 'NOT REGEXP',
-															},
-														] }
-														onChange={newValue => {
-															updateItem( item, 'meta_query_compare', newValue )
-														}}
-													/>
-													{ ! ['EXISTS', 'NOT EXISTS'].includes( item.meta_query_compare ) &&
-													<div>
-														<TextControl
-															type="text"
-															label={ __( 'Value' ) }
-															help={ __( 'For "In", "Not in", "Between" and "Not between" compare separate multiple values with comma' ) }
-															value={ item.meta_query_val }
-															onChange={newValue => {
-																updateItem( item, 'meta_query_val', newValue )
-															}}
-														/>
-														<TextControl
-															type="text"
-															label={ __( 'Or get value from query variable' ) }
-															help={ __( 'Set query variable name (from URL or WordPress query var) to get value from' ) }
-															value={ item.meta_query_request_val }
-															onChange={newValue => {
-																updateItem( item, 'meta_query_request_val', newValue )
-															}}
-														/>
-													</div>
-													}
-													<SelectControl
-														label={ __( 'Type' ) }
-														value={ item.meta_query_type }
-														options={ metaTypes }
-														onChange={newValue => {
-															updateItem( item, 'meta_query_type', newValue )
-														}}
-													/>
-													<TextControl
-														type="text"
-														label={ __( 'Meta Query Clause' ) }
-														help={ __( 'Set unique name for current query clause to use it to order posts by this clause' ) }
-														value={ item.meta_query_clause }
-														onChange={newValue => {
-															updateItem( item, 'meta_query_clause', newValue )
-														}}
-													/>
-												</div>
+												{ 'meta_clause' === item.order_by &&
+												<TextControl
+													type="text"
+													label={ __( 'Meta clause to order' ) }
+													help={ __( 'Meta clause name to order by. Clause with this name should be created in Meta Query parameters' ) }
+													value={ item.meta_clause_key }
+													onChange={newValue => {
+														updateItem( item, 'meta_clause_key', newValue )
+													}}
+												/>
 												}
 											</div>
+											}
+											{ 'tax_query' === item.type &&
+											<div>
+												<SelectControl
+													label={ __( 'Taxonomy' ) }
+													value={ item.tax_query_taxonomy }
+													options={ taxonomies }
+													onChange={newValue => {
+														updateItem( item, 'tax_query_taxonomy', newValue )
+													}}
+												/>
+												<SelectControl
+													label={ __( 'Operator' ) }
+													value={ item.tax_query_compare }
+													options={ [
+														{
+															value: 'IN',
+															label: 'IN',
+														},
+														{
+															value: 'NOT IN',
+															label: 'NOT IN',
+														},
+														{
+															value: 'AND',
+															label: 'AND',
+														},
+														{
+															value: 'EXISTS',
+															label: 'EXISTS',
+														},
+														{
+															value: 'NOT EXISTS',
+															label: 'NOT EXISTS',
+														},
+													] }
+													onChange={newValue => {
+														updateItem( item, 'tax_query_compare', newValue )
+													}}
+												/>
+												<SelectControl
+													label={ __( 'Field' ) }
+													value={ item.tax_query_field }
+													options={ [
+														{
+															value: 'term_id',
+															label: __( 'Term ID' ),
+														},
+														{
+															value: 'slug',
+															label: __( 'Slug' ),
+														},
+														{
+															value: 'name',
+															label: __( 'Name' ),
+														},
+													] }
+													onChange={newValue => {
+														updateItem( item, 'tax_query_field', newValue )
+													}}
+												/>
+												<TextControl
+													type="text"
+													label={ __( 'Terms' ) }
+													value={ item.tax_query_terms }
+													onChange={newValue => {
+														updateItem( item, 'tax_query_terms', newValue )
+													}}
+												/>
+												<TextControl
+													type="text"
+													label={ __( 'Terms from meta field' ) }
+													help={ __( 'Get terms IDs from current page meta field' ) }
+													value={ item.tax_query_terms_meta }
+													onChange={newValue => {
+														updateItem( item, 'tax_query_terms_meta', newValue )
+													}}
+												/>
+											</div>
+											}
+											{ 'meta_query' === item.type &&
+											<div>
+												<TextControl
+													label={ __( 'Key (name/ID)' ) }
+													value={ item.meta_query_key }
+													onChange={newValue => {
+														updateItem( item, 'meta_query_key', newValue )
+													}}
+												/>
+												<SelectControl
+													label={ __( 'Operator' ) }
+													value={ item.meta_query_compare }
+													options={ [
+														{
+															value: '=',
+															label: 'Equal',
+														},
+														{
+															value: '!=',
+															label: 'Not equal',
+														},
+														{
+															value: '>',
+															label: 'Greater than',
+														},
+														{
+															value: '>=',
+															label: 'Greater or equal',
+														},
+														{
+															value: '<',
+															label: 'Less than',
+														},
+														{
+															value: '<=',
+															label: 'Equal or less',
+														},
+														{
+															value: 'LIKE',
+															label: 'LIKE',
+														},
+														{
+															value: 'NOT LIKE',
+															label: 'NOT LIKE',
+														},
+														{
+															value: 'IN',
+															label: 'IN',
+														},
+														{
+															value: 'NOT IN',
+															label: 'NOT IN',
+														},
+														{
+															value: 'BETWEEN',
+															label: 'BETWEEN',
+														},
+														{
+															value: 'NOT BETWEEN',
+															label: 'NOT BETWEEN',
+														},
+														{
+															value: 'EXISTS',
+															label: 'EXISTS',
+														},
+														{
+															value: 'NOT EXISTS',
+															label: 'NOT EXISTS',
+														},
+														{
+															value: 'REGEXP',
+															label: 'REGEXP',
+														},
+														{
+															value: 'NOT REGEXP',
+															label: 'NOT REGEXP',
+														},
+													] }
+													onChange={newValue => {
+														updateItem( item, 'meta_query_compare', newValue )
+													}}
+												/>
+												{ ! ['EXISTS', 'NOT EXISTS'].includes( item.meta_query_compare ) &&
+												<div>
+													<TextControl
+														type="text"
+														label={ __( 'Value' ) }
+														help={ __( 'For "In", "Not in", "Between" and "Not between" compare separate multiple values with comma' ) }
+														value={ item.meta_query_val }
+														onChange={newValue => {
+															updateItem( item, 'meta_query_val', newValue )
+														}}
+													/>
+													<TextControl
+														type="text"
+														label={ __( 'Or get value from query variable' ) }
+														help={ __( 'Set query variable name (from URL or WordPress query var) to get value from' ) }
+														value={ item.meta_query_request_val }
+														onChange={newValue => {
+															updateItem( item, 'meta_query_request_val', newValue )
+														}}
+													/>
+												</div>
+												}
+												<SelectControl
+													label={ __( 'Type' ) }
+													value={ item.meta_query_type }
+													options={ metaTypes }
+													onChange={newValue => {
+														updateItem( item, 'meta_query_type', newValue )
+													}}
+												/>
+												<TextControl
+													type="text"
+													label={ __( 'Meta Query Clause' ) }
+													help={ __( 'Set unique name for current query clause to use it to order posts by this clause' ) }
+													value={ item.meta_query_clause }
+													onChange={newValue => {
+														updateItem( item, 'meta_query_clause', newValue )
+													}}
+												/>
+											</div>
+											}
+										</div>
+								}
+							</JetEngineRepeater>
+							<SelectControl
+								label={ __( 'Meta query relation' ) }
+								value={ attributes.meta_query_relation }
+								options={ [
+									{
+										value: 'AND',
+										label: __( 'AND' ),
+									},
+									{
+										value: 'OR',
+										label: __( 'OR' ),
 									}
-								</JetEngineRepeater>
-								<SelectControl
-									label={ __( 'Meta query relation' ) }
-									value={ attributes.meta_query_relation }
-									options={ [
-										{
-											value: 'AND',
-											label: __( 'AND' ),
-										},
-										{
-											value: 'OR',
-											label: __( 'OR' ),
-										}
-									] }
-									onChange={ newValue => {
-										props.setAttributes( { meta_query_relation: newValue } );
-									}}
-								/>
-								<SelectControl
-									label={ __( 'Tax query relation' ) }
-									value={ attributes.tax_query_relation }
-									options={ [
-										{
-											value: 'AND',
-											label: __( 'AND' ),
-										},
-										{
-											value: 'OR',
-											label: __( 'OR' ),
-										}
-									] }
-									onChange={ newValue => {
-										props.setAttributes( { tax_query_relation: newValue } );
-									}}
-								/>
-							</PanelBody> }
-							<PanelBody
-								title={ __( 'Block Visibility' ) }
-								initialOpen={ false }
-							>
-								<SelectControl
-									label={ __( 'Hide block if' ) }
-									value={ attributes.hide_widget_if }
-									options={ hideOptions }
-									onChange={ newValue => {
-										props.setAttributes( { hide_widget_if: newValue } );
-									} }
-								/>
-							</PanelBody>
-						</InspectorControls>
-					),
+								] }
+								onChange={ newValue => {
+									props.setAttributes( { meta_query_relation: newValue } );
+								}}
+							/>
+							<SelectControl
+								label={ __( 'Tax query relation' ) }
+								value={ attributes.tax_query_relation }
+								options={ [
+									{
+										value: 'AND',
+										label: __( 'AND' ),
+									},
+									{
+										value: 'OR',
+										label: __( 'OR' ),
+									}
+								] }
+								onChange={ newValue => {
+									props.setAttributes( { tax_query_relation: newValue } );
+								}}
+							/>
+						</PanelBody> }
+						<PanelBody
+							title={ __( 'Block Visibility' ) }
+							initialOpen={ false }
+						>
+							<SelectControl
+								label={ __( 'Hide block if' ) }
+								value={ attributes.hide_widget_if }
+								options={ hideOptions }
+								onChange={ newValue => {
+									props.setAttributes( { hide_widget_if: newValue } );
+								} }
+							/>
+						</PanelBody>
+					</InspectorControls>
+				),
+				<div { ...blockProps }>
 					<Disabled key={ 'block_render' }>
 						<ServerSideRender
 							block="jet-engine/maps-listing"
 							attributes={ attributes }
 						/>
 					</Disabled>
-				];
-			}
+				</div>
+			];
 		},
 		save: props => {
 			return null;

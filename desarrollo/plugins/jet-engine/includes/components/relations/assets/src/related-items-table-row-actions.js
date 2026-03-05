@@ -131,7 +131,7 @@ class RowActions extends Component {
 				isSecondary
 				isDestructive
 				isSmall
-				icon={ DisconnectIcon }
+				icon={ this.props.relatedObjectID !== 0 && this.props.relatedObjectID !== '0' ? DisconnectIcon : '' }
 				onClick={ () => {
 					this.setState( {
 						isTrash: false,
@@ -139,7 +139,9 @@ class RowActions extends Component {
 					} );
 				} }
 			>
-				{ window.JetEngineRelationsCommon.i18n.disconnect }
+				{ this.props.relatedObjectID !== 0 && this.props.relatedObjectID !== '0'
+				  ? window.JetEngineRelationsCommon.i18n.disconnect
+				  : window.JetEngineRelationsCommon.i18n.removeInvalid }
 				{ ( this.state.isDisconnect && ! this.state.isTrash ) && this.confirmPopover() }
 			</Button> }
 			{ this.props.actions.trash && <Button

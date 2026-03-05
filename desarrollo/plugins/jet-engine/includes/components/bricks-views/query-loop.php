@@ -101,7 +101,7 @@ class Query_Loop {
 
 	public function add_control_to_elements() {
 		// Only container, block and div element have query controls
-		$elements = [ 'section', 'container', 'block', 'div' ];
+		$elements = [ 'section', 'container', 'block', 'div', 'slider', 'accordion' ];
 
 		foreach ( $elements as $name ) {
 			add_filter( "bricks/elements/{$name}/controls", [ $this, 'add_jet_engine_controls' ], 40 );

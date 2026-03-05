@@ -358,6 +358,8 @@
 }
 
 .jet-engine-query-preview {
+	display: flex;
+	flex-direction: column;
 	width: 430px;
 	position: fixed;
 	right: 10px;
@@ -365,6 +367,7 @@
 	border: 1px solid #007cba;
 	box-shadow: 0 5px 10px rgba(0,0,0,.4);
 	background: #fff;
+	height: calc( 100vh - 55px );
 	body.rtl & {
 		left: 10px;
 		right: auto;
@@ -379,9 +382,12 @@
 			font-size: 12px;
 		}
 	}
+	&__settings {
+		flex: 0 0 auto;
+	}
 	&__body {
+		flex: 1 1 auto;
 		min-height: 10vh;
-		max-height: 50vh;
 		box-shadow: 0 5px 10px rgba(0,0,0,.1) inset;
 		padding: 12px;
 		overflow: auto;
@@ -774,5 +780,16 @@
 	&-wrap {
 		border: 1px solid #ececec;
     	border-radius: 4px;
+	}
+}
+
+div.cx-vui-component {
+	&--in-row {
+		column-gap: 10px;
+		align-items: center;
+
+		.cx-vui-component__control {
+			flex: 1 0;
+		}
 	}
 }

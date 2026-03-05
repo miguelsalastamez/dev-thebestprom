@@ -14,7 +14,7 @@
 				<th scope="row"><?php _e('Enable CAPTCHA on BuddyPress registration form', 'all-in-one-wp-security-and-firewall'); ?>:</label></th>
 				<td>
 					<div class="aiowps_switch_container">
-						<?php AIOWPSecurity_Utility_UI::setting_checkbox(sprintf(__('Enable this if you want to insert a CAPTCHA field on the %s registration forms.', 'all-in-one-wp-security-and-firewall'), 'BuddyPress'), 'aiowps_enable_bp_register_captcha', '1' == $aio_wp_security->configs->get_value('aiowps_enable_bp_register_captcha')); ?>
+						<?php AIOWPSecurity_Utility_UI::setting_checkbox(sprintf(__('Enable this if you want to insert a CAPTCHA field on the %s registration forms.', 'all-in-one-wp-security-and-firewall'), 'BuddyPress'), 'aiowps_enable_bp_register_captcha', '1' == $aiowps_enable_bp_register_captcha); ?>
 					</div>
 				</td>
 			</tr>
@@ -34,7 +34,7 @@
 					<th scope="row"><?php _e('Enable CAPTCHA on bbPress new topic form', 'all-in-one-wp-security-and-firewall'); ?>:</label></th>
 					<td>
 						<div class="aiowps_switch_container">
-							<?php AIOWPSecurity_Utility_UI::setting_checkbox(sprintf(__('Enable this if you want to insert a CAPTCHA field on the %s new topic forms.', 'all-in-one-wp-security-and-firewall'), 'bbPress'), 'aiowps_enable_bbp_new_topic_captcha', '1' == $aio_wp_security->configs->get_value('aiowps_enable_bbp_new_topic_captcha')); ?>
+							<?php AIOWPSecurity_Utility_UI::setting_checkbox(sprintf(__('Enable this if you want to insert a CAPTCHA field on the %s new topic forms.', 'all-in-one-wp-security-and-firewall'), 'bbPress'), 'aiowps_enable_bbp_new_topic_captcha', '1' == $aiowps_enable_bbp_new_topic_captcha); ?>
 						</div>
 					</td>
 				</tr>
@@ -54,7 +54,7 @@
 					<th scope="row"><?php echo sprintf(__('Enable CAPTCHA on %s', 'all-in-one-wp-security-and-firewall'), 'Contact Form 7'); ?>:</label></th>
 					<td>
 						<div class="aiowps_switch_container">
-							<?php AIOWPSecurity_Utility_UI::setting_checkbox(sprintf(__('Enable this if you want to insert a CAPTCHA field on %s forms.', 'all-in-one-wp-security-and-firewall'), 'Contact Form 7'), 'aiowps_enable_contact_form_7_captcha', '1' == $aio_wp_security->configs->get_value('aiowps_enable_contact_form_7_captcha')); ?>
+							<?php AIOWPSecurity_Utility_UI::setting_checkbox(sprintf(__('Enable this if you want to insert a CAPTCHA field on %s forms.', 'all-in-one-wp-security-and-firewall'), 'Contact Form 7'), 'aiowps_enable_contact_form_7_captcha', '1' == $aiowps_enable_contact_form_7_captcha); ?>
 							<span class="aiowps_more_info_anchor"><span class="aiowps_more_info_toggle_char">+</span><span class="aiowps_more_info_toggle_text"><?php _e('More info', 'all-in-one-wp-security-and-firewall'); ?></span></span>
 							<div class="aiowps_more_info_body">
 								<?php

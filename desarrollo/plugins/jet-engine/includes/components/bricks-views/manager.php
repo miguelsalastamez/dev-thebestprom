@@ -47,7 +47,6 @@ class Manager {
 		add_action( 'init', array( $this, 'init_listings' ), 10 );
 		add_action( 'init', array( $this, 'integrate_jet_engine_in_bricks_loop' ), 10 );
 		add_action( 'init', array( $this, 'register_providers' ), 90 );
-		add_action( 'init', array( $this, 'render_bricks_popup' ) );
 
 		add_filter( 'jet-engine/gallery/grid/args', array( $this, 'add_arguments_to_gallery_grid' ), 10 );
 		add_filter( 'jet-engine/gallery/slider/args', array( $this, 'add_arguments_to_gallery_slider' ), 10 );
@@ -307,16 +306,6 @@ class Manager {
 		$controls['dynamic_field_source']['options']['repeater_field'] = esc_html__( 'Repeater Field', 'jet-engine' );
 
 		return $controls;
-	}
-
-	/**
-	 * Prevent listing assets from being blocked during Bricks popup fake render
-	 * and restore them for the real render to ensure styles/scripts are printed.
-	 */
-	public function render_bricks_popup() {
-		require $this->component_path( 'bricks-popup-render.php' );
-
-		new Bricks_Popup_Render();
 	}
 
 	public function has_bricks() {

@@ -420,4 +420,77 @@ class AIOWPSecurity_Commands {
 			'upgrade_to_premium_data' => $upgrade_to_premium_data,
 		);
 	}
+
+	/**
+	 * Get report data for the current month.
+	 *
+	 * @return array - An array containing this month's report data.
+	 */
+	public function get_report_data() {
+		$start_time = strtotime('first day of this month 00:00:00');
+		$end_time = strtotime('last day of this month 23:59:59');
+		global $wpdb;
+
+		$block_table_name = AIOWPSEC_TBL_PERM_BLOCK;
+		$blocked_ips_count = $wpdb->get_var(
+			$wpdb->prepare(
+				"SELECT COUNT(*) 
+				FROM {$block_table_name}
+				WHERE created BETWEEN %d AND %d",
+				$start_time,
+				$end_time
+			)
+		);
+
+		$audit_log_table_name = AIOWPSEC_TBL_AUDIT_LOG;
+		$failed_login_attempts_count = $wpdb->get_var(
+			$wpdb->prepare(
+				"SELECT COUNT(*) 
+				FROM {$audit_log_table_name}
+				WHERE event_type='failed_login' AND created BETWEEN %d AND %d",
+				$start_time,
+				$end_time
+			)
+		);
+
+		$stopped_malicious_requests_count = $wpdb->get_var(
+			$wpdb->prepare(
+				"SELECT COUNT(*) 
+				FROM {$audit_log_table_name}
+				WHERE event_type='rule_triggered' AND created BETWEEN %d AND %d",
+				$start_time,
+				$end_time
+			)
+		);
+
+		$file_change_detection_data = AIOWPSecurity_Scan::get_fcd_data();
+
+		$critical_features = AIOWPSecurity_Feature_Item_Manager::get_critical_features();
+		$aiowps_feature_mgr = $this->get_feature_mgr_object();
+		$aiowps_feature_mgr->check_feature_status_and_recalculate_points();
+
+		$critical_issues = 0;
+
+		foreach ($critical_features as $key => $feature) {
+			$feature_item = $aiowps_feature_mgr->get_feature_item_by_id($key);
+			if (!$feature_item) continue;
+
+			if (!$feature_item->is_active()) {
+				++$critical_issues;
+			}
+		}
+
+		return array(
+			'report_data' => array(
+				'login_attempts_blocked' => empty($failed_login_attempts_count) ? 0 : $failed_login_attempts_count,
+				'stopped_malicious_requests' => empty($stopped_malicious_requests_count) ? 0 : $stopped_malicious_requests_count,
+				'blocked_ips_count' => empty($blocked_ips_count) ? 0 : $blocked_ips_count,
+				'total_files_scanned' => empty($file_change_detection_data['file_scan_data']) ? 0 : count($file_change_detection_data['file_scan_data']),
+			),
+			'variables' => array(
+				/* translators: %d is the number of critical issues found. */
+				'security_highlights' => sprintf(__('%d critical issue(s)', 'all-in-one-wp-security-and-firewall'), $critical_issues),
+			),
+		);
+	}
 }

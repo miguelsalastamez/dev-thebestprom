@@ -220,6 +220,7 @@ if ( ! class_exists( 'Jet_Engine_Img_Gallery' ) ) {
 				'cols_mobile' => 1,
 				'css_classes' => [ 'jet-engine-gallery-grid' ],
 				'masonry'     => false,
+				'fit_image'   => 'cover',
 			) ) );
 
 			ob_start();
@@ -235,6 +236,11 @@ if ( ! class_exists( 'Jet_Engine_Img_Gallery' ) ) {
 			$attr = array(
 				'class' => $classes,
 			);
+
+			if ( $args['fit_image'] !== 'none' ) {
+				$attr['class'][] = 'fit-image';
+				$attr['class'][] = sprintf( 'fit-image-%s', $args['fit_image'] );
+			}
 
 			if ( ! empty( $args['masonry'] ) ) {
 

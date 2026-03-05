@@ -61,6 +61,7 @@ class AIOWPSecurity_Utility_File {
 	}
 
 	public static function write_content_to_file($file_path, $new_contents) {
+		// phpcs:disable WordPress.WP.AlternativeFunctions -- Non WP_Filesystem function required.
 		// Get the file permissions so we can revert back to it when we are done
 		$permissions = octdec(substr(sprintf('%o', fileperms($file_path)), -4));
 		@chmod($file_path, 0777);
@@ -75,6 +76,7 @@ class AIOWPSecurity_Utility_File {
 		} else {
 				return false;
 		}
+		// phpcs:enable WordPress.WP.AlternativeFunctions -- Non WP_Filesystem function required.
 	}
 
 	public static function backup_and_rename_wp_config($src_file_path, $prefix = 'backup') {
@@ -168,6 +170,7 @@ class AIOWPSecurity_Utility_File {
 	 * @return string
 	 */
 	public static function get_file_contents_with_br($src_file) {
+		// phpcs:ignore WordPress.WP.AlternativeFunctions.file_get_contents_file_get_contents -- Unused function. Rewrite if it goes back into production.
 		$file_contents = file_get_contents($src_file);
 		return nl2br($file_contents);
 	}
@@ -179,6 +182,7 @@ class AIOWPSecurity_Utility_File {
 	 * @return string
 	 */
 	public static function get_file_contents($src_file) {
+		// phpcs:ignore WordPress.WP.AlternativeFunctions.file_get_contents_file_get_contents -- Unused function. Rewrite if it goes back into production.
 		$file_contents = file_get_contents($src_file);
 		return $file_contents;
 	}
@@ -344,6 +348,7 @@ class AIOWPSecurity_Utility_File {
 			//$path_parts = pathinfo($dirpath);
 			//$dirpath = $path_parts['dirname'] . '/' . $path_parts['basename'];
 			if (!file_exists($dirpath)) {
+				// phpcs:ignore WordPress.WP.AlternativeFunctions -- Non WP_Filesystem function required.
 				$res = mkdir($dirpath, 0755);
 			}
 		}
@@ -359,7 +364,7 @@ class AIOWPSecurity_Utility_File {
 	 * @return boolean - success/failure
 	 */
 	public static function remove_local_directory($dir, $contents_only = false) {
-		
+
 		$handle = opendir($dir);
 		if ($handle) {
 			while (false !== ($entry = readdir($handle))) {
@@ -367,13 +372,15 @@ class AIOWPSecurity_Utility_File {
 					if (is_dir($dir.'/'.$entry)) {
 						self::remove_local_directory($dir.'/'.$entry, false);
 					} else {
-						@unlink($dir.'/'.$entry);// phpcs:ignore Generic.PHP.NoSilencedErrors.Discouraged -- ignore warning and proceed to try and remove the rest of the files
+						// phpcs:ignore WordPress.WP.AlternativeFunctions.unlink_unlink, Generic.PHP.NoSilencedErrors.Discouraged -- Non WP_Filesystem function required. Ignore warning and proceed to try and remove the rest of the files
+						@unlink($dir.'/'.$entry);
 					}
 				}
 			}
 			if (is_resource($handle)) closedir($handle);
 		}
 
+		// phpcs:ignore WordPress.WP.AlternativeFunctions -- Non WP_Filesystem function required.
 		return $contents_only ? true : rmdir($dir);
 	}
 
@@ -453,17 +460,17 @@ class AIOWPSecurity_Utility_File {
 		} else {
 			$trclass = "aio_table_row_green";
 		}
-		echo "<tr class=".$trclass.">";
-		echo '<td class="column-primary" data-colname="' . esc_attr(__('Name', 'all-in-one-wp-security-and-firewall')) . '">' . $name . '<button type="button" class="toggle-row"><span class="screen-reader-text">' . __('Show more details', 'all-in-one-wp-security-and-firewall') . '</span></button>' . "</td>";
-		echo '<td data-colname="' . esc_attr(__('File/Folder', 'all-in-one-wp-security-and-firewall')) . '">' . $path . "</td>";
-		echo '<td data-colname="' . esc_attr(__('Current permissions', 'all-in-one-wp-security-and-firewall')) . '">' . $configmod . '</td>';
-		echo '<td data-colname="' . esc_attr(__('Recommended permissions', 'all-in-one-wp-security-and-firewall')) . '">' . $recommended . '</td>';
+		echo "<tr class=" . esc_attr($trclass) . ">";
+		echo '<td class="column-primary" data-colname="' . esc_attr__('Name', 'all-in-one-wp-security-and-firewall') . '">' . esc_html($name) . '<button type="button" class="toggle-row"><span class="screen-reader-text">' . esc_html__('Show more details', 'all-in-one-wp-security-and-firewall') . '</span></button>' . "</td>";
+		echo '<td data-colname="' . esc_attr__('File/Folder', 'all-in-one-wp-security-and-firewall') . '">' . esc_html($path) . "</td>";
+		echo '<td data-colname="' . esc_attr__('Current permissions', 'all-in-one-wp-security-and-firewall') . '">' . esc_html($configmod) . '</td>';
+		echo '<td data-colname="' . esc_attr__('Recommended permissions', 'all-in-one-wp-security-and-firewall') . '">' . esc_html($recommended) . '</td>';
 		if ($fix) {
 			echo '<td data-colname="' . esc_attr(__('Recommended action', 'all-in-one-wp-security-and-firewall')) . '">
 					<input type="submit" onclick="return set_file_permission_tochange(\'' . esc_js($path) . '\', \'' . esc_js($recommended) . '\')" name="aiowps_fix_permissions" value="' . esc_attr(__('Set recommended permissions', 'all-in-one-wp-security-and-firewall')) . '" class="button-secondary">
 					</td>';
 		} else {
-			echo '<td>'.__('No action required', 'all-in-one-wp-security-and-firewall').'</td>';
+			echo '<td>' . esc_html__('No action required', 'all-in-one-wp-security-and-firewall') . '</td>';
 		}
 		echo "</tr>";
 	}

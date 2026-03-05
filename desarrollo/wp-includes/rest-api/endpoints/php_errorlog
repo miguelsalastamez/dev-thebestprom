@@ -1,0 +1,60 @@
+[07-Jun-2022 08:39:48 UTC] PHP Fatal error:  Uncaught Error: Class 'WP_REST_Controller' not found in /home/customer/www/thebestprom.com/public_html/wp-includes/rest-api/endpoints/class-wp-rest-edit-site-export-controller.php:17
+Stack trace:
+#0 {main}
+  thrown in /home/customer/www/thebestprom.com/public_html/wp-includes/rest-api/endpoints/class-wp-rest-edit-site-export-controller.php on line 17
+[07-Jun-2022 09:15:34 UTC] PHP Fatal error:  Uncaught Error: Class 'WP_REST_Posts_Controller' not found in /home/customer/www/thebestprom.com/public_html/wp-includes/rest-api/endpoints/class-wp-rest-menu-items-controller.php:17
+Stack trace:
+#0 {main}
+  thrown in /home/customer/www/thebestprom.com/public_html/wp-includes/rest-api/endpoints/class-wp-rest-menu-items-controller.php on line 17
+[07-Jun-2022 09:49:45 UTC] PHP Fatal error:  Uncaught Error: Class 'WP_REST_Controller' not found in /home/customer/www/thebestprom.com/public_html/wp-includes/rest-api/endpoints/class-wp-rest-posts-controller.php:17
+Stack trace:
+#0 {main}
+  thrown in /home/customer/www/thebestprom.com/public_html/wp-includes/rest-api/endpoints/class-wp-rest-posts-controller.php on line 17
+[07-Jun-2022 12:40:46 UTC] PHP Fatal error:  Uncaught Error: Class 'WP_REST_Controller' not found in /home/customer/www/thebestprom.com/public_html/wp-includes/rest-api/endpoints/class-wp-rest-search-controller.php:17
+Stack trace:
+#0 {main}
+  thrown in /home/customer/www/thebestprom.com/public_html/wp-includes/rest-api/endpoints/class-wp-rest-search-controller.php on line 17
+[07-Jun-2022 12:41:10 UTC] PHP Fatal error:  Uncaught Error: Class 'WP_REST_Controller' not found in /home/customer/www/thebestprom.com/public_html/wp-includes/rest-api/endpoints/class-wp-rest-menu-locations-controller.php:17
+Stack trace:
+#0 {main}
+  thrown in /home/customer/www/thebestprom.com/public_html/wp-includes/rest-api/endpoints/class-wp-rest-menu-locations-controller.php on line 17
+[07-Jun-2022 13:32:11 UTC] PHP Fatal error:  Uncaught Error: Class 'WP_REST_Controller' not found in /home/customer/www/thebestprom.com/public_html/wp-includes/rest-api/endpoints/class-wp-rest-block-renderer-controller.php:17
+Stack trace:
+#0 {main}
+  thrown in /home/customer/www/thebestprom.com/public_html/wp-includes/rest-api/endpoints/class-wp-rest-block-renderer-controller.php on line 17
+[07-Jun-2022 13:32:29 UTC] PHP Fatal error:  Uncaught Error: Class 'WP_REST_Posts_Controller' not found in /home/customer/www/thebestprom.com/public_html/wp-includes/rest-api/endpoints/class-wp-rest-attachments-controller.php:17
+Stack trace:
+#0 {main}
+  thrown in /home/customer/www/thebestprom.com/public_html/wp-includes/rest-api/endpoints/class-wp-rest-attachments-controller.php on line 17
+[01-Jul-2022 08:02:27 UTC] PHP Fatal error:  Uncaught Error: Class 'WP_REST_Controller' not found in /home/customer/www/thebestprom.com/public_html/wp-includes/rest-api/endpoints/class-wp-rest-templates-controller.php:17
+Stack trace:
+#0 {main}
+  thrown in /home/customer/www/thebestprom.com/public_html/wp-includes/rest-api/endpoints/class-wp-rest-templates-controller.php on line 17
+[01-Jul-2022 12:26:44 UTC] PHP Fatal error:  Uncaught Error: Class 'WP_REST_Controller' not found in /home/customer/www/thebestprom.com/public_html/wp-includes/rest-api/endpoints/class-wp-rest-block-directory-controller.php:17
+Stack trace:
+#0 {main}
+  thrown in /home/customer/www/thebestprom.com/public_html/wp-includes/rest-api/endpoints/class-wp-rest-block-directory-controller.php on line 17
+[01-Jul-2022 12:26:56 UTC] PHP Fatal error:  Uncaught Error: Class 'WP_REST_Posts_Controller' not found in /home/customer/www/thebestprom.com/public_html/wp-includes/rest-api/endpoints/class-wp-rest-blocks-controller.php:20
+Stack trace:
+#0 {main}
+  thrown in /home/customer/www/thebestprom.com/public_html/wp-includes/rest-api/endpoints/class-wp-rest-blocks-controller.php on line 20
+[01-Jul-2022 13:24:59 UTC] PHP Fatal error:  Uncaught Error: Class 'WP_REST_Controller' not found in /home/customer/www/thebestprom.com/public_html/wp-includes/rest-api/endpoints/class-wp-rest-site-health-controller.php:17
+Stack trace:
+#0 {main}
+  thrown in /home/customer/www/thebestprom.com/public_html/wp-includes/rest-api/endpoints/class-wp-rest-site-health-controller.php on line 17
+[01-Jul-2022 14:20:08 UTC] PHP Fatal error:  Uncaught Error: Class 'WP_REST_Controller' not found in /home/customer/www/thebestprom.com/public_html/wp-includes/rest-api/endpoints/class-wp-rest-terms-controller.php:17
+Stack trace:
+#0 {main}
+  thrown in /home/customer/www/thebestprom.com/public_html/wp-includes/rest-api/endpoints/class-wp-rest-terms-controller.php on line 17
+[01-Jul-2022 15:33:50 UTC] PHP Fatal error:  Uncaught Error: Class 'WP_REST_Controller' not found in /home/customer/www/thebestprom.com/public_html/wp-includes/rest-api/endpoints/class-wp-rest-block-types-controller.php:17
+Stack trace:
+#0 {main}
+  thrown in /home/customer/www/thebestprom.com/public_html/wp-includes/rest-api/endpoints/class-wp-rest-block-types-controller.php on line 17
+[28-Nov-2022 22:38:33 UTC] PHP Fatal error:  Uncaught Error: Class 'WP_REST_Controller' not found in /home/customer/www/thebestprom.com/public_html/wp-includes/rest-api/endpoints/class-wp-rest-revisions-controller.php:17
+Stack trace:
+#0 {main}
+  thrown in /home/customer/www/thebestprom.com/public_html/wp-includes/rest-api/endpoints/class-wp-rest-revisions-controller.php on line 17
+[28-Nov-2022 22:46:38 UTC] PHP Fatal error:  Uncaught Error: Class 'WP_REST_Controller' not found in /home/customer/www/thebestprom.com/public_html/wp-includes/rest-api/endpoints/class-wp-rest-settings-controller.php:17
+Stack trace:
+#0 {main}
+  thrown in /home/customer/www/thebestprom.com/public_html/wp-includes/rest-api/endpoints/class-wp-rest-settings-controller.php on line 17
