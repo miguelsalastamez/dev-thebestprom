@@ -1,0 +1,138 @@
+/**
+ * Community Tickets Shortcodes Stylesheet
+ * The stylesheet for shortcodes on Community Tickets.
+ *
+ * Override this stylesheet in your own theme by creating a file at
+ * [your-theme]/tribe-events/community/events-community-tickets-shortcodes.css
+ *
+ * @since  5.0.0 Migrated to Community from Community Tickets.
+ * @author The Events Calendar
+ */
+
+/*
+ * Community Tickets Submission form
+ */
+#rsvp_form_save,
+#ticket_form_save,
+#ticket_form_cancel,
+#tribe_ticket_header_image,
+#tribe_settings_form_save,
+#tribe_settings_form_cancel {
+	background: #616161;
+	border-radius: 3px;
+	color: #fff;
+	cursor: pointer;
+	display: inline-block;
+	font-family: sans-serif;
+	font-size: 11px;
+	-webkit-font-smoothing: subpixel-antialiased;
+	font-weight: 400;
+	height: auto;
+	letter-spacing: 1px;
+	line-height: 1;
+	padding: 10px;
+	text-align: center;
+	text-decoration: none;
+	text-transform: uppercase;
+}
+
+#ticket_form_toggle,
+#rsvp_form_toggle,
+#settings_form_toggle {
+	line-height: 1;
+}
+
+#ticket_form_cancel,
+#tribe_ticket_header_image,
+#tribe_settings_form_cancel,
+#ticket_form_toggle,
+#rsvp_form_toggle,
+#settings_form_toggle {
+	&:hover {
+		background: #444;
+	}
+}
+
+#rsvp_form_save,
+#ticket_form_save,
+#tribe_settings_form_save {
+	background: #008dd5;
+
+	&:hover {
+		background: #0076b2;
+	}
+}
+
+.tribe-report-panel h3 {
+	font-size: 18px;
+}
+
+/* TODO: This should be removed when we copy it over to ET! */
+.tribe-report-panel .welcome-panel-column-container {
+	border: 3px solid #e5e5e5;
+	display: flex;
+	flex-flow: row wrap;
+	position: relative;
+	*zoom: 1;
+
+	&:before,
+	&:after {
+		content: '';
+		display: table;
+	}
+
+	&:after {
+		clear: both;
+	}
+}
+
+.tribe-report-panel .welcome-panel-column {
+	flex-basis: calc((40em - 100%) * 999);
+	flex-grow: 1;
+	flex-shrink: 1;
+	padding: 1rem;
+
+	ul {
+		list-style: none;
+	}
+
+	li {
+		font-size: 14px;
+	}
+
+	&.welcome-panel-last {
+		background-color: #f9f9f9;
+	}
+}
+
+.tribe-scrollable-table {
+	overflow-x: scroll;
+	table-layout: fixed;
+	width: 100%;
+
+	th {
+		white-space: nowrap;
+	}
+}
+
+#tribe-events-report {
+	.table-menu-wrapper,
+	.tabbed-view-wrap .nav-tab-wrapper {
+		display: none;
+	}
+
+	.row-actions {
+		position: static;
+	}
+}
+
+@media (min-width: 782px) {
+	.input_block .input_block,
+	.input_block .ticket_form_right {
+		margin-left: 70px;
+	}
+}
+
+.toggle-row {
+	display: none;
+}

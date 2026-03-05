@@ -1,0 +1,805 @@
+/*ECT ICONS FONT*/
+
+@font-face {
+    font-family: 'ecticons';
+    src: url('font/ecticons.eot?24096328');
+    src: url('font/ecticons.eot?24096328#iefix') format('embedded-opentype'), url('font/ecticons.woff2?24096328') format('woff2'), url('font/ecticons.woff?24096328') format('woff'), url('font/ecticons.ttf?24096328') format('truetype'), url('font/ecticons.svg?24096328#ecticons') format('svg');
+    font-weight: normal;
+    font-style: normal;
+}
+
+
+/* Chrome hack: SVG is rendered more smooth in Windozze. 100% magic, uncomment if you need it. */
+
+
+/* Note, that will break hinting! In other OS-es font will be not as sharp as it could be */
+
+
+/*
+  @media screen and (-webkit-min-device-pixel-ratio:0) {
+    @font-face {
+      font-family: 'ecticons';
+      src: url('font/ecticons.svg?24096328#ecticons') format('svg');
+    }
+  }
+  */
+
+[class^="ect-icon-"]:before,
+[class*=" ect-icon-"]:before {
+    font-family: "ecticons";
+    font-style: normal;
+    font-weight: normal;
+    speak: none;
+    display: inline-block;
+    text-decoration: inherit;
+    width: 1em;
+    margin-right: .2em;
+    text-align: center;
+    /* opacity: .8; */
+    /* For safety - reset parent styles, that can break glyph codes*/
+    font-variant: normal;
+    text-transform: none;
+    /* fix buttons height, for twitter bootstrap */
+    line-height: 1em;
+    /* Animation center compensation - margins should be symmetric */
+    /* remove if not needed */
+    margin-left: .2em;
+    /* you can be more comfortable with increased icons size */
+    /* font-size: 120%; */
+    /* Font smoothing. That was taken from TWBS */
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+    /* Uncomment for 3D effect */
+    /* text-shadow: 1px 1px 1px rgba(127, 127, 127, 0.3); */
+}
+
+a.ect-share-link i:before {
+    font-size: 28px;
+    line-height: 35px;
+}
+
+.ect-icon-star:before {
+    content: '\e800';
+}
+
+
+/* '' */
+
+.ect-icon-down:before {
+    content: '\e801';
+}
+
+
+/* '' */
+
+.ect-icon-up:before {
+    content: '\e802';
+}
+
+
+/* '' */
+
+.ect-icon-flight:before {
+    content: '\e803';
+}
+
+
+/* '' */
+
+.ect-icon-bell:before {
+    content: '\e804';
+}
+
+
+/* '' */
+
+.ect-icon-left:before {
+    content: '\e805';
+}
+
+
+/* '' */
+
+.ect-icon-right:before {
+    content: '\e806';
+}
+
+
+/* '' */
+
+.ect-icon-flash:before {
+    content: '\e807';
+}
+
+
+/* '' */
+
+.ect-icon-card:before {
+    content: '\e808';
+}
+
+
+/* '' */
+
+.ect-icon-calendar:before {
+    content: '\e809';
+}
+
+
+/* '' */
+
+.ect-icon-calendar-alt:before {
+    content: '\e80a';
+}
+
+
+/* '' */
+
+.ect-icon-clock:before {
+    content: '\e80b';
+}
+
+
+/* '' */
+
+.ect-icon-clock-alt:before {
+    content: '\e80c';
+}
+
+
+/* '' */
+
+.ect-icon-tag:before {
+    content: '\e80d';
+}
+
+
+/* '' */
+
+.ect-icon-pin:before {
+    content: '\e80e';
+}
+
+
+/* '' */
+
+.ect-icon-tags:before {
+    content: '\e80f';
+}
+
+
+/* '' */
+
+.ect-icon-location:before {
+    content: '\e810';
+}
+
+
+/* '' */
+
+.ect-icon-location-alt:before {
+    content: '\e811';
+}
+
+
+/* '' */
+
+.ect-icon-wallet:before {
+    content: '\e812';
+}
+
+
+/* '' */
+
+.ect-icon-share-alt:before {
+    content: '\e813';
+}
+
+
+/* '' */
+
+.ect-icon-search:before {
+    content: '\e814';
+}
+
+
+/* '' */
+
+.ect-icon-users:before {
+    content: '\e815';
+}
+
+
+/* '' */
+
+.ect-icon-user:before {
+    content: '\e816';
+}
+
+
+/* '' */
+
+.ect-icon-home:before {
+    content: '\e817';
+}
+
+
+/* '' */
+
+.ect-icon-link:before {
+    content: '\e818';
+}
+
+
+/* '' */
+
+.ect-icon-star-circled:before {
+    content: '\e819';
+}
+
+
+/* '' */
+
+.ect-icon-heart:before {
+    content: '\e81a';
+}
+
+
+/* '' */
+
+.ect-icon-tag-alt:before {
+    content: '\e81b';
+}
+
+
+/* '' */
+
+.ect-icon-spin:before {
+    content: '\e839';
+}
+
+
+/* '' */
+
+.ect-icon-phone:before {
+    content: '\f098';
+}
+
+
+/* '' */
+
+.ect-icon-certificate:before {
+    content: '\f0a3';
+}
+
+
+/* '' */
+
+.ect-icon-filter:before {
+    content: '\f0b0';
+}
+
+
+/* '' */
+
+.ect-icon-money:before {
+    content: '\f0d6';
+}
+
+
+/* '' */
+
+.ect-icon-mail-alt:before {
+    content: '\f0e0';
+}
+
+
+/* '' */
+
+.ect-icon-bulb:before {
+    content: '\f0eb';
+}
+
+
+/* '' */
+
+.ect-icon-bell-alt:before {
+    content: '\f0f3';
+}
+
+
+/* '' */
+
+.ect-icon-coffee:before {
+    content: '\f0f4';
+}
+
+
+/* '' */
+
+.ect-icon-food:before {
+    content: '\f0f5';
+}
+
+
+/* '' */
+
+.ect-icon-left-double:before {
+    content: '\f100';
+}
+
+
+/* '' */
+
+.ect-icon-right-double:before {
+    content: '\f101';
+}
+
+
+/* '' */
+
+.ect-icon-up-double:before {
+    content: '\f102';
+}
+
+
+/* '' */
+
+.ect-icon-down-double:before {
+    content: '\f103';
+}
+
+
+/* '' */
+
+.ect-icon-quote-left:before {
+    content: '\f10d';
+}
+
+
+/* '' */
+
+.ect-icon-quote-right:before {
+    content: '\f10e';
+}
+
+
+/* '' */
+
+.ect-icon-mic:before {
+    content: '\f130';
+}
+
+
+/* '' */
+
+.ect-icon-ticket:before {
+    content: '\f145';
+}
+
+
+/* '' */
+
+.ect-icon-ok:before {
+    content: '\f14a';
+}
+
+
+/* '' */
+
+.ect-icon-down-alt:before {
+    content: '\f150';
+}
+
+
+/* '' */
+
+.ect-icon-up-alt:before {
+    content: '\f151';
+}
+
+
+/* '' */
+
+.ect-icon-right-alt:before {
+    content: '\f152';
+}
+
+
+/* '' */
+
+.ect-icon-euro:before {
+    content: '\f153';
+}
+
+
+/* '' */
+
+.ect-icon-pound:before {
+    content: '\f154';
+}
+
+
+/* '' */
+
+.ect-icon-dollar:before {
+    content: '\f155';
+}
+
+
+/* '' */
+
+.ect-icon-bitcoin:before {
+    content: '\f15a';
+}
+
+
+/* '' */
+
+.ect-icon-thumbs-up:before {
+    content: '\f164';
+}
+
+
+/* '' */
+
+.ect-icon-thumbs-down:before {
+    content: '\f165';
+}
+
+
+/* '' */
+
+.ect-icon-youtube:before {
+    content: '\f166';
+}
+
+
+/* '' */
+
+.ect-icon-left-alt:before {
+    content: '\f191';
+}
+
+
+/* '' */
+
+.ect-icon-mail:before {
+    content: '\f199';
+}
+
+
+/* '' */
+
+.ect-icon-car:before {
+    content: '\f1b9';
+}
+
+
+/* '' */
+
+.ect-icon-share:before {
+    content: '\f1e1';
+}
+
+
+/* '' */
+
+.ect-icon-diamond:before {
+    content: '\f219';
+}
+
+
+/* '' */
+
+.ect-icon-whatsapp:before {
+    content: '\f232';
+}
+
+
+/* '' */
+
+.ect-icon-twitter:before {
+    content: '\f304';
+}
+
+
+/* '' */
+
+.ect-icon-facebook:before {
+    content: '\f308';
+}
+
+
+/* '' */
+
+.ect-icon-linkedin:before {
+    content: '\f30c';
+}
+
+
+/* '' */
+
+.ect-icon-calendar:before {
+    content: '\e809';
+}
+
+
+/* '' */
+
+
+/*ECT ICONS FONT - END*/
+
+.ect-load-more {
+    display: inline-block;
+    clear: both;
+    width: 100%;
+    margin: 10px 0;
+    padding: 0;
+    text-align: center;
+    position: relative;
+}
+
+.ect-load-more a.ect-load-more-btn {
+    display: inline-block;
+    padding: 10px 20px;
+    background-color: #ddd;
+    font-size: 20px;
+    text-align: center;
+    z-index: 2;
+    text-decoration: none;
+    color: #fff;
+}
+
+.ect-load-more a.ect-load-more-btn:hover,
+.ect-load-more a.ect-load-more-btn:focus {
+    opacity: 0.9;
+    text-decoration: none;
+    border-bottom: 0;
+}
+
+.ect-load-more img.ect-preloader {
+    filter: invert(100%);
+    height: 28px;
+    width: auto;
+    vertical-align: middle;
+}
+
+.ect-load-more:before,
+.ect-load-more:after {
+    content: "";
+    width: 38%;
+    height: 2px;
+    position: absolute;
+    top: 50%;
+    z-index: 1;
+}
+
+.ect-load-more:before {
+    left: 0;
+}
+
+.ect-load-more:after {
+    right: 0;
+}
+
+span.ect-ticket-info {
+    font-size: 0.75em;
+    display: inline-block;
+}
+
+span.ect-ticket-info span.tribe-tickets-left {
+    display: inline-block;
+}
+
+span.ect-ticket-info span.tribe-tickets-left:before {
+    content: "(";
+}
+
+span.ect-ticket-info span.tribe-tickets-left:after {
+    content: ")";
+}
+
+span.ect-ticket-info span.tribe-out-of-stock {
+    font-style: italic;
+    color: red;
+    display: inline-block;
+}
+
+span.ect-ticket-info a {
+    display: none;
+    /* display: inline-block; */
+    background: #222;
+    background-size: 200% auto!important;
+    transition: 0.5s;
+    color: #fff;
+    padding: 5px;
+    border-radius: 4px;
+}
+
+span.ect-ticket-info a:hover {
+    background-position: right center;
+    text-decoration: none;
+}
+
+.ect-event-category {
+    margin: 3px 0;
+    display: inline-block;
+    line-height: 14px;
+}
+
+.ect-event-category ul.tribe_events_cat {
+    padding: 0;
+    margin: 0;
+    display: flex;
+    font-size: 12px;
+    line-height: 14px;
+    list-style: none;
+    flex-direction: row;
+    flex-wrap: wrap;
+    gap: 5px;
+}
+
+.ect-event-category ul.tribe_events_cat li {
+    display: inline;
+    margin: 0;
+    padding: 0;
+    padding-bottom: 5px;
+    text-transform: capitalize;
+}
+
+.ect-event-category ul.tribe_events_cat li a {
+    /* background: #f4fcff; */
+    padding: 1px 12px;
+    border-radius: 4px;
+    text-decoration: none;
+    border-width: 1px;
+    border-style: solid;
+}
+
+.ect-event-category ul.tribe_events_cat li:hover a {
+    opacity: 0.82;
+}
+
+
+/*
+|-----------------------------
+| Responsive media query
+|-----------------------------
+*/
+
+@media only screen and (max-width: 640px) {
+    .ect-load-more:before,
+    .ect-load-more:after {
+        content: "";
+        width: 25%;
+    }
+    .ect-event-category ul.tribe_events_cat {
+        gap: 10px;
+    }
+}
+
+
+/* * ------------------- Tool Tip Style Start here ------------ */
+
+*/ .ect-tool-tip-wrapper.ect-labels-wrap {
+    display: block;
+    position: relative;
+    cursor: pointer;
+    transition: 0.5s ease-in-out;
+    margin-bottom: 10px;
+}
+
+.ect-tool-tip-wrapper.ect-labels-wrap .ect-tip-inr {
+    background: #f1f1f1;
+    bottom: 100%;
+    color: #060606;
+    display: block;
+    right: 0;
+    margin-bottom: 15px;
+    padding: 10px;
+    pointer-events: none;
+    position: absolute;
+    width: 190px;
+    right: 0;
+    border: 2px solid #f1f1f1;
+    z-index: 1;
+    border-radius: 8px;
+    font-size: 14px;
+    text-align: left;
+    left: 50%;
+    transform: translateX(-50%);
+}
+
+.ect-tool-tip-wrapper.ect-labels-wrap .ect-tip-inr span {
+    display: block;
+}
+
+.ect-tool-tip-wrapper.ect-labels-wrap .ect-tip-inr:before {
+    bottom: -20px;
+    content: " ";
+    display: block;
+    height: 20px;
+    left: 0;
+    position: absolute;
+    width: 100%;
+}
+
+.ect-tool-tip-wrapper.ect-labels-wrap .ect-tip-inr:after {
+    border-left: solid transparent 10px;
+    border-right: solid transparent 10px;
+    border-top: solid #f1f1f1 10px;
+    bottom: -10px;
+    content: " ";
+    height: 0;
+    left: 25px;
+    margin-left: -13px;
+    position: absolute;
+    width: 0;
+}
+
+.ect-tool-tip-wrapper.ect-labels-wrap:hover .ect-tip-inr span {
+    opacity: 1;
+    pointer-events: auto;
+}
+
+.ect-tool-tip-wrapper.ect-labels-wrap .ect-tip-inr {
+    display: none;
+    -webkit-transition: .5s ease-in-out;
+    -moz-transition: .5s ease-in-out;
+    -o-transition: .5s ease-in-out;
+    transition: .5s ease-in-out;
+}
+
+.ect-tool-tip-wrapper.ect-labels-wrap:hover .ect-tip-inr {
+    pointer-events: auto;
+    display: block;
+    opacity: 1;
+    -webkit-transition: .5s ease-in-out;
+    -moz-transition: .5s ease-in-out;
+    -o-transition: .5s ease-in-out;
+    transition: .5s ease-in-out;
+}
+
+.ect-tool-tip-wrapper span.ect-labels-canceled,
+.ect-tool-tip-wrapper span.ect-labels-scheduled,
+.ect-tool-tip-wrapper span.ect-labels-postponed {
+    padding: 2px 4px;
+    /* color: #fff; */
+    text-transform: capitalize;
+    font-size: 12px;
+}
+
+span.ect-labels-canceled {
+    color: #DD3333;
+    background-color: #FFE4E4;
+}
+
+span.ect-labels-scheduled {
+    background-color: #dbf9ea;
+    color: #016C35;
+    ;
+}
+
+span.ect-labels-postponed {
+    background-color: #f9efd5;
+    color: #CC9D1C;
+}
+
+@media(max-width:768px) {
+    .ect-tool-tip-wrapper.ect-labels-wrap {
+        display: block;
+    }
+    .ect-tool-tip-wrapper.ect-labels-wrap .ect-tip-inr {
+        padding: 4px;
+        left: 70px;
+        width: 200px;
+    }
+    .ect-tool-tip-wrapper.ect-labels-wrap .ect-tip-inr:after {
+        right: 0;
+        left: 70px;
+    }
+}
+
+
+/*-------------------  Tooltip Style End ---------------- */

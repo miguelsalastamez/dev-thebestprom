@@ -1,0 +1,35 @@
+/**
+ * This CSS file was auto-generated via PostCSS
+ *
+ * Contributors should avoid editing this file, but instead edit the associated
+ * src/resources/postcss/ file. For more information, check out our engineering
+ * docs on how we handle CSS in our engineering docs.
+ *
+ * @see: https://the-events-calendar.github.io/products-engineering/docs/code-standards/css/
+ */
+
+.tribe-community-options .attendees-filter {
+		display: inline-block;
+		float: right;
+	}
+	.tribe-community-options .tablenav a.button {
+			display: inline-block;
+			margin: 0 3px 0;
+		}
+	.tribe-community-options input[type="checkbox"] {
+		margin-right: 0.5em;
+		margin-top: 0.25em;
+		vertical-align: top;
+	}
+	.tribe-community-options input[type="checkbox"] ~ p {
+			display: inline-block;
+			margin-top: 0;
+		}
+	.tribe-community-options .tribe-settings-last-block {
+		margin-bottom: 1em;
+	}
+	@media screen and (max-width: 500px) {
+		.tribe-community-options .tribe-settings-form .tribe-field-wrap {
+			margin-top: 0.25em;
+		}
+	}

@@ -1,0 +1,141 @@
+/**
+ * This CSS file was auto-generated via PostCSS
+ *
+ * Contributors should avoid editing this file, but instead edit the associated
+ * src/resources/postcss/ file. For more information, check out our engineering
+ * docs on how we handle CSS in our engineering docs.
+ *
+ * @see: https://the-events-calendar.github.io/products-engineering/docs/code-standards/css/
+ */
+
+/**
+ * Community Tickets Shortcodes Stylesheet
+ * The stylesheet for shortcodes on Community Tickets.
+ *
+ * Override this stylesheet in your own theme by creating a file at
+ * [your-theme]/tribe-events/community/events-community-tickets-shortcodes.css
+ *
+ * @since  5.0.0 Migrated to Community from Community Tickets.
+ * @author The Events Calendar
+ */
+
+/*
+ * Community Tickets Submission form
+ */
+
+#rsvp_form_save,
+#ticket_form_save,
+#ticket_form_cancel,
+#tribe_ticket_header_image,
+#tribe_settings_form_save,
+#tribe_settings_form_cancel {
+	background: #616161;
+	border-radius: 3px;
+	color: #fff;
+	cursor: pointer;
+	display: inline-block;
+	font-family: sans-serif;
+	font-size: 11px;
+	-webkit-font-smoothing: subpixel-antialiased;
+	font-weight: 400;
+	height: auto;
+	letter-spacing: 1px;
+	line-height: 1;
+	padding: 10px;
+	text-align: center;
+	text-decoration: none;
+	text-transform: uppercase;
+}
+
+#ticket_form_toggle,
+#rsvp_form_toggle,
+#settings_form_toggle {
+	line-height: 1;
+}
+
+#ticket_form_cancel:hover, #tribe_ticket_header_image:hover, #tribe_settings_form_cancel:hover, #ticket_form_toggle:hover, #rsvp_form_toggle:hover, #settings_form_toggle:hover {
+		background: #444;
+	}
+
+#rsvp_form_save,
+#ticket_form_save,
+#tribe_settings_form_save {
+	background: #008dd5;
+}
+
+#rsvp_form_save:hover, #ticket_form_save:hover, #tribe_settings_form_save:hover {
+		background: #0076b2;
+	}
+
+.tribe-report-panel h3 {
+	font-size: 18px;
+}
+
+/* TODO: This should be removed when we copy it over to ET! */
+
+.tribe-report-panel .welcome-panel-column-container {
+	border: 3px solid #e5e5e5;
+	display: flex;
+	flex-flow: row wrap;
+	position: relative;
+	*zoom: 1;
+}
+
+.tribe-report-panel .welcome-panel-column-container:before,
+	.tribe-report-panel .welcome-panel-column-container:after {
+		content: '';
+		display: table;
+	}
+
+.tribe-report-panel .welcome-panel-column-container:after {
+		clear: both;
+	}
+
+.tribe-report-panel .welcome-panel-column {
+	flex-basis: calc(39960em - 99900%);
+	flex-grow: 1;
+	flex-shrink: 1;
+	padding: 1rem;
+}
+
+.tribe-report-panel .welcome-panel-column ul {
+		list-style: none;
+	}
+
+.tribe-report-panel .welcome-panel-column li {
+		font-size: 14px;
+	}
+
+.tribe-report-panel .welcome-panel-column.welcome-panel-last {
+		background-color: #f9f9f9;
+	}
+
+.tribe-scrollable-table {
+	overflow-x: scroll;
+	table-layout: fixed;
+	width: 100%;
+}
+
+.tribe-scrollable-table th {
+		white-space: nowrap;
+	}
+
+#tribe-events-report .table-menu-wrapper,
+	#tribe-events-report .tabbed-view-wrap .nav-tab-wrapper {
+		display: none;
+	}
+
+#tribe-events-report .row-actions {
+		position: static;
+	}
+
+.toggle-row {
+	display: none;
+}
+
+@media (min-width: 782px) {
+	.input_block .input_block,
+	.input_block .ticket_form_right {
+		margin-left: 70px;
+	}
+}

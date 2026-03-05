@@ -1,0 +1,21 @@
+.edd-add-repeatable-row {
+  display: flex;
+  align-items: center;
+}
+
+.igd-edd {
+  margin-left: auto;
+  display: inline-flex;
+  float: right;
+
+  .igd-edd-button {
+    display: inline-flex !important;
+    margin-left: auto !important;
+    align-items: center;
+
+    img {
+      margin-right: 5px;
+    }
+
+  }
+}

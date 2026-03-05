@@ -1,0 +1,157 @@
+/**
+ * 12. Responsive
+ */
+@media only screen and (max-width:1200px){
+
+  .ectcsf-metabox{
+
+    .ectcsf-field{
+
+      .ectcsf-title{
+        float: none;
+        width: 100%;
+        margin-bottom: 10px;
+      }
+
+      .ectcsf-fieldset{
+        float: none;
+        width: 100%;
+      }
+    }
+  }
+}
+
+@media only screen and (max-width:782px){
+
+  .ectcsf-header-inner{
+    text-align: center;
+
+    h1{
+      width: 100%;
+      margin-bottom: 10px;
+    }
+  }
+
+  .ectcsf-form-result{
+    float: none;
+    margin-right: 0;
+    margin-bottom: 10px;
+  }
+
+  .ectcsf-search,
+  .ectcsf-header-right,
+  .ectcsf-header-left{
+    width: 100%;
+  }
+
+  .ectcsf-search{
+    text-align: center;
+    margin-bottom: 15px;
+  }
+
+  .ectcsf-footer{
+    text-align: center;
+  }
+
+  .ectcsf-buttons{
+    float: none;
+  }
+
+  .ectcsf-copyright{
+    float: none;
+    margin-top: 10px;
+  }
+
+  .ectcsf-nav,
+  .ectcsf-expand-all,
+  .ectcsf-reset-section,
+  .ectcsf-nav-background{
+    display: none !important;
+  }
+
+  .ectcsf-nav-normal + .ectcsf-content{
+    margin-left: 0;
+  }
+
+  .ectcsf-section-title,
+  .ectcsf-section{
+    display: block !important;
+  }
+
+  .ectcsf-field{
+
+    .ectcsf-title{
+      float: none;
+      width: 100%;
+      margin-bottom: 10px;
+    }
+
+    .ectcsf-fieldset{
+      float: none;
+      width: 100%;
+    }
+  }
+
+  .ectcsf-field-color{
+
+    .button.wp-picker-clear{
+      padding: 0 8px;
+      line-height: 2.14285714;
+      min-height: 32px;
+    }
+  }
+
+  .ectcsf-profile-options,
+  .ectcsf-taxonomy-edit-fields{
+
+    > .ectcsf-field{
+
+      > .ectcsf-title{
+        float: none;
+        width: 100%;
+        margin-bottom: 10px;
+      }
+
+      > .ectcsf-fieldset{
+        float: none;
+        width: 100%;
+      }
+    }
+  }
+
+  .ectcsf-nav-menu-options{
+
+    > .ectcsf-fields{
+      margin-left: -10px;
+      margin-right: -10px;
+
+      > .ectcsf-field{
+        padding: 10px;
+      }
+    }
+  }
+}
+
+@media only screen and (max-width: 782px) {
+
+  .ectcsf-modal{
+
+    .ectcsf-modal-inner{
+      width: 90%;
+    }
+  }
+}
+
+@media only screen and (max-height: 750px) {
+
+  .ectcsf-modal{
+
+    .ectcsf-modal-inner{
+      height: auto;
+    }
+
+    .ectcsf-modal-content{
+      height: calc(100vh - 200px);
+    }
+  }
+}

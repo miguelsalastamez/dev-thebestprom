@@ -1,0 +1,13 @@
+# Backups y archivos pesados
+backup_*/
+*.zip
+*.tar.gz
+*.sql
+
+# Logs
+*.log
+desarrollo/wp-content/debug.log
+
+# Otros
+.DS_Store
+node_modules/

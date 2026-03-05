@@ -1,0 +1,161 @@
+/* ==========================================================================
+   Nord Theme for DataTables v2
+   Works with wrapper: .igd-table-container
+   Inspired by Nord color palette (arctic, aurora, snow storm)
+   ========================================================================== */
+
+&.theme-nord {
+  /* ---- Theme tokens (Nord inspired) ------------------------------------ */
+  --igd-radius: 4px;
+  --igd-border: #3b4252;        /* nord3 */
+  --igd-bg: #2e3440;            /* nord0 */
+  --igd-row-alt: #3b4252;       /* nord1 */
+  --igd-hover-bg: #434c5e;      /* nord2 */
+  --igd-text: #d8dee9;          /* nord4 */
+  --igd-muted: #81a1c1;         /* nord8 (faded blue) */
+  --igd-head-bg: #4c566a;       /* nord3/grey-blue */
+  --igd-head-text: #eceff4;     /* nord6 */
+  --igd-primary: #88c0d0;       /* nord7 (cyan) */
+  --igd-primary-dark: #5e81ac;  /* nord9 (blue) */
+
+  .dt-container {
+    // ----------------------------------------------------------------------
+    // Layout rows
+    // ----------------------------------------------------------------------
+    .dt-layout-row {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin: 10px 0;
+      color: var(--igd-text);
+    }
+
+    // ----------------------------------------------------------------------
+    // Length & Search
+    // (Inputs are light gray, readable in dark UI)
+    // ----------------------------------------------------------------------
+    .dt-length select,
+    .dt-search input {
+      border: 1px solid var(--igd-border);
+      border-radius: var(--igd-radius);
+      padding: 6px 10px;
+      font-size: 14px;
+      background: #eceff4;       /* nord6 */
+      color: #2e3440;            /* dark text */
+      height: 34px;
+      transition: border-color 0.2s;
+
+      &:focus {
+        border-color: var(--igd-primary);
+        outline: none;
+        box-shadow: 0 0 0 2px rgba(136, 192, 208, 0.25);
+      }
+    }
+
+    // ----------------------------------------------------------------------
+    // Buttons
+    // ----------------------------------------------------------------------
+    .dt-buttons .dt-button {
+      border: 1px solid var(--igd-primary);
+      background: var(--igd-primary);
+      border-radius: var(--igd-radius);
+      padding: 6px 14px;
+      font-size: 14px;
+      font-weight: 500;
+      color: #2e3440; /* dark text */
+      transition: background 0.2s, border-color 0.2s;
+
+      &:hover {
+        background: var(--igd-primary-dark);
+        border-color: var(--igd-primary-dark);
+        color: #fff;
+      }
+
+      &.disabled {
+        opacity: 0.5;
+        cursor: not-allowed;
+        background: #3b4252;
+        border-color: #434c5e;
+        color: var(--igd-muted);
+      }
+    }
+
+    // ----------------------------------------------------------------------
+    // Info
+    // ----------------------------------------------------------------------
+    .dt-info {
+      color: var(--igd-muted);
+      font-size: 13px;
+      margin-top: 4px;
+    }
+
+    // ----------------------------------------------------------------------
+    // Paging
+    // ----------------------------------------------------------------------
+    .dt-paging nav .dt-paging-button {
+      border: 1px solid var(--igd-border);
+      background: var(--igd-bg);
+      border-radius: var(--igd-radius);
+      padding: 6px 12px;
+      font-size: 13px;
+      color: var(--igd-text);
+      transition: background 0.2s, color 0.2s;
+
+      &:hover:not(.disabled):not(.current) {
+        background: var(--igd-hover-bg);
+        color: var(--igd-primary);
+      }
+
+      &.current {
+        background: var(--igd-primary-dark);  /* nord blue for active */
+        border-color: var(--igd-primary-dark);
+        color: #fff !important;
+      }
+
+      &.disabled {
+        color: var(--igd-muted) !important;
+        background: #3b4252;
+      }
+    }
+
+    // ----------------------------------------------------------------------
+    // Table
+    // ----------------------------------------------------------------------
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 14px;
+      border: 1px solid var(--igd-border);
+
+      thead th {
+        background: var(--igd-head-bg);
+        color: var(--igd-head-text);
+        font-weight: 600;
+        text-align: left;
+        padding: 12px 16px;
+        border-bottom: 1px solid var(--igd-border);
+      }
+
+      tbody td {
+        padding: 12px 16px;
+        border-bottom: 1px solid var(--igd-border);
+        color: var(--igd-text);
+        background: var(--igd-bg);
+      }
+
+      /* Alternate striped rows */
+      tbody tr:nth-child(even) td {
+        background: var(--igd-row-alt);
+      }
+
+      /* Hover effect */
+      tbody tr:hover td {
+        background: var(--igd-hover-bg);
+      }
+
+      th, td {
+        border-color: var(--igd-border);
+      }
+    }
+  }
+}

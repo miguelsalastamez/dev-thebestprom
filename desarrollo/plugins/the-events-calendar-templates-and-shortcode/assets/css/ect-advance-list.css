@@ -1,0 +1,365 @@
+/* Datatable wrapper style Start here */
+
+.dataTables_wrapper {
+    /* margin: 20px; */
+    font-family: 'Open Sans';
+}
+
+
+/* Datatable wrapper style end here */
+
+
+/* Selection & Serach Section Style Start Here */
+
+.ect-static-value {
+    display: none;
+}
+
+.dataTables_filter {
+    justify-content: space-between;
+    flex-wrap: wrap;
+    width: 100%;
+    content: "";
+    display: flex !important;
+    padding: 0px 13px;
+}
+
+.ect-category-filter {
+    width: 50%;
+    text-align: left;
+    display: flex;
+    align-items: center;
+    margin-bottom: 10px;
+}
+
+.ect-cat-filter,
+select.ect-tagFilter,
+.dataTables_info,
+.dataTables_wrapper .dataTables_filter input {
+    font-size: 14px;
+    line-height: 1.42857;
+    color: #000;
+    font-family: inherit;
+    width: 250px;
+    border-width: 1px !important;
+    border-style: solid !important;
+    border-color: rgb(204, 204, 204) !important;
+    border-image: initial !important;
+}
+
+.ect-cat-filter,
+select.ect-tagFilter {
+    margin-right: 10px;
+    border-radius: 4px;
+    padding: 5px;
+    outline: none;
+}
+
+
+/* Selection & Serach Section Style End Here */
+
+
+/* Table Style start here */
+
+.ect-advance-list.dataTable.no-footer {
+    margin-bottom: 10px;
+    border-bottom: 0px solid rgb(17, 17, 17);
+    padding: 13px;
+    box-sizing: border-box;
+    border: none;
+}
+
+.ect-advance-list.dataTable.no-footer thead th,
+.ect-advance-list.dataTable.no-footer tbody td {
+    vertical-align: middle;
+}
+
+.ect-advance-list a {
+    text-decoration: none;
+    border-bottom: none;
+}
+
+.ect-advance-list.dataTable.no-footer tbody tr,
+.ect-advance-list.dataTable.no-footer tbody td {
+    box-sizing: border-box;
+}
+
+.ect-advance-list.dataTable thead th,
+#ect-viewmoreBtn span {
+    font-family: inherit;
+    font-weight: inherit;
+}
+
+.ect-icon {
+    display: none;
+}
+
+span.ect-venue-details.ect-address,
+span.ev-mo {
+    display: block;
+}
+
+.ect-advance-list .ect-date-area .ev-day {
+    /* font-size: 1.5em; */
+    font-weight: 600;
+    clear: both;
+    line-height: 35px;
+    display: block;
+}
+
+.ect-event-content p,
+span.ect-venue-details.ect-address,
+.ect-event-time {
+    font-size: inherit;
+}
+
+td.ect-advance-list-catTag.ect-cattag-hide a {
+    background: #dbf5ff;
+    margin: 6px 2px;
+    padding: 4px 6px;
+    font-size: 14px;
+    border-radius: 6px;
+    text-align: center;
+    display: block;
+}
+
+td.ect-cattag-hide {
+    text-transform: capitalize;
+}
+
+.ect-advance-list-head {
+    font-size: 1.3rem;
+}
+
+.ect-advance-list.dataTable thead th {
+    /* font-size: 24px; */
+}
+
+span.reload {
+    font-size: 20px;
+    font-weight: 800;
+    cursor: pointer;
+}
+
+.ect-event-time {
+    text-align: center;
+    font-family: inherit;
+    font-size: inherit;
+    font-weight: inherit;
+}
+
+span.ect-str-date,
+span.end-date {
+    display: block;
+}
+
+
+/* Read More Button Style */
+
+td#ect-viewmoreBtn {
+    width: 125px;
+    position: relative;
+}
+
+input[type="search"]:focus-visible {
+    outline: none;
+}
+
+.ect-advance-list-mobi-serial {
+    z-index: 100;
+    text-align: center;
+}
+
+.ect-advance-list-mobi-serial .ev-time {
+    display: inline-block;
+    text-align: center;
+}
+
+.ect-advance-list-date {
+    text-align: center;
+}
+
+.ect-advance-list-catTag,
+.ect-advance-list-cost {
+    text-align: center;
+}
+
+#ect-viewmoreBtn span {
+    padding: 5px 10px;
+    border-radius: 4px;
+    /* background-color: #DBF5FF; */
+    color: #00445E;
+    font-weight: 600;
+    display: block;
+    font-size: 0.9rem;
+    padding: 5px 10px;
+    border-radius: 4px;
+    /* border-width: 1px; */
+    /* border-style: solid; */
+    /* border-color: rgb(204, 204, 204); */
+    border-image: initial;
+    text-align: center;
+}
+
+
+/* #ect-viewmoreBtn span:hover{
+        background-color: #00445E;
+        color:#DBF5FF ;
+    } */
+
+.ect-cattag-hide,
+.ect-advance-list-venue .ect-icon {
+    display: none;
+}
+
+a[rel="tag"] {
+    display: inline-block;
+    /* padding: 2px 10px; */
+    text-transform: capitalize;
+    /* background: #efefef; */
+    margin: 4px 4px;
+    text-align: center;
+    border-radius: 4px;
+    font-size: 12px;
+    font-weight: 700;
+    /* color: #000;; */
+}
+
+span.reload {
+    cursor: pointer;
+    font-size: 20px;
+    font-weight: 500;
+}
+
+a.more-link {
+    display: block;
+    width: fit-content;
+    text-transform: capitalize;
+}
+
+span#ect-view-more {
+    display: block;
+    width: 100%;
+    text-align: center;
+    background: #dbf5ff;
+    padding: 6px;
+    font-size: inherit;
+    color: #000;
+}
+
+
+/* Table Style end here */
+
+
+/* Pagination Section Style Start Here */
+
+.dataTables_filter label,
+.dataTables_length label {
+    align-items: baseline;
+    margin-bottom: 10px;
+    display: inline-flex !important;
+    padding: 0px 13px;
+}
+
+.dataTables_filter label {
+    padding: 0;
+}
+
+.dataTables_wrapper .dataTables_length select {
+    border: 1px solid #aaa;
+    border-radius: 3px;
+    padding: 5px;
+    background-color: transparent;
+    display: block;
+}
+
+.dataTables_length label select {
+    margin: 0px 4px;
+}
+
+.dataTables_wrapper .dataTables_paginate .paginate_button {
+    margin-bottom: 10px;
+    padding: 0px 1rem;
+    background: transparent !important;
+    border-radius: 4px;
+}
+
+
+/* Pagination Section Style End Here */
+
+
+/* Media Query Start Here */
+
+@media screen and (max-width:768px) {
+    td#ev-advance-date {
+        padding: 10px;
+    }
+}
+
+@media screen and (max-width:768px) {
+    .ect-category-filter {
+        display: flex;
+        width: 100%;
+        /* padding: 0px 10px; */
+    }
+    .dataTables_wrapper .dataTables_filter input {
+        margin-left: 0px;
+    }
+    .ect-cat-filter,
+    select.ect-tagFilter {
+        width: 100%;
+        margin-bottom: 10px;
+        font-size: 14px;
+    }
+    .dataTables_filter label {
+        width: 100%;
+        text-align: left;
+        /* padding: 0px 10px; */
+        font-size: 16px;
+        display: flex;
+    }
+    .dataTables_filter label input {
+        width: 100%;
+        margin-bottom: 10px;
+    }
+    .dataTables_filter {
+        flex-direction: column-reverse;
+    }
+    .dataTables_wrapper .dataTables_filter input {
+        width: 100%;
+    }
+    span.reload {
+        display: block;
+        margin: 0px 0px 10px 0px;
+    }
+    span.ect-str-date,
+    .ect-advance-list.dataTable thead th,
+    span.end-date,
+    td.ect-advance-list-tittle-name a,
+    span.ev-mo,
+    span.ev-yr,
+    .dataTables_length label,
+    .dataTables_wrapper .dataTables_length select,
+    .dataTables_wrapper .dataTables_paginate {
+        font-size: 14px !important;
+    }
+    .ect-advance-list .ect-date-area .ev-day {
+        font-size: 20px !important;
+    }
+}
+
+.dataTables_wrapper input[type="search"] {
+    background-image: none !important;
+}
+
+@media(max-width:350px) {
+    .ect-event-time {
+        text-align: left;
+    }
+    span.ect-str-date,
+    span.end-date {
+        display: inline-flex;
+        font-size: 14px !important;
+        padding-right: 5px;
+    }
+}

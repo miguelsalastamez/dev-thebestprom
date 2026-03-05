@@ -1,0 +1,301 @@
+msgid ""
+msgstr ""
+"Project-Id-Version: The Events Calendar - Shortcode And Templates Pro\n"
+"Report-Msgid-Bugs-To: \n"
+"POT-Creation-Date: 2020-02-07 11:11+0000\n"
+"PO-Revision-Date: 2022-09-22 04:10+0000\n"
+"Last-Translator: \n"
+"Language-Team: Turkish\n"
+"Language: tr_TR\n"
+"Plural-Forms: nplurals=2; plural=n != 1;\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"X-Generator: Loco https://localise.biz/\n"
+"X-Loco-Version: 2.6.2; wp-6.0.2"
+
+#: includes/ect-event-helpers.php:179 includes/ect-event-helpers.php:182
+#, php-format
+msgid "%s"
+msgstr "%s"
+
+#: includes/ect-event-helpers.php:151 includes/ect-event-helpers.php:154
+#: includes/ect-event-helpers.php:171
+#, php-format
+msgid "%s - %s"
+msgstr "%s - %s"
+
+#: includes/ect-event-helpers.php:261
+#, php-format
+msgid "%s spot left"
+msgid_plural "%s spots left"
+msgstr[0] "%spot sol s "
+msgstr[1] "%noktalar sol s "
+
+#: includes/ect-event-helpers.php:263
+#, php-format
+msgid "%s ticket left"
+msgid_plural "%s tickets left"
+msgstr[0] "%bilet kaldı "
+msgstr[1] "%bilet kaldı s "
+
+#: the-events-calendar-templates-and-shortcode.php:135
+msgid ""
+"<strong>Important Update</strong>:- <strong>Events Shortcodes (Pro) - The "
+"Events Calendar Addon</strong> plugin has integrated new settings panel. "
+"Please save your settings and check events views."
+msgstr ""
+
+#: includes/ect-functions.php:30
+msgid "All"
+msgstr "Herşey"
+
+#: admin/ect-event-shortcode.php:691
+msgid "All Category"
+msgstr "Tüm Kategori"
+
+#: templates/week-view/weekly-view.php:21
+#: templates/week-view/weekly-view.php:41
+msgid "All Day"
+msgstr "Tüm gün"
+
+#: templates/calendar/calendar.php:106
+msgid "April"
+msgstr "Nisan"
+
+#: templates/calendar/calendar.php:110
+msgid "August"
+msgstr "Ağustos"
+
+#: includes/ect-event-helpers.php:278
+msgid "Buy Now"
+msgstr "Satın Al "
+
+#. Author of the plugin
+msgid "Cool Plugins"
+msgstr "Serin Eklentileri"
+
+#: templates/calendar/calendar.php:114
+msgid "December"
+msgstr "Aralık"
+
+#: includes/events-shortcode-pro.php:629
+msgid "Events"
+msgstr "Olaylar"
+
+#. Name of the plugin
+msgid "Events Shortcodes (Pro) - The Events Calendar Addon"
+msgstr "Etkinlik Kısa Kodları (Pro) - Etkinlik Takvimi Eklentisi"
+
+#: templates/calendar/calendar.php:104
+msgid "February"
+msgstr "Şubat"
+
+#: templates/accordion/accordion.php:75 templates/accordion/accordion.php:99
+#: templates/accordion/accordion.php:127 templates/accordion/accordion.php:147
+#: templates/accordion/accordion.php:271 templates/accordion/accordion.php:296
+#: templates/accordion/accordion.php:324 templates/accordion/accordion.php:346
+#: templates/carousel/carousel.php:57 templates/carousel/carousel.php:62
+#: templates/carousel/carousel.php:111 templates/carousel/carousel.php:116
+#: templates/carousel/carousel.php:162 templates/carousel/carousel.php:167
+#: templates/cover/cover.php:87 templates/grid/grid.php:66
+#: templates/grid/grid.php:71 templates/grid/grid.php:115
+#: templates/grid/grid.php:121 templates/grid/grid.php:179
+#: templates/grid/grid.php:184 templates/list/list.php:63
+#: templates/list/list.php:118 templates/list/list.php:171
+#: templates/masonry/masonry.php:120 templates/masonry/masonry.php:125
+#: templates/minimal-list/minimal-list.php:63
+#: templates/minimal-list/minimal-list.php:98
+#: templates/minimal-list/minimal-list.php:132 templates/slider/slider.php:58
+#: templates/slider/slider.php:63 templates/slider/slider.php:111
+#: templates/slider/slider.php:116 templates/slider/slider.php:165
+#: templates/slider/slider.php:170 templates/timeline/timeline.php:67
+#: templates/timeline/timeline.php:109 templates/timeline/timeline.php:147
+msgid "Find out more"
+msgstr "Daha fazlasını bul"
+
+#: templates/calendar/calendar.php:122
+msgid "Fri"
+msgstr "Cum"
+
+#: the-events-calendar-templates-and-shortcode.php:145
+msgid ""
+"Hi! We checked that you are using <strong>Elementor Page Builder</strong>.\n"
+"\t\t\t\t\t\t\t<br/>Please try latest <a target=\"_blank\" href=\"https:"
+"//wordpress.org/plugins/events-widgets-for-elementor-and-the-events-"
+"calendar/\"><strong>The Events Calendar Widgets For Elementor</strong></a> "
+"plugin developed by <a href=\"https://coolplugins.net\">Cool Plugins</a>\n"
+"\t\t\t\t\t\t\t   & <br/> represent The Events Calendar events in the "
+"Elementor page builder pages."
+msgstr ""
+
+#. Author URI of the plugin
+msgid "https://coolplugins.net/"
+msgstr ""
+
+#. URI of the plugin
+msgid "https://eventscalendaraddons.com/"
+msgstr ""
+
+#: includes/events-shortcode-pro.php:651
+msgid "Image"
+msgstr "resim"
+
+#: the-events-calendar-templates-and-shortcode.php:223
+#, php-format
+msgid ""
+"In order to set the event status to Online event,Canceled or Postponed, "
+"Please first install the latest version of <a href=\"%1$s\" "
+"target=\"_blank\" title=\"%2$s\">%3$s</a>."
+msgstr ""
+
+#: includes/events-shortcode-pro.php:630
+msgid "in Total"
+msgstr "toplamda"
+
+#: templates/calendar/calendar.php:103
+msgid "January"
+msgstr "Ocak"
+
+#: templates/calendar/calendar.php:109
+msgid "July"
+msgstr "Temmuz"
+
+#: templates/calendar/calendar.php:108
+msgid "June"
+msgstr "Haziran"
+
+#: includes/ect-event-helpers.php:228
+msgctxt "list view stock sold out"
+msgid "Sold out"
+msgstr "Satıldı"
+
+#: templates/cover/cover.php:77 templates/minimal-list/minimal-list.php:89
+#: templates/minimal-list/minimal-list.php:120
+msgid "Live stream:-"
+msgstr "Canlı yayın:-"
+
+#: includes/events-shortcode-pro.php:491 includes/events-shortcode-pro.php:527
+#: includes/events-shortcode-pro.php:562 includes/events-shortcode-pro.php:604
+#: includes/events-shortcode-pro.php:689
+msgid "Load More"
+msgstr "Daha fazla yükle"
+
+#: includes/events-shortcode-pro.php:492 includes/events-shortcode-pro.php:528
+#: includes/events-shortcode-pro.php:564 includes/events-shortcode-pro.php:605
+#: includes/events-shortcode-pro.php:690
+msgid "Load more"
+msgstr "Daha fazla yükle"
+
+#: includes/events-shortcode-pro.php:493 includes/events-shortcode-pro.php:529
+#: includes/events-shortcode-pro.php:565 includes/events-shortcode-pro.php:606
+#: includes/events-shortcode-pro.php:691
+msgid "Loading"
+msgstr "Yükleniyor"
+
+#: templates/calendar/calendar.php:105
+msgid "March"
+msgstr "Mart"
+
+#: templates/calendar/calendar.php:107
+msgid "May"
+msgstr "Olabilir"
+
+#: templates/calendar/calendar.php:118
+msgid "Mon"
+msgstr "Mon"
+
+#: includes/events-shortcode-pro.php:627
+msgid "NEXT"
+msgstr "SONRAKİ"
+
+#: includes/events-shortcode-pro.php:492 includes/events-shortcode-pro.php:528
+#: includes/events-shortcode-pro.php:564 includes/events-shortcode-pro.php:605
+#: includes/events-shortcode-pro.php:690
+msgid "No Event Found"
+msgstr "Etkinlik Bulunamadı"
+
+#: templates/calendar/calendar.php:113
+msgid "November"
+msgstr "Kasım"
+
+#: templates/calendar/calendar.php:112
+msgid "October"
+msgstr "Ekim"
+
+#: includes/events-shortcode-pro.php:628
+msgid "PREV"
+msgstr "ÖNCEKİ"
+
+#: templates/calendar/calendar.php:126
+msgid "Read More"
+msgstr "Devamını oku"
+
+#: includes/ect-event-helpers.php:275
+msgid "RSVP Now"
+msgstr "RSVP Şimdi"
+
+#: templates/calendar/calendar.php:123
+msgid "Sat"
+msgstr "Sat"
+
+#: includes/events-shortcode-pro.php:631
+msgid "Search..."
+msgstr "Arama..."
+
+#: includes/events-shortcode-pro.php:637
+msgid "Select By Category"
+msgstr "Kategoriye Göre Seç"
+
+#: includes/events-shortcode-pro.php:642
+msgid "Select By Tag"
+msgstr "Etikete Göre Seç"
+
+#: templates/calendar/calendar.php:111
+msgid "September"
+msgstr "Eylül"
+
+#: templates/calendar/calendar.php:117
+msgid "Sun"
+msgstr "Güneş"
+
+#: includes/events-shortcode-pro.php:661
+msgid "Tags"
+msgstr "Etiketler"
+
+#: the-events-calendar-templates-and-shortcode.php:209
+msgid "The Events Calendar"
+msgstr "Etkinlik Takvimi"
+
+#. Description of the plugin
+msgid ""
+"The Events Calendar Shortcode And Templates Pro addon provides events list "
+"design templates and shortcode generator functionality for The Events "
+"Calendar plugin. It is an unofficial third party addon for <a href=\"http:"
+"//wordpress.org/plugins/the-events-calendar/\">The Events Calendar (by "
+"Modern Tribe)</a> that extends its design limitations."
+msgstr ""
+
+#: includes/ect-load-more-handler.php:149 includes/ect-masonry-loop.php:133
+#: includes/events-shortcode-pro.php:434 includes/events-shortcode-pro.php:840
+#: templates/week-view/ect-weekly-temaplate.php:132
+msgid "There are no upcoming events at this time."
+msgstr "Şu anda hiç bir etkinlik yoktur."
+
+#: templates/calendar/calendar.php:121
+msgid "Thu"
+msgstr "Prş"
+
+#: templates/calendar/calendar.php:119
+msgid "Tue"
+msgstr "Sal"
+
+#: templates/cover/cover.php:77 templates/minimal-list/minimal-list.php:54
+#: templates/minimal-list/minimal-list.php:89
+#: templates/minimal-list/minimal-list.php:120
+msgid "Watch Now"
+msgstr "İzle şimdi"
+
+#: templates/calendar/calendar.php:120
+msgid "Wed"
+msgstr "Çrş"

@@ -1,0 +1,276 @@
+body.google-drive_page_integrate-google-drive-private-folders {
+  &.swal2-shown {
+    overflow: auto !important;
+    padding-right: 0 !important;
+  }
+}
+
+.igd-private-folders {
+  &, * {
+    box-sizing: border-box;
+  }
+
+  &-header {
+    display: flex;
+    width: calc(100% + 20px);
+    margin-left: -20px;
+    background: #fff;
+    padding: 20px 20px;
+    position: sticky;
+    top: 32px;
+    border-bottom: 1px solid #ddd;
+    box-shadow: 0px 1px 5px rgba(0, 0, 0, 0.1);
+    z-index: 99;
+    margin-bottom: 30px;
+
+    .header-title {
+      display: flex;
+      align-items: center;
+      line-height: 1;
+      margin-right: auto;
+
+      img {
+        margin-right: 15px;
+      }
+
+      &-text {
+        display: flex;
+        flex-direction: column;
+
+        h3 {
+          font-size: 1.2rem;
+          margin: 0 0 5px 0;
+        }
+
+        span {
+          margin-top: 2px;
+          color: #7a7a7a;
+        }
+      }
+
+    }
+
+    .igd-btn {
+      margin-left: 10px;
+    }
+
+    @media (max-width: 767px) {
+      position: relative;
+      top: 0;
+      padding: 12px 15px;
+
+      .header-title {
+        img {
+          width: 30px;
+        }
+
+        &-text {
+          h3 {
+            font-size: 1rem;
+          }
+
+          span {
+            margin-top: 0;
+          }
+        }
+      }
+
+      .igd-btn {
+        height: 35px;
+
+        i {
+          margin-right: 0;
+        }
+
+        span {
+          display: none;
+        }
+      }
+    }
+
+  }
+
+  .private-folders-list {
+    background: #fff;
+    padding: 20px;
+    border-radius: 10px;
+    margin: 10px 15px 30px 0;
+    position: relative;
+    //overflow: hidden;
+    min-height: 70vh;
+
+    &-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 15px;
+
+      ul {
+        display: flex;
+        align-items: center;
+
+        li {
+          margin-right: 5px;
+          margin-bottom: 0;
+          cursor: pointer;
+          color: $igd_color;
+          font-weight: 600;
+          font-size: 0.875rem;
+
+          &:not(:last-child):after {
+            content: "|";
+            margin: 0 5px;
+            color: #555;
+          }
+
+          span {
+            text-transform: capitalize;
+          }
+
+          &.active {
+            color: #555c66;
+          }
+
+          &:hover {
+            color: $igd_color_dark;
+          }
+
+        }
+      }
+
+      .users-search {
+        display: flex;
+        align-items: center;
+
+        input {
+          height: 33px;
+          border: 1px solid rgba(#2FB44B, 0.5);
+        }
+
+        button {
+          margin-left: 10px;
+        }
+      }
+
+      @media screen and (max-width: 767px) {
+        flex-direction: column;
+      }
+
+    }
+
+    .swal2-container {
+      position: absolute;
+      width: 100%;
+      height: 100%;
+      z-index: 9;
+    }
+
+
+    .column-username {
+      span {
+        margin-left: 10px;
+      }
+    }
+
+    .column-actions {
+      button {
+        display: inline-flex;
+        align-items: center;
+        padding: 7px 10px;
+        line-height: 1;
+
+        i {
+          margin-right: 5px;
+        }
+      }
+    }
+
+    .column-folders {
+      .folder-item {
+        display: inline-flex;
+        align-items: center;
+        width: max-content;
+        padding: 5px;
+        margin: 3px;
+        border-radius: 5px;
+        background: lighten(#f5f5f5, 3%);
+        border: 1px solid #eee;
+        max-width: 200px;
+        overflow: hidden;
+
+        img {
+          margin-right: 5px;
+        }
+
+        span {
+          text-overflow: ellipsis;
+          white-space: nowrap;
+          overflow: hidden;
+        }
+
+        .dashicons-no-alt {
+          margin-left: 5px;
+          cursor: pointer;
+          color: #999;
+          transition: all 0.3s ease;
+
+          &:hover {
+            color: #555;
+          }
+
+        }
+
+      }
+    }
+
+    .private-folders-table {
+      border-radius: 10px;
+      overflow: hidden;
+      border-color: #EFEFEF;
+
+      thead {
+        th {
+          padding: 15px;
+          border-color: #EFEFEF;
+        }
+      }
+
+      tbody {
+        tr {
+          td {
+            padding: 10px;
+            vertical-align: middle;
+          }
+        }
+      }
+
+    }
+
+    @media (max-width: 767px) {
+      margin-left: 10px;
+
+      &-header {
+        flex-direction: column;
+      }
+
+      .private-folders-table-wrap {
+        overflow-x: auto;
+      }
+    }
+
+  }
+
+  .igd-pro-modal {
+    &-wrap {
+      position: absolute;
+      z-index: 9;
+      border-radius: 5px;
+    }
+
+    &-close {
+      display: none;
+    }
+
+  }
+
+}

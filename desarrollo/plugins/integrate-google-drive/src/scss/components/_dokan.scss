@@ -1,0 +1,196 @@
+.dokan-igd-settings {
+
+  .igd-dokan-settings-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 20px;
+    flex-wrap: wrap;
+    background: #EEEEEE;
+    border-radius: 7px;
+    padding: 10px;
+
+    h2 {
+      margin: 0;
+      font-size: 1.7rem;
+    }
+
+    .add-account-btn {
+      height: 40px;
+      margin-left: auto;
+    }
+
+    a {
+      margin-left: 10px;
+    }
+
+  }
+
+  .igd-upload-settings-header,
+  .igd-media-library-settings-header {
+    margin-top: 50px;
+  }
+
+  .dokan-igd-ajax-response {
+    width: 100%;
+    margin: 0;
+    display: none;
+  }
+
+  .save-upload-settings,
+  .save-media-library-settings {
+    padding: 15px 20px;
+  }
+
+  .dokan-control-label {
+    text-align: left;
+  }
+
+  .wc-radios {
+    margin-top: 0;
+    padding: 0;
+  }
+
+  .parent-folder {
+    padding: 7px 10px;
+    border-radius: 5px;
+    background: #eaeaea;
+    margin-right: 20px;
+    font-size: 0.9rem;
+    color: #555;
+    display: inline-flex;
+    flex-wrap: wrap;
+    align-items: center;
+    width: -moz-max-content;
+    width: max-content;
+    line-height: 1;
+
+    &-item {
+      background: #FFF;
+      padding: 3px 5px;
+      border-radius: 3px;
+      margin-left: 10px;
+      font-size: .8rem;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    i, img {
+      margin-right: 7px;
+    }
+
+    .dashicons-no-alt {
+      color: #FF9F10;
+      cursor: pointer;
+      margin-left: 7px;
+      margin-right: 0;
+    }
+
+    .select-parent-folder {
+      margin-left: 10px;
+    }
+
+  }
+
+  .folder-naming-template {
+    font-size: 1rem;
+    margin-bottom: 10px;
+  }
+
+  .variables {
+    display: flex;
+    flex-wrap: wrap;
+
+    .variable {
+      display: flex;
+      align-items: center;
+      margin: 3px;
+      padding: 3px;
+      border: 1px solid #ccc;
+      border-radius: 5px;
+      background: #f5f5f5;
+      font-size: 12px;
+      font-weight: 600;
+      color: #333;
+      cursor: pointer;
+      transition: all 0.2s ease-in-out;
+
+      &:hover {
+        background: #e5e5e5;
+      }
+
+      .variable-name {
+        margin-right: 5px;
+      }
+    }
+  }
+
+  .media-folders {
+    margin-bottom: 10px;
+    background: #f6f7f7;
+    padding: 5px;
+    border-radius: 7px;
+
+    &-wrap {
+      margin-bottom: 10px;
+    }
+
+    &:empty {
+      display: none;
+    }
+
+    .folder-item {
+      display: inline-flex;
+      align-items: center;
+      width: max-content;
+      padding: 5px;
+      margin: 3px;
+      border-radius: 5px;
+      background: #fdfdfd;
+      border: 1px solid #eee;
+
+      img {
+        margin-right: 5px;
+      }
+
+      .dashicons-no-alt {
+        margin-left: 5px;
+        cursor: pointer;
+        color: #999;
+        transition: all 0.3s ease;
+
+        &:hover {
+          color: #555;
+        }
+
+      }
+
+    }
+  }
+
+  &:has(.no-account-placeholder) {
+    .igd-dokan-settings-header {
+      .add-account-btn {
+        display: none;
+      }
+    }
+  }
+
+}
+
+.igd-dokan {
+  display: inline-block;
+  margin-left: 10px;
+
+  .igd-wc-button {
+    display: inline-flex !important;
+    margin-left: auto !important;
+    align-items: center;
+
+    img {
+      margin-right: 5px;
+    }
+
+  }
+}

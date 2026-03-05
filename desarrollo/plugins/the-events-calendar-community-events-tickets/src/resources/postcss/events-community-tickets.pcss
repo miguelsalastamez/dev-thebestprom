@@ -1,0 +1,369 @@
+/**
+ * Styles for the "Order Report" and "Attendees Report" views on the front-end.
+ */
+#tribe-events-report {
+	padding: 0 10px;
+
+	h2.nav-tab-wrapper {
+		display: none;
+	}
+
+	.wrap {
+		max-width: 100%;
+		padding-left: 0;
+		padding-right: 0;
+		width: 100%;
+	}
+
+	.table-menu-wrapper .button {
+		margin-left: 15px;
+
+		&:first-of-type {
+			margin-left: 0;
+		}
+	}
+}
+
+/* TODO: This should be removed when we copy it over to ET! */
+.tribe-report-panel .welcome-panel-column-container {
+	border: 3px solid #e5e5e5;
+	display: flex;
+	flex-flow: row wrap;
+	position: relative;
+	*zoom: 1;
+
+	&:before,
+	&:after {
+		content: '';
+		display: table;
+	}
+
+	&:after {
+		clear: both;
+	}
+}
+
+.tribe-report-panel .welcome-panel-column {
+	flex-basis: calc((40em - 100%) * 999);
+	flex-grow: 1;
+	flex-shrink: 1;
+	padding: 1rem;
+
+	.tribe-report-panel & {
+		flex: none;
+		float: none;
+		min-width: 0;
+		padding: 20px 15px;
+		width: 100%;
+
+		@media screen and (min-width: 768px) {
+			padding: 20px 20px;
+			width: 25%;
+		}
+
+		@media screen and (min-width: 1024px) {
+			padding: 20px 25px;
+			width: 28.7%;
+		}
+
+		h3 {
+			display: block;
+			padding: 0;
+			width: 100%;
+		}
+
+		ul {
+			list-style: none;
+		}
+
+		&.welcome-panel-last {
+			background-color: #f9f9f9;
+		}
+	}
+}
+
+.wrap.tribe-report-page {
+	#topics-filter {
+		margin-top: 1em;
+
+		.tablenav {
+
+			&.top {
+				padding: 1em 0;
+
+				@media screen and (min-width: 768px) {
+					height: 80px;
+				}
+
+				.bulkactions {
+					@media screen and (min-width: 768px) {
+						padding: 9px 0;
+					}
+				}
+			}
+
+			&.bottom {
+				padding: 2em 0 1em;
+
+				.tablenav-pages {
+					@media screen and (min-width: 768px) {
+						padding: 3px 0;
+					}
+				}
+			}
+
+			a.button,
+			input.button {
+				background: none;
+				color: #000;
+				font-size: 100%;
+				font-weight: bold;
+				line-height: 1;
+				padding: 0;
+				text-decoration: none;
+			}
+		}
+
+		.tablenav-pages {
+			align-items: center;
+			display: flex;
+			padding-top: 20px;
+			width: 100%;
+
+			@media screen and (min-width: 768px) {
+				float: right;
+				padding-top: 0;
+				width: auto;
+			}
+
+			.pagination-links {
+				padding-left: 25px;
+			}
+
+			.current-page {
+				display: inline-block;
+				width: 60px;
+			}
+		}
+
+		.search-box {
+			display: flex;
+			flex-wrap: wrap;
+
+			#attendees-search-search-input {
+				flex: none;
+
+				@media screen and (min-width: 768px) {
+					border-bottom-right-radius: 0;
+					border-top-right-radius: 0;
+					flex: auto;
+					width: auto;
+				}
+			}
+
+			#search-submit {
+				flex: none;
+				height: 48px;
+				width: 100%;
+
+				@media screen and (min-width: 768px) {
+					border-bottom-left-radius: 0;
+					border-top-left-radius: 0;
+					width: auto;
+				}
+			}
+		}
+
+		.bulkactions {
+			align-items: center;
+			display: flex;
+			float: none;
+			margin: 0;
+			width: 100%;
+
+			@media screen and (min-width: 768px) {
+				display: inline-block;
+				width: auto;
+			}
+
+			select {
+				height: 30px;
+			}
+
+			input {
+				margin-left: 25px;
+			}
+		}
+	}
+
+	table {
+		thead {
+			th {
+				border: none;
+			}
+		}
+
+		tr {
+			border: 1px solid #e6e6e6;
+		}
+	}
+
+	.attendees-actions.alignleft {
+		float: right;
+		margin-right: 0;
+
+		a:last-of-type {
+			margin-right: 0;
+		}
+	}
+
+	.attendees-filter {
+		clear: both;
+		margin: 1em 0;
+	}
+}
+
+/**
+ * Attendees Report-specific styles.
+ */
+.tribe-warning-toggle {
+	border: none;
+	box-shadow: none;
+	float: right;
+	margin: 0 10px 0 0;
+	transition: all 0.5s ease;
+
+	label {
+		line-height: 33px;
+
+		.event-warnings {
+			color: red;
+		}
+
+		.event-warnings,
+		.event-warnings-close {
+
+			.dashicons {
+				font-size: 18px;
+				line-height: 33px;
+			}
+		}
+	}
+
+	#tribe-tickets-warning {
+		display: none;
+	}
+}
+
+.recurring-warning {
+	color: red;
+	padding: 10px;
+	transition: all 0.5s ease;
+
+	.dashicons {
+		font-size: 40px;
+		height: 0;
+		line-height: 75px;
+		width: 0;
+	}
+
+	.recurring-warning-msg {
+		min-height: 38px;
+		padding: 0 0 0 50px;
+	}
+}
+
+/**
+ * Miscellaneous tweaks.
+ */
+.tribe-event-meta-note.tribe-event-ticket-sku {
+	color: #adaba5;
+}
+
+button.toggle-row {
+	display: none;
+}
+
+.tribe-scrollable-table {
+	overflow-x: scroll;
+	width: 100%;
+
+	table {
+		table-layout: auto;
+
+		th:first-of-type,
+		td:first-child {
+			padding-left: 10px;
+		}
+
+		th,
+		td {
+			word-break: normal;
+		}
+
+		th:last-of-type {
+			padding-right: 10px;
+		}
+	}
+}
+
+.tribe-community-events input[type="number"] {
+	&.tribe-ticket-field-capacity.small-text,
+	&.tribe-ticket-field-event-capacity.small-text {
+		width: 25%;
+	}
+}
+
+@media screen and (max-width: 768px) {
+	.tribe-event-meta.tribe-event-meta-organizer-paypal {
+		padding: 0 15px;
+	}
+}
+
+.tribe-button-icon-edit {
+	float: right;
+	margin-right: 0.25em;
+}
+
+/* -------------------------------------------------------------------------
+* Theme Overrides - Twenty seventeen
+* ------------------------------------------------------------------------- */
+.tribe-theme-twentyseventeen {
+	.ticket_panel {
+
+		legend,
+		.tribe_advanced_meta {
+			color: #333;
+		}
+	}
+
+	.tribe-community-tickets-payment-options {
+		tr {
+			border: 0;
+		}
+
+		td:first-child {
+			font-weight: bold;
+		}
+	}
+}
+
+.tribe-section-content {
+
+	.tribe-tickets-editor-blocker {
+		position: fixed;
+	}
+}
+
+/* -------------------------------------------------------------------------
+* Theme Overrides - Twenty twenty
+* ------------------------------------------------------------------------- */
+.tribe-theme-twentytwenty {
+
+	.tribe-section-tickets {
+
+		button.accordion-header {
+			background: none;
+		}
+	}
+}

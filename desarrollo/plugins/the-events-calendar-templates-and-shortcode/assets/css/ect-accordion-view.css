@@ -1,0 +1,428 @@
+#ect-accordion-wrapper {
+    width: 100%;
+    height: auto;
+    padding: 0;
+    margin: 0;
+    position: relative;
+    max-width: 100%;
+}
+
+#ect-accordion-wrapper * {
+    box-sizing: border-box;
+}
+
+.ect-accordion-event {
+    display: flex;
+    flex-direction: column;
+    padding: 15px;
+    border: 1px solid #00000020;
+    border-radius: 5px;
+    width: 100%;
+    height: auto;
+    margin-top: 20px;
+    position: relative;
+}
+
+.ect-accordion-event:first-child {
+    margin-top: 0;
+}
+
+#ect-accordion-wrapper .ect-accordion-venue .ect-icon,
+#ect-accordion-wrapper .ect-accordion-event .ect-accordion-header-right h3 {
+    font-size: 18px !important;
+}
+
+#ect-accordion-wrapper .ect-event-category {
+    margin-top: 5px;
+}
+
+
+/*|---------------------------------------|  Accordion header|---------------------------------------*/
+
+.ect-accordion-header {
+    display: flex;
+    display: -webkit-flex;
+    flex-direction: row;
+    -webkit-flex-direction: row;
+    -webkit-align-content: center;
+    align-content: center;
+    justify-content: center;
+    width: 100%;
+    height: auto;
+    position: relative;
+    cursor: pointer;
+}
+
+.ect-accordion-header-left {
+    width: 30%;
+    text-align: center;
+    position: relative;
+    align-self: center;
+    max-width: 165px;
+    margin-right: 15px;
+}
+
+.ect-accordion-header-right {
+    -webkit-flex: 1;
+    flex: 1;
+    position: relative;
+    align-self: center;
+    display: flex;
+    gap: 5px;
+    flex-direction: column;
+}
+
+.ect-accordion-header:after {
+    font-family: "ecticons";
+    position: absolute;
+    right: 10px;
+    top: -10px;
+    font-size: 24px;
+    content: '\f103';
+}
+
+.ect-accordion-header.active-event:after {
+    content: '\f102';
+}
+
+.ect-accordion-event .ect-share-wrapper {
+    position: absolute;
+    right: 0;
+    bottom: 0px;
+}
+
+.ect-accordion-event .ect-share-wrapper .ect-social-share-list {
+    right: 0;
+    left: auto;
+}
+
+.ect-accordion-event .ect-share-wrapper .ect-social-share-list:before {
+    right: 6px;
+    left: auto;
+}
+
+.ect-date-area.accordion-view-schedule {
+    display: flex;
+    flex-direction: column;
+}
+
+.ect-accordion-date span.ev-day,
+.ect-accordion-date span.ev-mo,
+.ect-accordion-date span.ev-yr,
+.ect-accordion-date span.ev-time,
+.ect-accordion-date span.ev-weekday {
+    clear: both;
+    width: 100%;
+}
+
+.ect-accordion-date span.ev-mo,
+.ect-accordion-date span.ev-yr,
+.ect-accordion-date span.ev-time,
+.ect-accordion-date span.ev-weekday {
+    font-weight: normal;
+    position: relative;
+    top: -10px;
+}
+
+.accordion-view-venue {
+    display: flex;
+}
+
+.ect-accordion-venue span.ect-icon {
+    font-size: 1.2em;
+}
+
+.ect-accordion-venue span.ect-venue-details {
+    vertical-align: top;
+    width: calc(100% - 40px);
+    padding-right: 25px;
+}
+
+.ect-accordion-header h3.ect-accordion-title {
+    margin: 0px;
+    padding: 0;
+    width: 100%;
+    text-align: left;
+}
+
+.ect-accordion-header h3:hover {
+    opacity: 0.75;
+}
+
+
+/*|---------------------------------------|  Accordion footer|---------------------------------------*/
+
+@keyframes stretch {
+    0% {
+        bottom: -600px;
+    }
+    100% {
+        bottom: 0
+    }
+}
+
+.ect-accordion-footer {
+    display: none;
+    flex-flow: row wrap;
+    width: 100%;
+    padding-top: 15px;
+    position: relative;
+    -webkit-animation-name: stretch;
+    /* Safari 4.0 - 8.0 */
+    -webkit-animation-duration: 1s;
+    /* Safari 4.0 - 8.0 */
+    animation-name: stretch;
+    animation-duration: 1s;
+}
+
+.ect-accordion-footer.show-event {
+    display: flex;
+    -webkit-animation-name: stretch;
+    /* Safari 4.0 - 8.0 */
+    -webkit-animation-duration: 1s;
+    /* Safari 4.0 - 8.0 */
+    animation-name: stretch;
+    animation-duration: 1s;
+}
+
+.ect-accordion-image,
+.ect-accordion-map {
+    width: 50%;
+    height: 300px;
+    position: relative;
+    overflow: hidden;
+}
+
+.ect-accordion-map iframe {
+    max-height: 300px;
+}
+
+.ect-accordion-image img {
+    height: 100%;
+    object-fit: cover;
+    width: 100%;
+}
+
+.ect-accordion-cost,
+.ect-accordion-date-full {
+    width: 100%;
+}
+
+.ect-accordion-cost {
+    margin: 15px 0px 0px;
+}
+
+.ect-accordion-date-full:before {
+    font-family: "ecticons";
+    font-size: 1.1em;
+    content: '\e80b';
+    margin: 0 5px 0 3px;
+}
+
+.ect-accordion-content {
+    width: 100%;
+    margin-top: 15px;
+}
+
+span.ect-icon i:before {
+    margin-left: 0px !important;
+}
+
+.ect-accordion-content .ect-event-content,
+.ect-accordion-content .ect-event-content p {
+    padding: 0;
+    margin: 0;
+}
+
+.ect-accordion-content a.ect-events-read-more {
+    padding: 10px 20px;
+    display: inline-block;
+    margin: 15px 0px;
+    text-decoration: none;
+    border-radius: 8px;
+    color: #ffffff;
+}
+
+.ect-accordion-content a.ect-events-read-more:hover {
+    opacity: 0.9;
+    filter: alpha(opacity=9);
+}
+
+
+/*|-----------------------------| Style-1|-----------------------------*/
+
+.ect-accordion-event.style-1 {
+    border-left: 4px solid;
+}
+
+.ect-accordion-event.style-1 .ect-accordion-footer {
+    flex-flow: unset;
+    gap: 10px;
+}
+
+.ect-accordion-event.style-1 .ect-accordion-content {
+    margin-top: 0px;
+}
+
+.ect-accordion-event.style-1 .ect-accordion-content {
+    width: 50%;
+}
+
+
+/*|-----------------------------| Style-2|-----------------------------*/
+
+.ect-accordion-event.active-event.style-2 {
+    border-left: 4px solid;
+}
+
+.ect-accordion-event.style-2 {
+    border-radius: 0;
+}
+
+.style-2 .ect-accordion-date {
+    padding: 10px;
+    position: relative;
+    left: -20px;
+}
+
+
+/*|-----------------------------| Style-3|-----------------------------*/
+
+.ect-accordion-event.style-3 {
+    border-radius: 20px;
+    padding: 20px;
+    margin: 0;
+    display: block;
+    margin-top: 20px;
+}
+
+@keyframes shakebell {
+    0% {
+        transform: translate(0px, 0px) rotate(0deg);
+    }
+    25% {
+        transform: translate(-5px, 1px) rotate(20deg);
+    }
+    50% {
+        transform: translate(0px, 0px) rotate(0deg);
+    }
+    75% {
+        transform: translate(5px, 1px) rotate(-20deg);
+    }
+    100% {
+        transform: translate(0px, 0px) rotate(0deg);
+    }
+}
+
+
+/*|-----------------------------| Style-4|-----------------------------*/
+
+.ect-accordion-event-year {
+    height: auto;
+}
+
+.ect-accordion-event-year:focus {
+    outline: none !IMPORTANT;
+}
+
+.ect-accordion-arrows {
+    display: inline-block;
+    position: absolute;
+    width: 70px;
+    right: 0;
+    top: 0;
+    z-index: 8;
+}
+
+.ect-accordn-slick-prev,
+.ect-accordn-slick-next {
+    width: 30px;
+    height: 30px;
+    display: inline-block !IMPORTANT;
+    cursor: pointer;
+    overflow: hidden;
+    background: #ddd;
+    padding: 0;
+    margin: 0 1px;
+}
+
+.ect-accordion-view span.month-year-box {
+    display: inline-block;
+    width: calc(100% - 75px);
+    text-align: right;
+}
+
+.ect-accordion-view span.month-year-box span {
+    font-size: 0.8em;
+    display: inline-block;
+    vertical-align: top;
+}
+
+.style-4 .ect-accordion-date span.ev-day {
+    color: #00445e;
+    font-size: 28px;
+    font-weight: bold;
+    font-style: normal;
+    line-height: 1em;
+    padding: 7px;
+}
+
+.style-4 .ect-accordion-date span.ev-mo,
+.style-4 .ect-accordion-date span.ev-yr {
+    font-size: 18px;
+    font-weight: 600;
+    position: relative;
+    top: 0;
+}
+
+.style-4 .ect-accordion-date span.ev-mo {
+    font-size: 21px;
+    top: 0;
+}
+
+.style-4 h3.ect-accordion-title {
+    color: #00445e;
+}
+
+
+/*|-----------------------------| Responsive media querys|-----------------------------*/
+
+@media only screen and (max-width: 640px) {
+    .ect-accordion-header {
+        flex-direction: column;
+        -webkit-flex-direction: column;
+    }
+    .ect-accordion-header-left {
+        width: 100%;
+        margin-right: 0;
+        max-width: none;
+    }
+    .ect-accordion-header:after {
+        right: 0px;
+    }
+    .ect-accordion-image,
+    .ect-accordion-map {
+        width: 100%;
+        height: 190px;
+    }
+    .ect-accordion-event.style-1 .ect-accordion-footer {
+        flex-flow: wrap;
+    }
+    .ect-accordion-event.style-1 .ect-accordion-content {
+        width: 100%;
+    }
+    .ect-accordion-event.style-2 .ect-accordion-header {
+        gap: 5px;
+    }
+    .style-4 .ect-accordion-header:after {
+        right: 10px;
+        top: 5px;
+    }
+    .style-4 .ect-accordion-header-right {
+        width: 100%;
+    }
+    .style-4 .ect-date-area.accordion-view-schedule {
+        margin-bottom: 20px;
+        border-bottom: 1px solid #e6e0e0;
+    }
+}

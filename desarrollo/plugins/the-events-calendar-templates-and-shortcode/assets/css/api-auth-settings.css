@@ -1,0 +1,58 @@
+.cool_timeline-notice-red {
+    color: red;
+    font-weight: bold;
+}
+h4.cool-license-q {
+  margin: 0;
+  }
+  .form-table td p.cool-license-a {
+    margin: 0 0 15px;
+  }
+.cool_timeline-notice-green {
+    color: green;
+    font-weight: bold;
+}
+.license-warning.notice-error {
+    background: #fffcda;
+}
+span.ect-renew-support-notice {
+  font-weight: 700;
+  color: red;
+}
+/* Loading spinner for 'uninstall license' button */
+.cool_timeline-loading {
+    display: inline-block;
+    width: 20px;
+    height: 20px;
+    vertical-align: middle;
+  }
+.cool_timeline-loading:after {
+    content: " ";
+    display: block;
+    width: 10px;
+    height: 10px;
+    border-radius: 50%;
+    border: 5px solid #d02424;
+    border-color: #f7931a transparent #c40000 transparent;
+    animation: cool_timeline-loading 1.2s linear infinite;
+}
+  @keyframes cool_timeline-loading {
+    0% {
+      transform: rotate(0deg);
+    }
+    100% {
+      transform: rotate(360deg);
+    }
+  }
+  span.ect-notice-red.uninstall {
+    max-width: 700px;
+    display: block;
+    padding: 8px;
+    border: 2px solid #157d0f;
+    margin: 10px 0;
+    background: #13a50b;
+    font-weight: bold;
+    font-size: 13px;
+    color: #ffffff;
+}
+  /* End of loading spinner css */

@@ -1,0 +1,382 @@
+#woocommerce-product-data ul.wc-tabs li.upload_options_options a:before {
+  content: "\f13b";
+  font-family: "dashicons";
+}
+
+
+.igd-woocommerce {
+  display: inline-flex;
+  float: right;
+  margin-right: 10px;
+
+  .igd-wc-button {
+    display: inline-flex !important;
+    margin-left: auto !important;
+    align-items: center;
+
+    img {
+      margin-right: 5px;
+    }
+
+  }
+}
+
+.upload-box-settings {
+  margin: 20px;
+  border: 1px solid #ddd;
+  padding: 5px;
+  border-radius: 5px;
+
+  h4 {
+    margin: 10px;
+  }
+
+  .form-field {
+    display: flex;
+    align-items: center;
+
+    label {
+      width: auto;
+      margin-right: 15px;
+    }
+
+    select {
+      max-width: 350px;
+    }
+
+  }
+
+  .igd-wc-configure-module {
+    display: inline-flex;
+    margin-left: 20px;
+  }
+
+  .form-field {
+
+    .description {
+      display: block;
+      clear: both;
+      margin: 20px 0 10px 0;
+    }
+
+    .upload_folder_name {
+      width: 100%;
+    }
+
+  }
+
+}
+
+.igd-wc-upload-wrap {
+  margin: 20px 0;
+  display: block;
+
+  .upload-button {
+    display: flex !important;
+    align-items: center;
+    width: max-content;
+    text-align: center;
+    margin-bottom: 15px !important;
+    float: none !important;
+    padding: 10px 15px;
+    background-color: #f7f7f7;
+    border: 1px solid #ddd;
+    border-radius: 3px;
+    cursor: pointer;
+    transition: all 0.2s ease-in-out;
+    color: #333;
+    font-weight: 600;
+    font-size: 14px;
+    box-shadow: 0 1px 2px rgba(0, 0, 0, 0.1);
+
+    &:hover {
+      background-color: #f0f0f0;
+      border-color: #ccc;
+    }
+
+    i {
+      margin-right: 5px;
+    }
+
+  }
+
+  .igd-shortcode-wrap {
+    --module-width: 0;
+    --module-height: 0;
+    visibility: hidden;
+    position: absolute;
+    overflow: hidden;
+    z-index: -1;
+    max-width: 100%;
+    clear: both;
+
+    .igd-file-uploader-inner {
+      .dashicons-cloud-upload {
+        display: none;
+      }
+    }
+
+    .igd-file-uploader {
+      margin: 0;
+    }
+
+  }
+
+  .igd-wc-upload-description {
+    margin: 0;
+    font-size: 15px;
+    clear: both;
+  }
+
+  .wc-file-list-wrap {
+    margin-top: 15px;
+    clear: both;
+
+    h4 {
+      font-size: 1.2rem;
+      margin-bottom: 10px;
+    }
+
+    .wc-file-list {
+      margin: 10px 0;
+      padding: 0;
+      list-style: none;
+
+      li {
+        display: flex;
+        align-items: center;
+        margin: 3px;
+        font-size: 12px;
+        font-weight: 600;
+        color: #333;
+        transition: all 0.2s ease-in-out;
+        user-select: none;
+
+        img {
+          margin-right: 5px;
+          width: 16px;
+        }
+
+        .dashicons-no-alt {
+          color: #FF9F10;
+          cursor: pointer;
+          margin-left: 15px;
+          margin-right: 0;
+        }
+      }
+    }
+
+  }
+
+  &.active {
+
+    .upload-button {
+      background-color: #007cba;
+      border-color: #006ba1;
+      color: #fff;
+      box-shadow: 0 1px 2px rgba(0, 0, 0, 0.2);
+
+      &:hover {
+        background-color: #006ba1;
+        border-color: #005a8c;
+      }
+    }
+
+    .igd-shortcode-wrap {
+      --module-width: 500px;
+      --module-height: auto;
+      display: flex;
+      visibility: visible;
+      position: relative;
+      overflow: visible;
+      z-index: 1;
+    }
+  }
+
+  &:not(.active) {
+    .igd-shortcode-wrap:has(.file-list-wrapper) {
+      --module-width: 500px;
+      --module-height: auto;
+      display: flex;
+      visibility: visible;
+      position: relative;
+      overflow: visible;
+      z-index: 1;
+
+      .igd-file-uploader {
+        border: 1px solid #eee !important;
+        padding: 0;
+        overflow: hidden;
+
+        .igd-file-uploader-body {
+          display: none !important;
+        }
+
+        .file-list-wrapper {
+          margin-top: 0 !important;
+
+          .file-list-header {
+            border-bottom-left-radius: 0;
+            border-bottom-right-radius: 0;
+          }
+        }
+
+      }
+
+    }
+  }
+
+}
+
+// classic checkout page
+.woocommerce-page.woocommerce-checkout {
+  .woocommerce-checkout-review-order {
+
+    .cart_item_uploader {
+      td {
+        padding: 0;
+      }
+    }
+
+    .igd-wc-upload-wrap {
+      width: 100%;
+      text-align: left;
+    }
+  }
+}
+
+// Blocks checkout page
+.woocommerce-page.woocommerce-checkout {
+
+  form #order_review td.product-name {
+    &:has(.igd-wc-upload-wrap) {
+      flex-wrap: wrap;
+    }
+  }
+
+  .wc-block-components-order-summary__content {
+    &:has(.igd-wc-upload-wrap) {
+      display: block;
+
+      .wc-block-components-order-summary-item {
+        flex-wrap: wrap;
+
+        .igd-wc-upload-wrap {
+          width: 100%;
+          border-bottom: 1px solid #e5e5e5;
+          margin-top: 0;
+
+          h3 {
+            display: none;
+          }
+
+          .igd-wc-upload-description {
+            margin-bottom: 10px;
+          }
+
+        }
+
+      }
+    }
+  }
+
+}
+
+// Hide checkout meta data
+.wc-block-components-product-details__igd-wc-uploader,
+.variation-igd_wc_uploader {
+  display: none !important;
+}
+
+//admin order page
+.igd-wc-uploaded-files {
+  display: flex;
+  flex-direction: column;
+  margin: 0 !important;
+  padding: 0 !important;
+
+  &-wrap {
+    width: 30%;
+    padding: 0;
+  }
+
+  li {
+    margin-bottom: 5px !important;
+  }
+
+  a {
+    display: flex;
+    text-decoration: none;
+    font-size: .875rem;
+    overflow: hidden;
+    transition: all 0.2s ease-in-out;
+
+    img {
+      margin-right: 5px !important;
+      width: 20px !important;
+    }
+
+    span {
+      overflow: hidden;
+      white-space: nowrap;
+      text-overflow: ellipsis;
+    }
+
+    &:hover {
+      color: #333;
+    }
+
+  }
+
+
+}
+
+// dokan
+.dokan-section-content {
+  .upload-box-settings {
+    padding: 0;
+    margin: 0;
+    border: none;
+
+    h4 {
+      margin: 10px 0;
+      font-size: 18px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      border-bottom: 1px solid #ddd;
+      padding-bottom: 7px;
+
+      a {
+        font-size: 15px;
+        text-decoration: none;
+        font-weight: 500;
+      }
+    }
+
+    .dokan-igd-select-module {
+      display: flex;
+      align-items: center;
+      margin-top: 10px;
+
+      label {
+        font-weight: 700;
+        margin-right: 10px;
+        margin-bottom: 0;
+      }
+
+      select {
+        flex: 1;
+        max-width: 300px;
+        border-color: #ddd;
+        border-radius: 3px;
+      }
+
+      .igd-wc-configure-module {
+        height: 38px;
+      }
+
+    }
+
+  }
+}

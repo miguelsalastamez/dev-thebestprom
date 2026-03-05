@@ -1,0 +1,41 @@
+.attachment-preview,
+.attachment-details .thumbnail, {
+  .igd-media-replaced-label {
+    display: inline-flex;
+    position: absolute;
+    right: 5px;
+    bottom: 5px;
+    padding: 3px;
+    background: #fff;
+    border-radius: 50%;
+    line-height: 1;
+    color: #2fb44b;
+    text-transform: uppercase;
+    align-items: center;
+    justify-content: center;
+    font-size: 18px;
+    height: 20px;
+    width: 20px;
+    box-sizing: border-box;
+  }
+}
+
+.attachment-details {
+
+  &:has(.igd-media-action-import,.igd-media-action-restore) {
+    .attachment-actions {
+      display: none;
+    }
+  }
+
+  .thumbnail {
+    position: relative;
+
+    .igd-media-replaced-label {
+      top: 10px;
+      right: 10px;
+      border: 1px solid;
+    }
+
+  }
+}

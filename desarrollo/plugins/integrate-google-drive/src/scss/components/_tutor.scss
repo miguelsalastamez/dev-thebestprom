@@ -1,0 +1,37 @@
+.video_source_wrap_google_drive {
+  .google_drive-video-data {
+    display: none;
+  }
+
+  &.tutor-has-video {
+    .google_drive-video-data {
+      display: block;
+    }
+
+    .video-metabox-source-google_drive-upload {
+      display: none;
+    }
+  }
+
+}
+
+.tutor_lesson_modal_form {
+
+  .tutorIgdUploadAttachmentBtn {
+    margin-left: 15px;
+  }
+
+  .igd-tutor-attachment {
+    i.tutor-icon-brand-google-drive {
+      position: absolute;
+      right: 10px;
+      top: 10px;
+    }
+  }
+
+}
+
+// Select from Google Drive Button
+.igd-tutor-button {
+  margin-top: 15px;
+}

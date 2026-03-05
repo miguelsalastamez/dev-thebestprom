@@ -1,0 +1,693 @@
+.igd-module-uploader {
+  &, * {
+    box-sizing: border-box;
+  }
+
+  .dashicons-cloud-upload {
+    width: auto;
+    height: auto;
+  }
+
+  &.igd-form-uploader {
+    margin-top: 1rem !important;
+  }
+
+  .upload-confirmation {
+    display: none !important;
+    margin: 20px 0;
+    text-align: center;
+    flex-direction: column;
+    align-items: center;
+
+    h3 {
+      color: var(--color-primary);
+    }
+
+  }
+
+  &.show-confirmation {
+    border-style: solid !important;
+
+    .upload-confirmation {
+      display: flex !important;
+    }
+
+    .igd-file-uploader-inner {
+      display: none !important;
+    }
+
+  }
+
+}
+
+.igd-file-uploader {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-direction: column;
+  border-radius: 10px !important;
+  border: 1px dashed var(--color-primary-light) !important;
+  padding: 3px !important;
+  max-width: 500px;
+  width: 100% !important;
+  background: #FFF !important;
+  font-size: 16px;
+
+  * {
+    box-sizing: border-box;
+  }
+
+  &:not(.igd-form-uploader) {
+    margin: auto;
+  }
+
+  &.drag-active {
+    border-color: var(--color-primary);
+    border-width: 2px;
+    background-color: #BFDBFE;
+    box-shadow: rgba(149, 157, 165, 0.2) 0px 8px 24px;
+
+    * {
+      pointer-events: none;
+    }
+  }
+
+  &-body {
+    display: flex;
+    align-items: center;
+    flex-direction: column;
+    width: 100% !important;
+    user-select: none;
+
+    h3 {
+      font-size: 1.2em;
+      font-weight: 600;
+      margin-bottom: 10px !important;
+    }
+
+    .max-size-label {
+      font-size: .875em;
+      margin-top: 1em;
+      color: #999;
+    }
+
+  }
+
+  .igd-file-uploader-inner {
+    display: flex !important;
+    align-items: center !important;
+    flex-direction: column !important;
+    border-radius: 7px !important;
+    padding: 30px 20px !important;
+    background-color: var(--color-primary-lighter) !important;
+    justify-content: center;
+    width: 100% !important;
+    border: 1px dashed #ddd !important;
+
+    p {
+      font-weight: 400;
+      margin: 5px 0 !important;
+      color: #555;
+      line-height: 1;
+      font-size: .875em;
+    }
+
+    .dashicons-cloud-upload {
+      font-size: 50px;
+      height: auto;
+      width: auto;
+      line-height: 1;
+      color: #555;
+    }
+
+    .igd-file-uploader-buttons {
+      display: flex;
+      margin-top: 20px;
+    }
+
+    .upload-info {
+      display: flex;
+      align-items: center;
+      line-height: 1;
+
+      span {
+        margin-right: 5px;
+
+        &:after {
+          content: '|';
+          margin-left: 5px;
+          color: #000;
+        }
+
+        &:last-child {
+          margin-right: 0;
+
+          &:after {
+            content: '';
+            margin-left: 0;
+          }
+        }
+      }
+    }
+
+    .igd-file-uploader-add-more {
+      margin-top: 15px;
+    }
+
+    .upload-folder-selection {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      flex-direction: column;
+      width: 100%;
+      margin: 10px 0;
+
+      span {
+        margin-bottom: 7px;
+      }
+
+      select {
+        max-width: 100%;
+        width: 300px;
+        height: 40px;
+        border: 1px solid #ddd;
+        border-radius: 5px;
+        padding: 0 10px;
+        font-size: .875em;
+        color: #555;
+        background-color: #fff;
+        cursor: pointer;
+        transition: all .3s ease-in-out;
+
+        &:focus {
+          border-color: var(--color-primary);
+        }
+
+        option {
+          color: #555;
+        }
+
+
+      }
+
+    }
+
+  }
+
+  &.required-error {
+    border-color: #F00;
+  }
+
+  .file-list-wrapper {
+    display: flex;
+    flex-direction: column;
+    z-index: 50;
+    margin-top: 5px !important;
+    width: 100% !important;
+    max-height: 400px;
+    max-width: 100%;
+    overflow: hidden !important;
+    background-color: #fff !important;
+    box-shadow: rgba(149, 157, 165, 0.2) 0px 8px 24px !important;
+    bottom: 1em;
+    right: 1em;
+
+    &.fixed {
+      position: fixed;
+    }
+
+    .start-upload {
+      margin: 10px auto;
+
+    }
+
+    @media (max-width: 991px) {
+      //max-width: 300px;
+      max-height: 300px;
+      right: 0;
+    }
+  }
+
+  .file-list {
+    display: flex;
+    flex-flow: column;
+    flex-wrap: nowrap !important;
+    overflow-y: auto !important;
+
+    &-header {
+      display: flex;
+      align-items: center;
+      padding: 10px 15px !important;
+      background-color: var(--color-primary) !important;
+      color: #fff;
+      line-height: 1;
+      border-radius: 5px;
+      margin-bottom: 5px;
+
+      .file-count {
+        margin-right: 5px;
+      }
+
+      i {
+        cursor: pointer;
+        height: 26px !important;
+        width: 26px !important;
+        border: 1px solid !important;
+        border-radius: 50% !important;
+        font-size: 22px !important;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+      }
+    }
+
+    &-item {
+      display: flex;
+      align-items: center;
+      padding: 8px 12px !important;
+      border-bottom: 1px solid #eaeaea !important;
+      width: 100% !important;
+      transition: background-color .3s ease-in-out;
+
+      img {
+        width: 30px !important;
+        height: 30px !important;
+        margin-right: 5px !important;
+        border-radius: 3px;
+      }
+
+      .file-info {
+        display: flex;
+        flex-wrap: wrap;
+        overflow: hidden;
+        width: 100%;
+        line-height: 1;
+
+        .upload-item {
+          display: flex;
+          align-items: center;
+          text-overflow: ellipsis;
+          white-space: nowrap;
+          overflow: hidden;
+          flex: 1;
+
+          &-name {
+            text-overflow: ellipsis;
+            white-space: nowrap;
+            overflow: hidden;
+            margin-right: 4px;
+            line-height: 1.5;
+            color: #777;
+            font-weight: normal;
+          }
+
+          &-size {
+            font-size: .75em;
+            color: #999;
+          }
+
+          //add description button, style it with a primary color
+          .add-description {
+            background: #6c757d;
+            color: #FFF;
+            border: none;
+            padding: 5px;
+            border-radius: 3px;
+            font-size: 12px;
+            font-weight: 500;
+            margin-left: 10px;
+            cursor: pointer;
+            line-height: 1;
+            opacity: .7;
+
+            &.disabled {
+              opacity: .5;
+              cursor: not-allowed;
+              background: #f1f1f1;
+              color: #999;
+            }
+
+            &.cancel {
+              background: #FF9F10;
+              color: #FFF;
+              margin-left: 10px;
+              opacity: .8;
+            }
+
+            &:hover {
+              opacity: 1;
+            }
+
+          }
+
+        }
+
+        &-percentage {
+          margin-left: auto;
+          text-align: right;
+          font-size: .875em;
+          display: flex;
+          align-items: center;
+          width: max-content;
+
+          .igd-spinner {
+            margin-top: 0;
+            margin-right: 5px;
+            border-radius: 50%;
+          }
+
+
+        }
+
+        &-progress {
+          width: 100%;
+          height: 4px;
+          background-color: #ddd;
+          border-radius: .25em;
+          margin-top: 7px;
+          overflow: hidden;
+          position: relative;
+          align-items: center;
+          justify-content: space-between;
+          display: none;
+
+          &-bar {
+            width: var(--percentage);
+            height: 100%;
+            background-color: var(--color-primary-light-alt);
+            border-radius: .25em;
+            position: absolute;
+            left: 0;
+            top: 0;
+            transition: width .5s ease-in-out;
+          }
+        }
+
+        &-error {
+          color: #F00;
+          width: 100%;
+          font-size: .75em;
+          margin-top: 3px;
+        }
+
+        .igd-spinner {
+          width: 20px;
+          margin-left: 7px;
+        }
+
+        .percentage {
+          margin: 0 7px;
+        }
+
+        i {
+          margin-left: 7px;
+          height: 22px !important;
+          width: 22px !important;
+          font-size: 16px;
+          border-radius: 50%;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          cursor: pointer;
+
+          &:not(.dashicons-saved, .dashicons-no-alt) {
+            border: 1px solid #ddd;
+          }
+        }
+
+        .dashicons-controls-play {
+          padding-left: 3px;
+        }
+
+        .remove-file {
+          background: #FF9F10;
+          color: #FFF;
+          margin-left: 10px;
+          opacity: .5;
+        }
+
+        .file-description {
+          font-size: 14px !important;
+          color: #666 !important;
+          margin-top: 5px;
+          border: 1px solid #ddd;
+          padding: 3px 5px;
+          line-height: 1.5;
+          border-radius: 5px;
+          width: 100% !important;
+          min-height: auto;
+          height: 60px;
+
+          &:disabled {
+            background: #f1f1f1;
+          }
+
+          &:focus {
+            border-color: var(--color-primary);
+
+            &::placeholder {
+              color: #999;
+            }
+          }
+
+          //customize scrollbar
+          &::-webkit-scrollbar {
+            width: 5px;
+          }
+
+          &::-webkit-scrollbar-track {
+            background: #f1f1f1;
+          }
+
+          &::-webkit-scrollbar-thumb {
+            background: #ccc;
+
+            &:hover {
+              background: #bbb;
+            }
+          }
+
+        }
+
+      }
+
+      &:hover {
+        background-color: #E0F2FE;
+      }
+
+      &.uploaded {
+        .file-info {
+          .dashicons-saved {
+            background: var(--color-primary);
+            color: #fff;
+          }
+
+          .remove-file {
+            background: transparent;
+            color: #FF9F10;
+            border: 1px solid #FF9F10;
+            opacity: .7;
+
+            &:hover {
+              background: #FF9F10;
+              color: #fff;
+              opacity: 1;
+            }
+
+          }
+
+          &-progress {
+            display: flex;
+
+            &-bar {
+              width: 100%;
+            }
+          }
+
+          .upload-item {
+            &-name {
+              color: #333;
+            }
+          }
+
+        }
+      }
+
+      &.active {
+        .file-info {
+
+          .remove-file {
+            opacity: .7;
+          }
+
+          &-progress {
+            display: flex;
+          }
+
+          .upload-item {
+            &-name {
+              color: #555;
+            }
+
+
+          }
+
+        }
+      }
+
+    }
+
+    //customize scrollbar
+    &::-webkit-scrollbar {
+      width: 5px;
+    }
+
+    &::-webkit-scrollbar-track {
+      background: #f1f1f1;
+    }
+
+    &::-webkit-scrollbar-thumb {
+      background: #ccc;
+
+      &:hover {
+        background: #bbb;
+      }
+    }
+
+  }
+
+  .cancel-upload {
+    position: absolute;
+    top: 15px;
+    right: 15px;
+    cursor: pointer;
+    border-radius: 5px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 5px 7px;
+    min-width: unset;
+    min-height: unset;
+    overflow: hidden;
+
+    i {
+      margin-right: 0;
+    }
+
+    span {
+      font-size: 14px;
+      display: none;
+    }
+
+    &:hover {
+      i {
+        margin-right: 3px;
+      }
+
+      span {
+        display: inline-block;
+      }
+
+    }
+
+
+  }
+
+  .igd-file-uploader-buttons button,
+  .start-upload, {
+    display: flex;
+    align-items: center;
+    white-space: nowrap;
+    cursor: pointer;
+    border-radius: .25em;
+    border: none;
+    padding: .375rem .5em;
+    margin: .5em;
+    background-color: var(--color-primary);
+    box-shadow: rgba(149, 157, 165, 0.2) 0 8px 24px;
+    color: #fff;
+    transition: all .2s ease-in-out;
+    font-weight: 400;
+    font-size: .87em;
+
+    span {
+      margin-left: 5px;
+    }
+
+    &:hover {
+      background-color: var(--color-primary-light-alt);
+    }
+
+  }
+
+  .dashicons {
+    font-family: 'dashicons' !important;
+  }
+
+}
+
+// File Browser Uploader
+.igd-file-browser {
+
+  .igd-file-uploader {
+    position: absolute !important;
+    left: 50%;
+    transform: translateX(-50%);
+    top: 0;
+    z-index: 3;
+    box-shadow: 0 0 10px rgba(0, 0, 0, 0.2);
+
+    &:has(.file-list-wrapper) {
+      .igd-file-uploader-inner {
+        .dashicons-cloud-upload {
+          display: none;
+        }
+      }
+    }
+
+    @media (max-width: 767px) {
+      position: absolute !important;
+      height: 100%;
+      right: unset;
+      bottom: unset;
+      width: calc(100% - 20px) !important;
+      justify-content: flex-start;
+      background: rgba(0, 0, 0, .5) !important;
+
+      .igd-file-uploader-inner {
+        background: linear-gradient(var(--color-primary-lighter), var(--color-primary-lighter)), #FFF !important;
+      }
+
+    }
+  }
+
+  &:has(.igd-file-uploader) {
+    position: relative;
+    min-height: 400px;
+
+    &:after {
+      width: 100%;
+      height: 100%;
+      content: '';
+      position: absolute;
+      top: 0;
+      left: 0;
+      background: rgba(0, 0, 0, .5);
+      z-index: 2;
+    }
+  }
+
+}
+
+// Forms Error
+.ff-el-is-error,
+.wpforms-has-error,
+.gfield_error,
+.nf-error,
+.frm_blank_field,
+.mf-input-wrapper.has-error,
+{
+  .igd-file-uploader {
+    border-color: #f00 !important;
+  }
+}

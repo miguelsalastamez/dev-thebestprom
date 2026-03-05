@@ -1,0 +1,74 @@
+.et-fb-modules-list {
+
+  .igd_shortcodes, {
+    max-height: 100px !important;
+
+    &:before {
+      content: "" !important;
+      height: 30px;
+      display: block;
+      background-size: contain;
+      background-repeat: no-repeat;
+      background-position: center center;
+      margin-bottom: 10px !important;
+    }
+
+    .et_module_title {
+      line-height: 1.5 !important;
+    }
+
+    &:after {
+      content: "" !important;
+      background-image: url(../images/drive.png);
+      height: 20px;
+      width: 20px;
+      display: block;
+      background-size: contain;
+      background-repeat: no-repeat;
+      background-position: center center;
+      position: absolute;
+      right: 7px;
+      top: 7px;
+    }
+
+  }
+
+  .igd_shortcodes:before {
+    background-image: url('../images/shortcode-builder/types/shortcodes.svg');
+  }
+
+}
+
+.et-fb-option-container {
+  .igd-configure-wrap {
+    display: flex;
+    flex-direction: column;
+
+    label {
+      margin: 7px 0;
+      font-weight: 600;
+    }
+
+    select {
+      width: 100%;
+      max-width: 350px;
+      padding: 5px;
+      border-radius: 3px;
+      border: 1px solid #ccc;
+      font-size: 14px;
+      margin-bottom: 10px;
+    }
+
+    .igd-help-text {
+      font-size: 12px;
+      color: #666;
+      margin-top: 5px;
+      margin-bottom: 15px;
+    }
+
+  }
+}
+
+
+
+

@@ -1,0 +1,136 @@
+.igd-datepicker {
+  background: #fff;
+  border: 1px solid rgba($igd_color, .3);
+  border-radius: 7px;
+  border-top: 2px solid $igd_color_light;
+  box-shadow: 0 0 5px rgba(0, 0, 0, 0.2);
+  font-size: 14px;
+  padding: 10px;
+  width: 250px;
+
+  .ui-datepicker-header {
+    border: none;
+    padding: 0;
+    margin-bottom: 10px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+
+
+    .ui-datepicker-prev,
+    .ui-datepicker-next {
+      background: none;
+      color: $igd_color;
+      border: 1px solid rgba($igd_color, .3);
+      font-size: 20px;
+      font-weight: 700;
+      line-height: 1;
+      text-shadow: none;
+      padding: 0;
+      margin: 0;
+      width: 30px;
+      height: 30px;
+      border-radius: 50%;
+      text-align: center;
+      vertical-align: middle;
+      position: relative;
+      top: 2px;
+      font-family: 'Dashicons', serif;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      cursor: pointer;
+
+      &:hover {
+        background: #f1f1f1;
+      }
+    }
+
+    .ui-datepicker-prev {
+      float: left;
+
+      &:before {
+        content: '\f341';
+      }
+    }
+
+    .ui-datepicker-next {
+      order: 3;
+
+      &:before {
+        content: '\f345';
+      }
+    }
+
+    .ui-datepicker-title {
+      font-size: 16px;
+      font-weight: 700;
+      line-height: 1;
+      text-align: center;
+      margin: 0;
+      padding: 0;
+      text-transform: uppercase;
+      order: 2;
+
+      .ui-datepicker-month,
+      .ui-datepicker-year {
+        font-size: inherit;
+      }
+    }
+
+  }
+
+  .ui-datepicker-calendar {
+    border: none;
+    width: 100%;
+    margin: 15px 0 0 0;
+    padding: 0;
+    border-collapse: collapse;
+
+    th {
+      font-size: 12px;
+      font-weight: 700;
+      line-height: 1;
+      text-align: center;
+      padding: 5px 0;
+      text-transform: uppercase;
+    }
+
+    td {
+      padding: 0;
+      text-align: center;
+
+      a {
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        padding: 5px;
+        color: #000;
+        text-decoration: none;
+        border-radius: 50%;
+        transition: all 0.3s ease;
+        aspect-ratio: 1/1;
+
+        &:hover {
+          background: $igd_color_light;
+          color: #FFF;
+        }
+      }
+
+      &.ui-datepicker-today a {
+        border: 1px solid $igd_color_light;
+      }
+
+      &.ui-datepicker-unselectable a {
+        color: #ccc;
+      }
+
+      &.ui-datepicker-current-day a {
+        background: $igd_color;
+        color: #fff;
+        aspect-ratio: 1/1;
+      }
+    }
+  }
+
+}

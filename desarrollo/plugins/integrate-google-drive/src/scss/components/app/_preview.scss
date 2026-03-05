@@ -1,0 +1,108 @@
+.igd-lightbox {
+  z-index: 999999;
+  position: fixed;
+
+  .lg-backdrop {
+    background: rgba(0, 0, 0, 0.9) !important;
+  }
+
+  .lg-sub-html {
+    h4, p {
+      color: inherit;
+    }
+  }
+
+  &:not(.gallery-lightbox) {
+    .lg-sub-html {
+      background: #111 !important;
+      display: flex;
+      align-items: center;
+      padding: 10px 15px;
+      max-width: calc(100% - 100px);
+    }
+  }
+
+  .lg-outer {
+    .lg-thumb-item {
+      height: 60px;
+    }
+  }
+
+  .item-name {
+    display: flex;
+    align-items: center;
+    max-width: 75%;
+    overflow: hidden;
+
+    img {
+      margin-right: 10px;
+      width: 24px;
+    }
+
+    span {
+      text-overflow: ellipsis;
+      overflow: hidden;
+      white-space: nowrap;
+    }
+
+  }
+
+  &.no-download {
+    .lg-download {
+      display: none;
+    }
+  }
+
+  .lg-outer[data-lg-slide-type='video'],
+  .lg-outer[data-lg-slide-type='iframe'] {
+    .lg-zoom-in,
+    .lg-actual-size,
+    .lg-zoom-out {
+      display: none;
+    }
+  }
+
+  .lg-outer[data-lg-slide-type='iframe'] {
+    .igd-hidepopout {
+      width: 60px;
+      height: 55px;
+      position: absolute;
+      opacity: 1;
+      right: 12px;
+      top: 0;
+      z-index: 10000000;
+      background-color: #d1d1d1;
+      cursor: default !important;
+    }
+  }
+
+  .lg-item {
+    &:has(video > source[type*='audio/']) {
+      .lg-video-cont {
+        margin-top: -60px;
+        max-height: 60px;
+        max-width: 500px;
+
+        .lg-video-poster {
+          margin-top: -20px;
+          max-width: 100px !important;
+          height: 100px !important;
+          max-height: none !important;
+        }
+      }
+    }
+
+    @media (max-width: 767px) {
+      .lg-video-cont {
+        max-width: 90% !important;
+      }
+    }
+  }
+
+  @media (max-width: 767px) {
+    .lg-sub-html {
+      display: none !important;
+    }
+  }
+
+}

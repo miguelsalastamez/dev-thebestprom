@@ -1,0 +1,761 @@
+# Copyright (C) 2024 The Events Calendar
+# This file is distributed under the GPLv2 or later.
+msgid ""
+msgstr ""
+"Project-Id-Version: The Events Calendar: Community Events Tickets 4.9.6\n"
+"Report-Msgid-Bugs-To: https://evnt.is/191x\n"
+"Last-Translator: \n"
+"Language-Team: \n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"POT-Creation-Date: 2024-05-06T11:46:28-07:00\n"
+"PO-Revision-Date: 2024-05-06 18:46\n"
+"X-Generator: WP-CLI 2.7.1\n"
+"X-Domain: tribe-events-community-tickets\n"
+
+#. Plugin Name of the plugin
+msgid "The Events Calendar: Community Events Tickets"
+msgstr ""
+
+#. Plugin URI of the plugin
+msgid "https://evnt.is/1ace"
+msgstr ""
+
+#. Description of the plugin
+msgid "Community Events Tickets is an add-on providing an additional way for community organizers to offer paid tickets for community events."
+msgstr ""
+
+#. Author of the plugin
+msgid "The Events Calendar"
+msgstr ""
+
+#. Author URI of the plugin
+msgid "https://evnt.is/1aor"
+msgstr ""
+
+#: events-community-tickets.php:59
+#: src/Tribe/Main.php:1656
+msgid "Community Events Tickets"
+msgstr ""
+
+#: src/admin-views/payment-options.php:9
+msgid "Community Tickets"
+msgstr ""
+
+#: src/admin-views/payment-options.php:13
+msgid "Enable Community Tickets"
+msgstr ""
+
+#: src/admin-views/payment-options.php:14
+msgid "Check this box if you wish to turn on Community Tickets functionality"
+msgstr ""
+
+#: src/admin-views/payment-options.php:21
+msgid "Allow any user to create tickets"
+msgstr ""
+
+#: src/admin-views/payment-options.php:22
+msgid "Check this box if you wish all Subscribers to receive the ability to create tickets. Uncheck it if you will be altering the <code>edit_event_tickets</code> capability either via a plugin or custom filter. Allowing Subscribers to create tickets will not let them manage attendees."
+msgstr ""
+
+#: src/admin-views/payment-options.php:29
+msgid "Enable ticket images"
+msgstr ""
+
+#: src/admin-views/payment-options.php:30
+msgid "Check this box if you wish to allow community organizers to upload images for their tickets."
+msgstr ""
+
+#: src/admin-views/payment-options.php:43
+#: src/views/community-tickets/modules/payment-options.php:135
+msgid "Ticket Fees"
+msgstr ""
+
+#: src/admin-views/payment-options.php:48
+msgid "IMPORTANT"
+msgstr ""
+
+#: src/admin-views/payment-options.php:49
+msgid "Certain fee restrictions apply."
+msgstr ""
+
+#: src/admin-views/payment-options.php:51
+msgid "Review our %1$sUnderstanding Site Fees KB%2$s for a further explanation so that you set your site fees according to what Community Tickets supports."
+msgstr ""
+
+#: src/admin-views/payment-options.php:55
+msgid "Learn more."
+msgstr ""
+
+#: src/admin-views/payment-options.php:60
+msgid "Ticket Fee Type"
+msgstr ""
+
+#: src/admin-views/payment-options.php:61
+msgid "What type of fee will be charged?"
+msgstr ""
+
+#: src/admin-views/payment-options.php:65
+msgid "None"
+msgstr ""
+
+#: src/admin-views/payment-options.php:66
+msgid "Flat Fee Per Event"
+msgstr ""
+
+#: src/admin-views/payment-options.php:67
+msgid "Flat Fee Per Ticket"
+msgstr ""
+
+#: src/admin-views/payment-options.php:68
+msgid "Percentage Fee Per Transaction"
+msgstr ""
+
+#: src/admin-views/payment-options.php:69
+msgid "Flat & Percentage Fee Per Event"
+msgstr ""
+
+#: src/admin-views/payment-options.php:70
+msgid "Flat & Percentage Fee Per Ticket"
+msgstr ""
+
+#: src/admin-views/payment-options.php:80
+msgid "Fee percentage"
+msgstr ""
+
+#: src/admin-views/payment-options.php:81
+msgid "The percentage fee charged to each ticket transaction."
+msgstr ""
+
+#: src/admin-views/payment-options.php:93
+msgid "Flat fee"
+msgstr ""
+
+#: src/admin-views/payment-options.php:94
+msgid "The flat fee charged per the Ticket Fee Type setting."
+msgstr ""
+
+#: src/admin-views/payment-options.php:106
+msgid "Fee display option"
+msgstr ""
+
+#: src/admin-views/payment-options.php:115
+msgid "Fees will be subtracted from the cost of the ticket (paid tickets only)"
+msgstr ""
+
+#: src/admin-views/payment-options.php:120
+msgid "Additional fees will be subtracted from the individual ticket price. The fee will be displayed on the event submission form, but ticket prices will not be restricted to accommodate the fee."
+msgstr ""
+
+#: src/admin-views/payment-options.php:122
+#: src/admin-views/payment-options.php:133
+#: src/admin-views/payment-options.php:144
+msgid "Learn more"
+msgstr ""
+
+#: src/admin-views/payment-options.php:126
+msgid "Fees will be added to the price of the ticket"
+msgstr ""
+
+#: src/admin-views/payment-options.php:131
+msgid "Additional fees will be added to the individual ticket price. The fee will also be displayed on the event submission form, but ticket prices will not be restricted to accommodate the fee."
+msgstr ""
+
+#: src/admin-views/payment-options.php:137
+msgid "Display fees in addition to subtotal on the Cart page"
+msgstr ""
+
+#: src/admin-views/payment-options.php:142
+msgid "Additional fees will be added to the total ticket price (applies to paid and free tickets)."
+msgstr ""
+
+#: src/admin-views/payment-options.php:152
+msgid "Add flat fees to free tickets"
+msgstr ""
+
+#: src/admin-views/payment-options.php:153
+msgid "When checked, flat fees will be added to free tickets as well as paid tickets."
+msgstr ""
+
+#: src/admin-views/payment-options.php:193
+msgid "Split Payment Settings"
+msgstr ""
+
+#: src/admin-views/payment-options.php:197
+msgid "Enable split payments"
+msgstr ""
+
+#: src/admin-views/payment-options.php:199
+msgid ""
+"Leaving this box unchecked means that all funds will be collected by the payment methods configured in WooCommerce.\n"
+"\t\t\t\tCheck this box if you prefer the money for tickets to be distributed to the site and the event\n"
+"\t\t\t\torganizer. You will need a PayPal %1$sdeveloper account%2$s. We advise turning off auto-complete and issuing refunds.\n"
+"\t\t\t\t%3$s\n"
+"\t\t\t\t"
+msgstr ""
+
+#: src/admin-views/payment-options.php:209
+msgid "Read more"
+msgstr ""
+
+#: src/admin-views/payment-options.php:230
+msgid "Configure PayPal:"
+msgstr ""
+
+#: src/admin-views/payment-options.php:231
+msgid "The following PayPal settings are required for enabling split payments."
+msgstr ""
+
+#: src/admin-views/payment-options.php:236
+msgid "Split Payment method"
+msgstr ""
+
+#: src/admin-views/payment-options.php:240
+msgid "Use the PayPal Payouts API"
+msgstr ""
+
+#: src/admin-views/payment-options.php:245
+msgid "Learn about PayPal's Payouts API "
+msgstr ""
+
+#: src/admin-views/payment-options.php:247
+msgid "Learn more about PayPal's Payouts API"
+msgstr ""
+
+#: src/admin-views/payment-options.php:248
+#: src/admin-views/payment-options.php:261
+msgid "Read more."
+msgstr ""
+
+#: src/admin-views/payment-options.php:249
+msgid "IMPORTANT: You may use any payment gateway we currently support for selling Community Tickets through WooCommerce. However, all Payout funds will be withdrawn from the PayPal account you enter into the PayPal settings."
+msgstr ""
+
+#: src/admin-views/payment-options.php:250
+msgid "For example, if you use Stripe as your payment processor for WooCommerce and you have enabled Split Payments for Community Tickets, your Organizer will be paid via your PayPal account, not your Stripe account. It's important that you have enough funds within your PayPal account in order to successfully pay your organizers."
+msgstr ""
+
+#: src/admin-views/payment-options.php:253
+msgid "Use the legacy PayPal Adaptive Payments API"
+msgstr ""
+
+#: src/admin-views/payment-options.php:258
+msgid "This API has been deprecated by PayPal and you have to have an existing account to use it. "
+msgstr ""
+
+#: src/admin-views/payment-options.php:260
+msgid "Read more about PayPal's Adaptive Payments API"
+msgstr ""
+
+#: src/admin-views/payment-options.php:268
+msgid "Use PayPal sandbox"
+msgstr ""
+
+#: src/admin-views/payment-options.php:269
+msgid "Check this box if you wish all payments to be test payments via PayPal sandbox."
+msgstr ""
+
+#: src/admin-views/payment-options.php:276
+msgid "PayPal API Client ID"
+msgstr ""
+
+#: src/admin-views/payment-options.php:287
+msgid "PayPal API Client Secret"
+msgstr ""
+
+#: src/admin-views/payment-options.php:298
+msgid "PayPal API Username"
+msgstr ""
+
+#: src/admin-views/payment-options.php:309
+msgid "PayPal API Password"
+msgstr ""
+
+#: src/admin-views/payment-options.php:320
+msgid "PayPal API Signature"
+msgstr ""
+
+#: src/admin-views/payment-options.php:331
+msgid "PayPal Application ID"
+msgstr ""
+
+#: src/admin-views/payment-options.php:342
+msgid "Receiver email"
+msgstr ""
+
+#: src/admin-views/payment-options.php:343
+msgid "This is the email address for the PayPal account that will receive payments."
+msgstr ""
+
+#: src/admin-views/payment-options.php:354
+msgid "Invoice prefix"
+msgstr ""
+
+#: src/admin-views/payment-options.php:355
+msgid "Enter a prefix for your PayPal invoices. If you run multiple stores/event sites, entering a value here will ensure that your invoice numbers are unique - PayPal does not accept duplicate invoice numbers."
+msgstr ""
+
+#: src/admin-views/payouts-report-header-first.php:2
+msgid "Event Date"
+msgstr ""
+
+#: src/admin-views/payouts-report-header-first.php:6
+msgid "Post type"
+msgstr ""
+
+#: src/admin-views/payouts-report-header-middle.php:11
+msgid "payout"
+msgid_plural "payouts"
+msgstr[0] ""
+msgstr[1] ""
+
+#: src/admin-views/payouts-report-header-middle.php:12
+msgid "ticket sold"
+msgid_plural "tickets sold"
+msgstr[0] ""
+msgstr[1] ""
+
+#: src/admin-views/payouts-tab.php:9
+msgid "Event Details"
+msgstr ""
+
+#: src/admin-views/payouts-tab.php:34
+msgid "Overview"
+msgstr ""
+
+#: src/Community_Tickets/Tickets/Commerce/Admin/Settings.php:70
+#: src/Community_Tickets/Tickets/Commerce/Admin/Settings.php:79
+msgid "Default Provider"
+msgstr ""
+
+#: src/Community_Tickets/Tickets/Commerce/Admin/Settings.php:80
+msgid "Provider to be used for events created via Community Events. Changing this will only affect new tickets."
+msgstr ""
+
+#. Translators: %1$s Is the link opening, %2$s is the link closing `</a>`.
+#: src/Community_Tickets/Tickets/Commerce/Admin/Settings.php:169
+msgid "To begin using The Events Calendar: Community Tickets, Please %1$ssetup a provider%2$s."
+msgstr ""
+
+#: src/functions/php-min-version.php:51
+msgctxt "Plugin A \"and\" Plugin B"
+msgid " and "
+msgstr ""
+
+#: src/functions/php-min-version.php:52
+msgctxt "Plugin A\",\" Plugin B"
+msgid ", "
+msgstr ""
+
+#: src/functions/php-min-version.php:64
+msgid "<b>%1$s</b> requires <b>PHP %2$s</b> or higher."
+msgid_plural "<b>%1$s</b> require <b>PHP %2$s</b> or higher."
+msgstr[0] ""
+msgstr[1] ""
+
+#: src/functions/php-min-version.php:74
+msgid "To allow better control over dates, advanced security improvements and performance gain."
+msgstr ""
+
+#: src/functions/php-min-version.php:76
+msgid "Contact your Host or your system administrator and ask to upgrade to the latest version of PHP."
+msgstr ""
+
+#: src/Tribe/Adapter/WooCommerce_PayPal.php:31
+msgid "PayPal Split Payments"
+msgstr ""
+
+#: src/Tribe/Adapter/WooCommerce_PayPal.php:34
+msgid "Split the distribution of money between the site owner and event organizer at the time of ticket purchase with Community Tickets. Settings are available in %1$sEvents > Settings > Community%2$s"
+msgstr ""
+
+#: src/Tribe/Adapter/WooCommerce_PayPal.php:37
+msgid "Proceed to PayPal"
+msgstr ""
+
+#: src/Tribe/Adapter/WooCommerce_PayPal.php:325
+msgid "An error has occurred while processing your payment, please try again. Or contact us for assistance."
+msgstr ""
+
+#: src/Tribe/Cart.php:181
+msgid "Site Fees"
+msgstr ""
+
+#: src/Tribe/Event_Form.php:76
+msgid "Are you sure you want to delete this ticket? This cannot be undone."
+msgstr ""
+
+#: src/Tribe/Event_Form.php:129
+msgid "%1$sPayment options%2$s"
+msgstr ""
+
+#: src/Tribe/Event_Form.php:178
+#: src/Tribe/Payouts/Tabbed_View/Table.php:102
+#: src/views/community-tickets/modules/tickets.php:55
+msgid "Tickets"
+msgstr ""
+
+#: src/Tribe/Event_Form.php:317
+msgctxt "attendee event actions"
+msgid "View"
+msgstr ""
+
+#: src/Tribe/Event_Form.php:318
+msgctxt "attendee event actions"
+msgid "View Event"
+msgstr ""
+
+#: src/Tribe/Fees.php:721
+msgctxt "the total fees collected for an order"
+msgid "Total Fees Collected: "
+msgstr ""
+
+#: src/Tribe/Fees.php:764
+msgctxt "the prefix to the fee message for added in subtotal"
+msgid "A site fee of"
+msgstr ""
+
+#: src/Tribe/Fees.php:767
+msgctxt "the prefix to the fee message for fees deducted or added to price"
+msgid "A fee of"
+msgstr ""
+
+#: src/Tribe/Fees.php:816
+msgctxt "the fee mathematical operation (deduct or add)"
+msgid "is deducted"
+msgstr ""
+
+#: src/Tribe/Fees.php:819
+msgctxt "the fee mathematical operation (deduct or add)"
+msgid "is added"
+msgstr ""
+
+#: src/Tribe/Fees.php:822
+msgctxt "the type of fee (per ticket or event)"
+msgid "per ticket"
+msgstr ""
+
+#: src/Tribe/Fees.php:826
+msgctxt "the type of fee (per ticket, event, or transaction)"
+msgid "per transaction"
+msgstr ""
+
+#: src/Tribe/Fees.php:828
+msgctxt "the type of fee (per ticket, event, or transaction)"
+msgid "per event in the cart"
+msgstr ""
+
+#: src/Tribe/Fees.php:848
+msgctxt "fee message to be added if flat fees set on free"
+msgid "including free tickets"
+msgstr ""
+
+#: src/Tribe/Main.php:796
+#: src/views/community-tickets/modules/shortcode-attendees.php:42
+msgid "Attendees"
+msgstr ""
+
+#: src/Tribe/Main.php:800
+msgid "Reports:"
+msgstr ""
+
+#: src/Tribe/Main.php:829
+msgid "Sales"
+msgstr ""
+
+#: src/Tribe/Main.php:1130
+msgid "To update the pricing for tickets that already have sales, please contact the Site Admin."
+msgstr ""
+
+#: src/Tribe/Main.php:1194
+msgid "Editing ticket prices is not allowed once purchases have been made."
+msgstr ""
+
+#: src/Tribe/Main.php:1344
+msgid "Limited to %1$s per order."
+msgstr ""
+
+#: src/Tribe/Main.php:1628
+msgid "Site Fee: %s per order"
+msgstr ""
+
+#: src/Tribe/Main.php:1633
+msgid "Site Fee Percentage: %s%%"
+msgstr ""
+
+#: src/Tribe/Main.php:1662
+msgid "Community Events Tickets - Legacy"
+msgstr ""
+
+#: src/Tribe/Payouts.php:101
+#: src/Tribe/Payouts/Tabbed_View/Report.php:150
+#: src/Tribe/Payouts/Tabbed_View/Report.php:180
+#: src/Tribe/Payouts/Tabbed_View/Report_Tab.php:32
+msgid "Payouts"
+msgstr ""
+
+#: src/Tribe/Payouts.php:102
+#: src/Tribe/Payouts/Tabbed_View/Table.php:106
+msgid "Payout"
+msgstr ""
+
+#: src/Tribe/Payouts.php:139
+msgid "Pending Order Completion"
+msgstr ""
+
+#. translators: %s: number of payouts
+#: src/Tribe/Payouts.php:145
+msgid "Pending Order Completion <span class=\"count\">(%s)</span>"
+msgid_plural "Pending Order Completion <span class=\"count\">(%s)</span>"
+msgstr[0] ""
+msgstr[1] ""
+
+#: src/Tribe/Payouts.php:148
+msgid "Pending Payout"
+msgstr ""
+
+#. translators: %s: number of payouts
+#: src/Tribe/Payouts.php:154
+msgid "Pending Payout <span class=\"count\">(%s)</span>"
+msgid_plural "Pending Payout <span class=\"count\">(%s)</span>"
+msgstr[0] ""
+msgstr[1] ""
+
+#: src/Tribe/Payouts.php:157
+msgid "Paid"
+msgstr ""
+
+#. translators: %s: number of payouts
+#: src/Tribe/Payouts.php:163
+msgid "Paid <span class=\"count\">(%s)</span>"
+msgid_plural "Paid <span class=\"count\">(%s)</span>"
+msgstr[0] ""
+msgstr[1] ""
+
+#: src/Tribe/Payouts.php:166
+msgid "Failed"
+msgstr ""
+
+#. translators: %s: number of payouts
+#: src/Tribe/Payouts.php:172
+msgid "Failed <span class=\"count\">(%s)</span>"
+msgid_plural "Failed <span class=\"count\">(%s)</span>"
+msgstr[0] ""
+msgstr[1] ""
+
+#: src/Tribe/Payouts.php:618
+msgid "Order status changed from %1$s to %2$s"
+msgstr ""
+
+#: src/Tribe/Payouts/Payout.php:320
+msgid "Payout for Order #%d"
+msgstr ""
+
+#: src/Tribe/Payouts/PayPal/Payouts_API.php:304
+msgid "You have a Payout!"
+msgstr ""
+
+#: src/Tribe/Payouts/Tabbed_View/Report.php:118
+msgid "View Payouts"
+msgstr ""
+
+#: src/Tribe/Payouts/Tabbed_View/Report.php:148
+msgid "See payouts for this %s"
+msgstr ""
+
+#: src/Tribe/Payouts/Tabbed_View/Report.php:245
+msgctxt "Browser title"
+msgid "%s - Payouts"
+msgstr ""
+
+#: src/Tribe/Payouts/Tabbed_View/Report.php:339
+msgid "Total Payouts"
+msgstr ""
+
+#: src/Tribe/Payouts/Tabbed_View/Report.php:341
+msgid "Total Payout Amount"
+msgstr ""
+
+#: src/Tribe/Payouts/Tabbed_View/Report.php:395
+msgctxt "event payout actions"
+msgid "Edit %s"
+msgstr ""
+
+#: src/Tribe/Payouts/Tabbed_View/Report.php:396
+msgctxt "event payout actions"
+msgid "View %s"
+msgstr ""
+
+#: src/Tribe/Payouts/Tabbed_View/Report.php:399
+msgctxt "event payout actions"
+msgid "Edit"
+msgstr ""
+
+#: src/Tribe/Payouts/Tabbed_View/Report.php:400
+msgctxt "event payout actions"
+msgid "View"
+msgstr ""
+
+#: src/Tribe/Payouts/Tabbed_View/Table.php:56
+msgid "Number of payouts per page:"
+msgstr ""
+
+#: src/Tribe/Payouts/Tabbed_View/Table.php:103
+msgid "Receiver"
+msgstr ""
+
+#: src/Tribe/Payouts/Tabbed_View/Table.php:104
+msgid "Order Date"
+msgstr ""
+
+#: src/Tribe/Payouts/Tabbed_View/Table.php:105
+msgid "Date Paid"
+msgstr ""
+
+#: src/Tribe/Payouts/Tabbed_View/Table.php:107
+msgid "Status"
+msgstr ""
+
+#: src/Tribe/Payouts/Tabbed_View/Table.php:171
+msgid "Order #%s"
+msgstr ""
+
+#: src/Tribe/Payouts/Tabbed_View/Table.php:223
+#: src/Tribe/Payouts/Tabbed_View/Table.php:323
+msgid "Unknown"
+msgstr ""
+
+#: src/Tribe/Payouts/Tabbed_View/Table.php:334
+msgid "Note"
+msgstr ""
+
+#: src/Tribe/Payouts/Tabbed_View/Table.php:345
+msgid "Transaction ID"
+msgstr ""
+
+#: src/Tribe/Payouts/Tooltips.php:21
+msgid "Pending Order Completion includes all payouts that have an order that has not yet been completed."
+msgstr ""
+
+#: src/Tribe/Payouts/Tooltips.php:34
+msgid "Pending includes all payouts pending processing through the queue."
+msgstr ""
+
+#: src/Tribe/Payouts/Tooltips.php:47
+msgid "Paid includes all successful payouts for all Completed orders."
+msgstr ""
+
+#: src/Tribe/Payouts/Tooltips.php:61
+msgid "Failed payouts happen when an order is Cancelled or Refunded before the Payout is paid, or when the Payout API fails to process the Payout."
+msgstr ""
+
+#: src/Tribe/Reports/Sales.php:247
+msgid "Total Completed Sales:"
+msgstr ""
+
+#: src/Tribe/Reports/Sales.php:251
+msgid "Total Site Fees:"
+msgstr ""
+
+#: src/Tribe/Route/Attendees_Report.php:45
+msgid "attendees"
+msgstr ""
+
+#: src/Tribe/Route/Attendees_Report.php:47
+msgid "Attendees Report"
+msgstr ""
+
+#: src/Tribe/Route/Payment_Options.php:21
+msgid "payment-options"
+msgstr ""
+
+#: src/Tribe/Route/Payment_Options.php:23
+msgid "Payment Options"
+msgstr ""
+
+#: src/Tribe/Route/Payment_Options.php:119
+msgid "Payment options"
+msgstr ""
+
+#: src/Tribe/Route/Sales_Report.php:44
+msgid "sales"
+msgstr ""
+
+#: src/Tribe/Route/Sales_Report.php:46
+msgid "Sales Report"
+msgstr ""
+
+#: src/Tribe/Shortcodes.php:110
+msgid "Community Tickets Shortcode error: The provided Event ID is invalid"
+msgstr ""
+
+#: src/Tribe/Shortcodes.php:138
+msgid "Community Tickets Shortcode error: The view you specified doesn't exist or the Event ID is invalid."
+msgstr ""
+
+#. Translators: linked email address.
+#: src/views/community-tickets/modules/orders-report-after-organizer.php:36
+msgctxt "before linked email address"
+msgid "Organizer PayPal: %s"
+msgstr ""
+
+#. Translators: dynamic 'Events' text.
+#: src/views/community-tickets/modules/payment-options.php:41
+msgid "My %s"
+msgstr ""
+
+#: src/views/community-tickets/modules/payment-options.php:80
+msgid "PayPal Options"
+msgstr ""
+
+#: src/views/community-tickets/modules/payment-options.php:86
+msgid "Please enter your PayPal email address; this is needed in order to take payment."
+msgstr ""
+
+#: src/views/community-tickets/modules/payment-options.php:93
+msgid "Email:"
+msgstr ""
+
+#: src/views/community-tickets/modules/payment-options.php:107
+msgid "Tickets cannot be created without an email address that is associated with PayPal"
+msgstr ""
+
+#: src/views/community-tickets/modules/payment-options.php:141
+msgid "Fee Structure:"
+msgstr ""
+
+#. Translators: 1: per transaction fee amount, 2: flat fee amount
+#: src/views/community-tickets/modules/payment-options.php:149
+msgid "Fees are %1$s%% per transaction plus a %2$s flat fee per ticket."
+msgstr ""
+
+#. Translators: 1: fee amount
+#: src/views/community-tickets/modules/payment-options.php:160
+msgid "Fees are a flat fee of %1$s per ticket."
+msgstr ""
+
+#. Translators: the formatted percentage fee
+#: src/views/community-tickets/modules/payment-options.php:169
+msgid "Fees are %s%% per transaction."
+msgstr ""
+
+#: src/views/community-tickets/modules/payment-options.php:186
+msgid "Save"
+msgstr ""
+
+#. Translators: 1: singular name of the post type ticket to which ticket is attached.
+#: src/views/community-tickets/modules/shortcode-attendees.php:64
+msgctxt "attendee screen summary"
+msgid "%1$s Details"
+msgstr ""
+
+#: src/views/community-tickets/modules/shortcode-attendees.php:117
+msgctxt "attendee screen summary"
+msgid "Overview"
+msgstr ""
+
+#. Translators: 1: link opening tag and URL 2: link closing tag
+#: src/views/community-tickets/modules/tickets.php:84
+msgid "Before you can create tickets, please add your PayPal email address on the %1$sPayment options%2$s form."
+msgstr ""

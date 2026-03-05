@@ -1,0 +1,42 @@
+@import "components/helpers";
+@import "components/app";
+@import "components/shortcode";
+@import "components/elementor-frontend";
+@import "components/woocommerce";
+
+.igd-hidden {
+  display: none !important;
+}
+
+.igd-direct-content-html, body {
+  margin: 0;
+  padding: 0;
+}
+
+#igd-direct-content {
+  font-family: 'roboto', sans-serif;
+
+  &.type-embed {
+    width: 100%;
+    height: 100vh;
+    overflow: hidden;
+    position: relative;
+
+    .igd-embed {
+      width: 100%;
+      height: 100%;
+      border: none;
+    }
+
+    .igd-shortcode-wrap {
+      height: 100%;
+
+      .igd-embed-wrap {
+        height: 100%;
+      }
+
+    }
+
+  }
+
+}

@@ -1,0 +1,202 @@
+/* ==========================================================================
+   Simple Theme for DataTables v2
+   Works with wrapper: .igd-table-container
+   Aims to look plain, neutral, with minimal background and borders.
+   ========================================================================== */
+
+&.theme-simple {
+  /* ---- Theme tokens (Simple inspired) ----------------------------------- */
+  --igd-radius: 0;
+  --igd-border: #e0e0e0;
+  --igd-bg: #ffffff;
+  --igd-text: #333333;
+  --igd-muted: #777777;
+  --igd-head-bg: #f9f9f9;
+  --igd-head-text: #333333;
+  --igd-primary: #007bff;
+  --igd-primary-dark: #0056b3;
+
+  .dt-container {
+
+    // ------------------------------------------------------------------------
+    // Layout rows
+    // ------------------------------------------------------------------------
+    .dt-layout-row {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 8px;
+      margin: 4px 0 8px;
+    }
+
+    // ------------------------------------------------------------------------
+    // Length (select)
+    // ------------------------------------------------------------------------
+    .dt-length {
+      select {
+        border: 1px solid var(--igd-border);
+        border-radius: var(--igd-radius);
+        padding: 6px 8px;
+        font-size: 14px;
+        height: 32px;
+
+        &:focus {
+          border-color: var(--igd-primary);
+        }
+      }
+    }
+
+    // ------------------------------------------------------------------------
+    // Search
+    // ------------------------------------------------------------------------
+    .dt-search {
+      input {
+        border: 1px solid var(--igd-border);
+        border-radius: var(--igd-radius);
+        padding: 4px 8px;
+        font-size: 14px;
+        background-color: #fff;
+        outline: none;
+        height: 32px;
+
+        &:focus {
+          border-color: var(--igd-primary);
+        }
+      }
+    }
+
+    // ------------------------------------------------------------------------
+    // Buttons
+    // ------------------------------------------------------------------------
+    .dt-buttons {
+
+      .dt-button {
+        background: #fff;
+        border-radius: var(--igd-radius);
+        padding: 4px 10px;
+        font-size: 14px;
+        color: var(--igd-text);
+
+        &:hover {
+          background: #f2f2f2;
+        }
+
+        &.dt-button-active,
+        &.dt-button-collection {
+          background: var(--igd-primary);
+          border-color: var(--igd-primary-dark);
+          color: #fff;
+        }
+
+        &.disabled {
+          opacity: 0.6;
+          cursor: not-allowed;
+        }
+      }
+    }
+
+    // ------------------------------------------------------------------------
+    // Info
+    // ------------------------------------------------------------------------
+    .dt-info {
+      color: var(--igd-muted);
+      font-size: 13px;
+      margin-top: 2px;
+    }
+
+    // ------------------------------------------------------------------------
+    // Paging
+    // ------------------------------------------------------------------------
+    .dt-paging {
+      nav {
+        .dt-paging-button {
+          border: 1px solid var(--igd-border);
+          background: #fff;
+          border-radius: var(--igd-radius);
+          padding: 4px 8px;
+          font-size: 13px;
+          color: var(--igd-text);
+
+          &:hover:not(.disabled):not(.current) {
+            background: #f2f2f2;
+          }
+
+          &.current {
+            background: var(--igd-primary);
+            border-color: var(--igd-primary-dark);
+            color: #fff !important;
+          }
+
+          &.disabled {
+            color: var(--igd-muted) !important;
+            background: #fafafa;
+          }
+        }
+      }
+    }
+
+    // ------------------------------------------------------------------------
+    // Scroll containers
+    // ------------------------------------------------------------------------
+    .dt-scroll {
+      border-radius: var(--igd-radius);
+      overflow: hidden;
+      border: none;
+
+      table {
+        border-collapse: collapse;
+        border: none;
+      }
+
+      thead th {
+        border: none;
+        border-bottom: 1px solid var(--igd-border);
+      }
+
+      tbody td {
+        border: none;
+        border-bottom: 1px solid var(--igd-border);
+      }
+
+      tbody tr:last-child td {
+        border-bottom: none;
+      }
+
+      .dt-scroll-head table thead th {
+        background: var(--igd-head-bg);
+      }
+    }
+
+    // ------------------------------------------------------------------------
+    // Base table
+    // ------------------------------------------------------------------------
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 14px;
+
+      thead th {
+        background: var(--igd-head-bg);
+        color: var(--igd-head-text);
+        font-weight: 600;
+        text-align: left;
+        padding: 8px 12px;
+        border-bottom: 1px solid var(--igd-border);
+      }
+
+      tbody td {
+        padding: 8px 12px;
+        border-bottom: 1px solid var(--igd-border);
+        color: var(--igd-text);
+        background: var(--igd-bg);
+      }
+
+      th, td {
+        box-shadow: none !important;
+      }
+
+    }
+
+  }
+
+}

@@ -1,0 +1,97 @@
+ .ect-shortcode-block {
+    font-size: 12px;
+    font-family: monospace;
+    color: #444;
+    display: inline-block;
+    padding: 6px;
+    background: #f9f9f9;
+    border: 1px solid #eee;
+  }
+  
+  .wp-block-ect-shortcode {
+    border: 1px solid black;
+    padding: 20px;
+    border-radius: 2px;
+  }
+  
+  .wp-block-ect-shortcode .event-template {
+    display: flex;
+    align-items: center;
+    margin-bottom: 10px;
+  }
+  
+  .wp-block-ect-shortcode .event-template img {
+    height: 40px;
+    width: 40px;
+  }
+  
+  .wp-block-ect-shortcode .event-template p {
+    margin: 0px 0px 0px 15px !important;
+    padding: 0px !important;
+  }
+  
+  .wp-block-ect-shortcode .ect-shortcode-block {
+    background: white;
+    border: 1px solid black;
+    border-radius: 2px;
+    padding: 5px;
+  }
+  
+  .ect-tab-settings .active-tab {
+    border-width: 1px 1px 0px 1px;
+    border-color: #E5E5E5;
+    border-style: solid;
+    border-radius: 5px 5px 0px 0px;
+    box-shadow: 0px 0px transparent;
+  }
+  
+  .ect-tab-settings .active-tab:focus {
+    box-shadow: unset !important;
+  }
+  
+  .ect-tab-settings .active-tab:focus:not(:disabled) {
+    box-shadow: unset !important;
+  }
+  
+  .ect_shortcode-button-group_label {
+    font-size: 11px;
+    font-weight: 500;
+    line-height: 1.4;
+    text-transform: uppercase;
+    box-sizing: border-box;
+    display: block;
+    padding-top: 0px;
+    padding-bottom: 0px;
+    max-width: 100%;
+    z-index: 1;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    margin-bottom: 8px;
+  }
+  
+  .ect_shortcode-button-group {
+    width: 100%;
+    margin-bottom: 14px;
+  }
+  
+  .ect_shortcode-button-group button {
+    width: 50%;
+    justify-content: center;
+    box-shadow: inset 0 0 0 1px #ccc !important;
+    color: #ccc !important;
+  }
+  
+  .ect_shortcode-button-group button {
+    width: 50%;
+  }
+  
+  .ect_shortcode-button-group:has(button:nth-child(3)) button {
+    width: 33.3%;
+  }
+  
+  .ect_shortcode-button-group button.active {
+    color: var(--wp-admin-theme-color) !important;
+    background-color: #DFF4FF;
+  }
+  

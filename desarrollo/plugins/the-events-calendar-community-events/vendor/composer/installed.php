@@ -1,0 +1,52 @@
+<?php return array(
+    'root' => array(
+        'name' => 'the-events-calendar/events-community',
+        'pretty_version' => 'dev-release/T25.elektra',
+        'version' => 'dev-release/T25.elektra',
+        'reference' => 'bae180c1dabddd2ea890016529e0f849fb5f4c18',
+        'type' => 'wordpress-plugin',
+        'install_path' => __DIR__ . '/../../',
+        'aliases' => array(),
+        'dev' => false,
+    ),
+    'versions' => array(
+        'paypal/rest-api-sdk-php' => array(
+            'pretty_version' => '1.14.0',
+            'version' => '1.14.0.0',
+            'reference' => '72e2f2466975bf128a31e02b15110180f059fc04',
+            'type' => 'library',
+            'install_path' => __DIR__ . '/../paypal/rest-api-sdk-php',
+            'aliases' => array(),
+            'dev_requirement' => false,
+        ),
+        'psr/log' => array(
+            'pretty_version' => '1.1.4',
+            'version' => '1.1.4.0',
+            'reference' => 'd49695b909c3b7628b6289db5479a1c204601f11',
+            'type' => 'library',
+            'install_path' => __DIR__ . '/../psr/log',
+            'aliases' => array(),
+            'dev_requirement' => false,
+        ),
+        'the-events-calendar/events-community' => array(
+            'pretty_version' => 'dev-release/T25.elektra',
+            'version' => 'dev-release/T25.elektra',
+            'reference' => 'bae180c1dabddd2ea890016529e0f849fb5f4c18',
+            'type' => 'wordpress-plugin',
+            'install_path' => __DIR__ . '/../../',
+            'aliases' => array(),
+            'dev_requirement' => false,
+        ),
+        'the-events-calendar/wp-router' => array(
+            'pretty_version' => 'dev-master',
+            'version' => 'dev-master',
+            'reference' => '5a689c585a0bacb2bdcbe48ebd56a867783828cb',
+            'type' => 'wordpress-plugin',
+            'install_path' => __DIR__ . '/../the-events-calendar/wp-router',
+            'aliases' => array(
+                0 => '9999999-dev',
+            ),
+            'dev_requirement' => false,
+        ),
+    ),
+);

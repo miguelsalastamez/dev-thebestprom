@@ -1,0 +1,47 @@
+/*--- Frontend ---*/
+.igd-hidden {
+  display: none !important;
+}
+
+.frm-fluent-form {
+
+  // Conversational Forms
+  &.ff_conv_app {
+    .igd {
+      img {
+        margin-bottom: 0;
+      }
+
+      .upload-folder-selection select{
+        appearance: auto;
+        position: relative;
+        opacity: 1;
+        margin: auto;
+      }
+
+    }
+  }
+
+}
+
+/*--- Editor ---*/
+#ff_form_editor_app {
+
+  .igd-form-uploader-config {
+  }
+
+  .igd-shortcode-browser {
+    max-height: 500px;
+  }
+
+  .el-form-item:has(.igd-form-uploader-config) {
+    margin-bottom: 0;
+
+    .el-form-item__label,
+    .el-textarea {
+      display: none;
+    }
+
+  }
+
+}

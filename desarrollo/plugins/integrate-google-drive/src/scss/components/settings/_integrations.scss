@@ -1,0 +1,250 @@
+.integrations-wrapper {
+  margin-bottom: 50px !important;
+  background: transparent !important;
+  padding: 0 !important;
+  border-radius: 10px;
+
+  .integrations-header {
+    display: flex;
+    flex-wrap: wrap;
+    width: 100%;
+    margin-bottom: 20px;
+
+    .igd-settings-body-title {
+      margin-bottom: 0;
+    }
+
+    p {
+      font-size: 1rem;
+    }
+
+    .integrations-actions {
+      display: flex;
+      align-items: center;
+      column-gap: 10px;
+      margin-left: auto;
+
+      button {
+        height: 40px;
+      }
+    }
+
+  }
+
+  .integrations {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: space-between;
+    gap: 20px 15px;
+  }
+
+  .integration-item {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: calc(33.33% - 15px);
+    border-radius: 10px;
+    padding: 15px 10px;
+    position: relative;
+    background: #FFF;
+    border: 1px dashed rgba(#2FB44B, 0.3);
+    transition: all 0.3s ease;
+    cursor: pointer;
+
+    &-img {
+      width: 55px;
+      height: auto;
+      border-radius: 50%;
+      background: #FFF;
+      padding: 3px;
+      border: 1px solid #DDD;
+    }
+
+    .dashicons {
+      color: #BCBCBC;
+      padding: 0;
+      transition: all 0.3s ease;
+
+      &:hover {
+        transform: scale(1.2);
+        color: #2FB44B;
+      }
+    }
+
+    .dashicons-info {
+      margin-right: auto;
+    }
+
+    &-doc-link {
+      text-decoration: none;
+      color: #555;
+      font-weight: 400;
+      display: flex;
+      align-items: center;
+      line-height: 1;
+      transition: all 0.3s ease;
+      padding: 0;
+      min-width: unset;
+      height: unset;
+      margin-left: 7px;
+      box-shadow: none;
+
+      i {
+        height: auto;
+        width: auto;
+        font-size: 22px;
+      }
+    }
+
+    &-title {
+      font-size: 13px;
+      font-weight: 500;
+      text-transform: uppercase;
+      color: #000;
+      margin: 0 5px;
+    }
+
+    .integration-actions {
+      display: flex;
+      align-items: center;
+
+      i {
+        font-size: 26px;
+        height: 26px;
+        width: 26px;
+        margin-left: 5px;
+        color: #666;
+
+        &:hover {
+          color: $igd_color_dark;
+        }
+
+      }
+    }
+
+    .toggle-label {
+      color: #555;
+      font-size: .75rem;
+      font-weight: 400;
+      display: none;
+
+      &.active {
+        color: #44B754;
+      }
+
+      &.inactive {
+        color: #E74C3C;
+      }
+
+    }
+
+    &-toggle {
+      &-wrapper {
+        display: flex;
+        align-items: center;
+      }
+
+      margin-right: 0;
+      margin-left: 5px;
+    }
+
+    &.active {
+      border-style: solid;
+      border-color: rgba($igd_color, 0.3);
+      background: rgba($igd_color, 0.1);
+
+      &:after {
+        display: none;
+        content: 'Enabled';
+        background: #44B754;
+        position: absolute;
+        top: 10px;
+        left: 10px;
+        text-align: center;
+        color: #FFF;
+        font-size: 12px;
+        padding: 5px 7px;
+        border-radius: 5px;
+      }
+
+    }
+
+    .pro-badge {
+      position: absolute;
+      top: -10px;
+      left: 12px;
+      border-radius: 3px;
+      background: #fdb837;
+      color: #fff;
+      text-align: center;
+      padding: 3px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 12px;
+      line-height: 1;
+
+      i {
+        margin-right: 3px;
+        height: auto;
+        width: auto;
+        font-size: 16px;
+        color: #FFF;
+      }
+    }
+
+    .active-badge {
+      position: absolute;
+      top: -10px;
+      right: -10px;
+      background: #44B754;
+      color: #fff;
+      padding: 5px 10px;
+      border-radius: 30px;
+      font-size: 12px;
+      font-weight: normal;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      line-height: 1;
+      box-shadow: 0 0 5px rgba(0, 0, 0, 0.1);
+      transition: all 0.3s ease;
+
+      i {
+        height: auto;
+        width: auto;
+        font-size: 18px;
+        margin-right: 3px;
+      }
+    }
+
+    .integration-tooltip {
+      max-width: 300px;
+    }
+
+    &:hover {
+      .pro-badge {
+        transform: scale(1.1);
+      }
+    }
+
+    &.pro-item {
+      border-color: #FF9458;
+    }
+
+    @media (min-width: 1200px) and (max-width: 1600px) {
+      width: calc(33.333% - 15px);
+    }
+
+    @media (max-width: 1200px) {
+      width: calc(50% - 15px);
+    }
+
+    @media (max-width: 768px) {
+      width: 100%;
+      margin: 0;
+    }
+
+  }
+
+}

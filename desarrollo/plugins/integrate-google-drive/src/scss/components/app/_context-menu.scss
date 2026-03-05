@@ -1,0 +1,888 @@
+.igd-context-menu {
+  * {
+    box-sizing: border-box;
+  }
+
+  z-index: 99999999;
+  background-color: #fff;
+  border-radius: 4px;
+  list-style: none;
+  font-size: 14px;
+  font-family: sans-serif;
+  font-weight: 400;
+  line-height: 1.5;
+  color: #444;
+  cursor: default;
+  user-select: none;
+  -webkit-tap-highlight-color: transparent;
+  box-shadow: 0 0 10px rgba(0, 0, 0, 0.2);
+
+  .context-menu-item {
+    display: flex;
+    align-items: center;
+    padding: 10px 15px;
+    cursor: pointer;
+    transition: background-color .2s ease;
+    width: 100%;
+    position: relative;
+
+    &.import,
+    &.details {
+      border-bottom: 1px solid #eee;
+    }
+
+    &.download,
+    &.delete {
+      border-top: 1px solid #eee;
+    }
+
+    &.disabled {
+      color: #ccc;
+    }
+
+    &.upload {
+      border-bottom: 1px solid #eee;
+    }
+
+    &.delete {
+      //border-bottom: 1px solid #eee;
+    }
+
+    &.view {
+      border-top: 1px solid #eee;
+    }
+
+    i, img {
+      margin-right: 7px;
+      color: #777;
+    }
+
+    &:hover {
+      background-color: #f5f5f5;
+
+      .pro-badge {
+        transform: scale(1.1);
+      }
+    }
+
+    .pro-badge {
+      position: absolute;
+      right: 0;
+      background: #FDB837;
+      color: #fff;
+      padding: 5px;
+      border-radius: 4px;
+      font-size: 11px;
+      font-weight: normal;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      line-height: 1;
+      box-shadow: 0 0 5px rgba(0, 0, 0, 0.1);
+      transition: transform .2s ease;
+
+      i {
+        margin-right: 2px;
+        height: auto;
+        width: auto;
+        font-size: 15px;
+      }
+
+
+    }
+  }
+}
+
+.share-modal {
+  * {
+    box-sizing: border-box;
+  }
+
+  .swal2-close:focus {
+    outline: none;
+    background: transparent;
+    color: lightcoral;
+    box-shadow: none;
+  }
+
+  .link-types-wrap {
+    border: 1px dashed rgba(#00b5ff, .5);
+    padding: 15px;
+    margin-bottom: 15px;
+    border-radius: 5px;
+    margin-top: 10px;
+
+    h4 {
+      margin: 0 0 10px;
+    }
+
+    .components-button-group {
+      background: rgba(#00b5ff, 0.1);
+      padding: 10px;
+      width: max-content;
+      border-radius: 10px;
+
+      button {
+        color: #00b5ff;
+        box-shadow: inset 0 0 0 1px rgba(#00b5ff, .25);
+        margin: 0 3px;
+        border-radius: 5px;
+        background: #FFF;
+        height: 40px;
+        line-height: 1.5;
+
+        i, svg {
+          margin-right: 10px;
+        }
+
+        svg, path {
+          fill: #00b5ff;
+        }
+
+        &:first-child {
+          border-top-left-radius: 5px;
+          border-bottom-left-radius: 5px;
+        }
+
+        &:last-child {
+          border-top-right-radius: 5px;
+          border-bottom-right-radius: 5px;
+        }
+
+        &.is-primary {
+          z-index: auto;
+          background: #00b5ff;
+          color: #fff;
+
+          svg, path {
+            fill: #fff;
+          }
+
+        }
+
+        &.is-secondary {
+          &:hover {
+            color: #00b5ff;
+            box-shadow: inset 0 0 0 1px #00b5ff;
+
+            svg, path {
+              fill: #00b5ff;
+            }
+
+          }
+        }
+
+
+      }
+    }
+
+    .description {
+      margin: 5px 0;
+    }
+
+    .igd-notice {
+      margin-bottom: 0;
+      padding: 10px 5px;
+      border-left-width: 1px;
+
+      .igd-notice-content {
+        font-size: 14px;
+
+        strong {
+          font-size: 12px;
+        }
+      }
+    }
+
+  }
+
+  .share-link {
+    margin-bottom: 1rem;
+
+    input, textarea {
+      width: -webkit-fill-available;
+      border: 1px solid #ddd;
+      border-radius: 4px;
+      padding: 0 10px;
+      font-size: 14px;
+      font-family: sans-serif;
+      font-weight: 400;
+      line-height: 1.5;
+      color: #333;
+      cursor: default;
+      user-select: none;
+      -webkit-tap-highlight-color: transparent;
+      text-align: center;
+      word-break: break-all;
+    }
+
+    input {
+      height: 40px;
+    }
+
+    textarea {
+      height: 100px;
+    }
+
+  }
+
+  &.embed {
+    .embed-code {
+      display: flex;
+    }
+
+    .share-links {
+      display: none;
+    }
+  }
+
+
+  .share-links {
+    display: flex;
+    justify-content: center;
+    flex-wrap: wrap;
+
+    .share-item {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      color: #333;
+      text-decoration: none;
+      margin: 0 10px 10px 0;
+
+      i {
+        font-size: 22px;
+        width: auto;
+        height: auto;
+        border: 1px solid #ccc;
+        border-radius: 50%;
+        padding: 10px;
+        margin: 10px;
+      }
+
+      span {
+        font-size: .875rem;
+      }
+
+      &.link {
+        i {
+          background: #fff;
+          border: 1px solid #ccc;
+          color: #333;
+        }
+
+        span {
+          color: #333;
+        }
+
+        &:hover {
+          i {
+            background: darken(#fff, 10%);
+          }
+        }
+      }
+
+      &.embed {
+        i {
+          background: #333;
+          border: 1px solid #333;
+          color: #fff;
+        }
+
+        &:hover {
+          i {
+            background: darken(#333, 10%);
+          }
+        }
+      }
+
+      &.facebook {
+        i {
+          background-color: #3b5998;
+          color: #fff;
+        }
+
+        span {
+          color: #3b5998;
+        }
+
+        &:hover {
+          i {
+            background-color: lighten(#3b5998, 10%);
+          }
+        }
+      }
+
+      &.twitter {
+        i {
+          background-color: #1da1f2;
+          color: #fff;
+        }
+
+        span {
+          color: #1da1f2;
+        }
+
+        &:hover {
+          i {
+            background-color: lighten(#1da1f2, 10%);
+          }
+        }
+      }
+
+      &.whatsapp {
+        i {
+          background-color: #25d366;
+          color: #fff;
+        }
+
+        span {
+          color: #25d366;
+        }
+
+        &:hover {
+          i {
+            background-color: lighten(#25d366, 10%);
+          }
+        }
+      }
+
+      &.email {
+        i {
+          background-color: #DD4F42;
+          color: #FFF;
+        }
+
+        span {
+          color: #DD4F42;
+        }
+
+        &:hover {
+          i {
+            background-color: lighten(#DD4F42, 10%);
+          }
+        }
+      }
+
+    }
+  }
+}
+
+.move-folders {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  max-height: 300px;
+  overflow-y: auto;
+  border: 1px solid #eee;
+  border-radius: 4px;
+  padding: 10px;
+
+  &-wrap {
+    button {
+      margin: 20px auto 0;
+      padding: 10px 20px;
+      display: flex;
+
+      .igd-spinner {
+        margin-right: 10px;
+      }
+    }
+  }
+
+  &, * {
+    box-sizing: border-box;
+  }
+
+  // scrollbar
+  &::-webkit-scrollbar {
+    width: 5px;
+  }
+
+  &::-webkit-scrollbar-track {
+    background: #f1f1f1;
+  }
+
+  &::-webkit-scrollbar-thumb {
+    background: #999;
+    border-radius: 5px;
+  }
+
+  .move-folder {
+    display: flex;
+    align-items: center;
+    justify-content: flex-start;
+    text-align: left;
+    width: 100%;
+    cursor: pointer;
+    padding: 7px 0;
+    border-radius: 3px;
+
+    & > .igd-spinner {
+      margin-left: 10px;
+    }
+
+    &-wrap {
+      width: 100%;
+      padding-left: 20px;
+      text-align: left;
+
+      &.empty {
+        margin: 10px 0;
+        padding-left: 30px;
+        display: flex;
+        align-items: center;
+        color: #C73E1D;
+        font-size: .875rem;
+
+        i {
+          margin-right: 5px;
+        }
+      }
+    }
+
+    i {
+      margin-right: 10px;
+    }
+
+    img {
+      width: 22px;
+      height: 22px;
+      margin-right: 10px;
+    }
+
+    .file-item-checkbox {
+      .box {
+        border-color: #999;
+      }
+    }
+
+    span {
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+
+    &:hover {
+      background-color: #f5f5f5;
+
+      &:has(.file-item-checkbox) {
+        img {
+          display: none;
+        }
+
+        .file-item-checkbox {
+          display: flex;
+          padding: 0;
+          border: 1px solid #fff;
+          margin-right: 10px;
+        }
+      }
+
+    }
+
+    &.active {
+      background-color: var(--color-primary-lighter);
+
+      img {
+        display: none;
+      }
+
+      .file-item-checkbox {
+        display: flex;
+        padding: 0;
+        border: 1px solid #fff;
+        margin-right: 10px;
+      }
+
+    }
+
+  }
+
+}
+
+.igd-download-popup {
+  z-index: 999999 !important;
+}
+
+.igd-download-wrap {
+  #igd-download-status {
+    font-size: 1.3rem;
+    font-weight: 600;
+    margin: 15px auto 5px;
+  }
+
+  #igd-hidden-download {
+    display: none;
+  }
+}
+
+.igd-copy-swal,
+.igd-move-swal {
+  z-index: 99999;
+}
+
+.import-files {
+  display: flex;
+  flex-wrap: wrap;
+  flex-direction: column;
+
+  .import-file {
+    width: 100%;
+    display: flex;
+    align-items: center;
+    margin-bottom: 5px;
+    padding: 7px;
+    border: 1px solid #eee;
+    border-radius: 4px;
+    box-sizing: border-box;
+    overflow: hidden;
+
+    .import-file-thumb {
+      width: 50px;
+      height: 50px;
+      margin-right: 10px;
+
+      img {
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
+        border-radius: 4px;
+      }
+    }
+
+    .import-file-info {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      justify-content: flex-start;
+      overflow: hidden;
+      text-align: left;
+      line-height: 1;
+
+      .import-file-name {
+        font-size: 14px;
+        font-weight: 600;
+        margin-bottom: 5px;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+      }
+
+      .import-file-size {
+        font-size: 12px;
+        color: #666;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+      }
+
+    }
+
+    .import-file-actions {
+      display: flex;
+      align-items: center;
+      margin-left: 10px;
+
+      .igd-spinner {
+        margin-right: 7px;
+      }
+
+    }
+
+    .button-link-delete {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      background: #f5f5f5;
+      color: #333;
+      border: 1px solid #eee;
+      border-radius: 4px;
+      padding: 5px;
+      cursor: pointer;
+      transition: background-color .2s ease;
+      margin-left: 10px;
+      font-size: 14px;
+      font-weight: 600;
+      line-height: 1;
+      text-align: center;
+      user-select: none;
+      -webkit-tap-highlight-color: transparent;
+
+      &:hover {
+        background-color: #e5e5e5;
+      }
+
+      &:active {
+        background-color: #ddd;
+      }
+
+      &:focus {
+        outline: 0;
+      }
+
+    }
+
+  }
+}
+
+// Contexify
+.react-contexify {
+  position: fixed;
+  opacity: 0;
+  -webkit-user-select: none;
+  -moz-user-select: none;
+  -ms-user-select: none;
+  user-select: none;
+  background-color: #ffffff;
+  box-sizing: border-box;
+  box-shadow: 0px 10px 30px -5px rgba(0, 0, 0, 0.3);
+  border-radius: 6px;
+  min-width: 200px;
+}
+
+.context-submenu {
+  width: 100%;
+}
+
+.react-contexify__submenu--is-open, .react-contexify__submenu--is-open > .react-contexify__item__content {
+  color: white;
+  background-color: #4393e6;
+}
+
+.react-contexify__submenu--is-open > .react-contexify__submenu {
+  pointer-events: initial;
+  opacity: 1;
+}
+
+.react-contexify .react-contexify__submenu {
+  position: absolute;
+  /* negate padding */
+  top: -6px;
+  pointer-events: none;
+  transition: opacity 0.275s;
+}
+
+.react-contexify__submenu-arrow {
+  margin-left: auto;
+  font-size: 12px;
+
+  i {
+    margin-right: 0 !important;
+  }
+}
+
+.react-contexify__separator {
+  width: 100%;
+  height: 1px;
+  cursor: default;
+  margin: 4px 0;
+  background-color: rgba(0, 0, 0, 0.2);
+}
+
+.react-contexify__will-leave--disabled {
+  pointer-events: none;
+}
+
+.react-contexify__item {
+  cursor: pointer;
+  position: relative;
+}
+
+.react-contexify__item:focus {
+  outline: 0;
+}
+
+.react-contexify__item:not(.react-contexify__item--disabled):hover > .react-contexify__submenu {
+  pointer-events: initial;
+  opacity: 1;
+}
+
+.react-contexify__item--disabled {
+  cursor: default;
+  opacity: 0.5;
+}
+
+.react-contexify__item__content {
+  display: -ms-flexbox;
+  display: flex;
+  -ms-flex-align: center;
+  align-items: center;
+  white-space: nowrap;
+  color: #333;
+  position: relative;
+  width: 100%;
+}
+
+.react-contexify__theme--dark {
+  background-color: rgba(40, 40, 40, 0.98);
+}
+
+.react-contexify__theme--dark .react-contexify__submenu {
+  background-color: rgba(40, 40, 40, 0.98);
+}
+
+.react-contexify__theme--dark .react-contexify__separator {
+  background-color: #eee;
+}
+
+.react-contexify__theme--dark .react-contexify__item__content {
+  color: #ffffff;
+}
+
+.react-contexify__theme--light .react-contexify__separator {
+  background-color: #eee;
+}
+
+.react-contexify__theme--light .react-contexify__submenu--is-open,
+.react-contexify__theme--light .react-contexify__submenu--is-open > .react-contexify__item__content {
+  color: #4393e6;
+  background-color: #e0eefd;
+}
+
+.react-contexify__theme--light .react-contexify__item:not(.react-contexify__item--disabled):hover > .react-contexify__item__content, .react-contexify__theme--light .react-contexify__item:not(.react-contexify__item--disabled):focus > .react-contexify__item__content {
+  color: #4393e6;
+  background-color: #e0eefd;
+}
+
+.react-contexify__theme--light .react-contexify__item__content {
+  color: #666;
+}
+
+@keyframes react-contexify__scaleIn {
+  from {
+    opacity: 0;
+    transform: scale3d(0.3, 0.3, 0.3);
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+@keyframes react-contexify__scaleOut {
+  from {
+    opacity: 1;
+  }
+  to {
+    opacity: 0;
+    transform: scale3d(0.3, 0.3, 0.3);
+  }
+}
+
+.react-contexify__will-enter--scale {
+  transform-origin: top left;
+  animation: react-contexify__scaleIn 0.3s;
+}
+
+.react-contexify__will-leave--scale {
+  transform-origin: top left;
+  animation: react-contexify__scaleOut 0.3s;
+}
+
+@keyframes react-contexify__fadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes react-contexify__fadeOut {
+  from {
+    opacity: 1;
+    transform: translateY(0);
+  }
+  to {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+}
+
+.react-contexify__will-enter--fade {
+  animation: react-contexify__fadeIn 0.3s ease;
+}
+
+.react-contexify__will-leave--fade {
+  animation: react-contexify__fadeOut 0.3s ease;
+}
+
+@keyframes react-contexify__flipInX {
+  from {
+    transform: perspective(800px) rotate3d(1, 0, 0, 45deg);
+  }
+  to {
+    transform: perspective(800px);
+  }
+}
+
+@keyframes react-contexify__flipOutX {
+  from {
+    transform: perspective(800px);
+  }
+  to {
+    transform: perspective(800px) rotate3d(1, 0, 0, 45deg);
+    opacity: 0;
+  }
+}
+
+.react-contexify__will-enter--flip {
+  -webkit-backface-visibility: visible !important;
+  backface-visibility: visible !important;
+  transform-origin: top center;
+  animation: react-contexify__flipInX 0.3s;
+}
+
+.react-contexify__will-leave--flip {
+  transform-origin: top center;
+  animation: react-contexify__flipOutX 0.3s;
+  -webkit-backface-visibility: visible !important;
+  backface-visibility: visible !important;
+}
+
+@keyframes swing-in-top-fwd {
+  0% {
+    transform: rotateX(-100deg);
+    transform-origin: top;
+    opacity: 0;
+  }
+  100% {
+    transform: rotateX(0deg);
+    transform-origin: top;
+    opacity: 1;
+  }
+}
+
+@keyframes react-contexify__slideIn {
+  from {
+    opacity: 0;
+    transform: scale3d(1, 0.3, 1);
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+@keyframes react-contexify__slideOut {
+  from {
+    opacity: 1;
+  }
+  to {
+    opacity: 0;
+    transform: scale3d(1, 0.3, 1);
+  }
+}
+
+.react-contexify__will-enter--slide {
+  transform-origin: top center;
+  animation: react-contexify__slideIn 0.3s;
+}
+
+.react-contexify__will-leave--slide {
+  transform-origin: top center;
+  animation: react-contexify__slideOut 0.3s;
+}

@@ -1,0 +1,432 @@
+/* ------------------- Common Style for all design -----------------*/
+
+a {
+    text-decoration: none !important;
+}
+
+.ect-event-date-tag {
+    width: 18%;
+}
+
+.ect-event-details {
+    width: 82%;
+}
+
+.ect-event-datetimes {
+    display: flex;
+    flex-direction: column;
+    text-align: center;
+    font-size: 12px;
+    line-height: 1.38;
+}
+
+.ect-event-datetimes span.ev-mo {
+    font-size: 16px;
+    font-weight: 600;
+    line-height: 1.5;
+    text-transform: uppercase;
+}
+
+.ect-featured-event .ect-event-datetime .ect-icon-clock:before {
+    margin-left: 0px;
+}
+
+.ect-list-posts span.ev-day {
+    font-weight: 700;
+    font-size: 24px;
+    line-height: 1.42;
+}
+
+
+/* Style 1 Css Start Here */
+
+.ect-list-posts.style-1 {
+    display: flex;
+    flex-wrap: nowrap;
+    width: 100%;
+    max-width: 100%;
+    margin-bottom: 20px;
+    padding: 15px;
+    align-items: center;
+}
+
+.style-1 span.ect-minimal-list-time {
+    letter-spacing: -1px;
+}
+
+.style-1 .ect-event-datetime {
+    font-size: 16px;
+}
+
+.style-1 .ect-events-read-more {
+    font-size: 14px;
+}
+
+
+/* Style 1 Css End  Here */
+
+
+/** ------------------ style 2 css start here -------------------- **/
+
+span.ect-date-viewport {
+    display: block;
+    font-size: 24px;
+    font-weight: 700;
+    text-align: center;
+    margin-bottom: 4px;
+}
+
+.style-2 span.ect-month {
+    display: block;
+    padding-bottom: 5px;
+}
+
+.ect-event-date {
+    position: relative;
+    float: left;
+    margin-right: 30px;
+    color: #000;
+    width: 52px;
+    text-align: center;
+    text-transform: uppercase;
+    border-radius: 3px;
+}
+
+.ect-list-posts.style-2 {
+    width: 100%;
+    max-width: 100%;
+    margin: 5px auto;
+    padding: 20px;
+    margin-bottom: 20px;
+    display: flex;
+    border-bottom: 1px solid #00000020;
+}
+
+.style-2 .ect-event-date {
+    width: 15%;
+    margin-right: 0px;
+    margin-right: 15px;
+    height: max-content;
+}
+
+.style-2 .ect-right-wrapper {
+    width: 85%;
+    padding-left: 0px;
+}
+
+span.ect-event-title {
+    letter-spacing: 0;
+    color: #353535;
+    font-size: 22px;
+    margin-top: 0;
+    margin-bottom: 10px;
+    font-weight: 700;
+    font-size: 20px;
+    text-transform: uppercase;
+    letter-spacing: 0;
+    padding-top: 10px;
+    line-height: 23px;
+}
+
+.ect-read-mores {
+    border-bottom: 1px solid #efefef;
+    padding: 3px 0 16px;
+}
+
+.minimal-list-venue {
+    font-size: 15px;
+    font-weight: 400;
+    letter-spacing: 0;
+    display: flex;
+}
+
+.ect-read-more {
+    border-bottom: 1px solid #efefef;
+    margin-right: 25px;
+    padding-left: 84px;
+    padding-bottom: 25px;
+}
+
+#ect-minimal-list-wrp .style-3 i.ect-icon-location {
+    display: none;
+}
+
+.ect-img-wrapper {
+    margin-left: 21%;
+}
+
+
+/** ------------------ style 2 style end here -------------------- **/
+
+
+/** ------------------ style 3 style start here -------------------- **/
+
+.style-3 .ect-event-details {
+    padding: 15px 0px 15px 10px;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+}
+
+.style-3 span.ect-minimal-list-time {
+    font-size: 13px;
+}
+
+.style-3 .ect-event-datetimes {
+    line-height: auto;
+}
+
+.style-3 .ect-event-date-tag {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+div#ect-minimal-list-wrp {
+    margin-bottom: 25px;
+}
+
+.ect-left-wrapper {
+    width: 18%;
+}
+
+.ect-right-wrapper {
+    width: 82%;
+    padding-left: 15px;
+    position: relative;
+}
+
+.ect-list-posts.style-3 {
+    display: flex;
+    flex-wrap: nowrap;
+    border: 1px solid #00000020;
+    margin-bottom: 15px;
+}
+
+.ect-list-posts .ect-events-title {
+    font-size: 20px;
+    line-height: 30px;
+    font-weight: 700;
+}
+
+.ect-list-posts.style-1 .ect-events-title,
+.ect-list-posts.style-2 .ect-events-title {
+    display: flex;
+}
+
+.ect-list-posts.style-1 .ect-tool-tip-wrapper.ect-labels-wrap,
+.ect-list-posts.style-2 .ect-tool-tip-wrapper.ect-labels-wrap {
+    margin-left: 15px;
+}
+
+a.ect-event-url:hover {
+    filter: opacity(.75);
+    -webkit-filter: opacity(.75);
+}
+
+.ect-event-date-tag {
+    width: 18%;
+}
+
+.ect-list-posts .style-3 {
+    margin-bottom: 30px;
+}
+
+.style-3 span.ect-google {
+    display: none;
+}
+
+.ect-list-posts.style-3 a.ect-events-read-more {
+    font-size: 12px;
+}
+
+.ect-list-posts.style-3 .ect-minimal-list-time {
+    font-size: 16px;
+}
+
+.style-3 .ect-icon-clock:before {
+    margin-left: 0px;
+}
+
+
+/** ------------------ style 3 css Style end here -------------------- **/
+
+
+/* ------------------- Tool Tip Style Start here ------------ */
+
+.ect-tool-tip-wrapper.ect-labels-wrap {
+    display: inline;
+    position: relative;
+    cursor: pointer;
+    transition: 0.5s ease-in-out;
+}
+
+.ect-tool-tip-wrapper.ect-labels-wrap .ect-tip-inr {
+    background: #f1f1f1;
+    bottom: 100%;
+    color: #060606;
+    display: block;
+    right: 0px;
+    margin-bottom: 15px;
+    padding: 10px;
+    pointer-events: none;
+    position: absolute;
+    width: 220px;
+    right: 0px;
+    border: 2px solid #f1f1f1;
+    z-index: 1;
+    border-radius: 8px;
+    font-size: 14px;
+    text-align: right;
+    left: 50%;
+    transform: translateX(-50%);
+}
+
+.ect-tool-tip-wrapper.ect-labels-wrap .ect-tip-inr span {
+    display: block;
+}
+
+.ect-tool-tip-wrapper.ect-labels-wrap .ect-tip-inr:before {
+    bottom: -20px;
+    content: " ";
+    display: block;
+    height: 20px;
+    left: 0;
+    position: absolute;
+    width: 100%;
+}
+
+.ect-tool-tip-wrapper.ect-labels-wrap .ect-tip-inr:after {
+    border-left: solid transparent 10px;
+    border-right: solid transparent 10px;
+    border-top: solid #f1f1f1 10px;
+    bottom: -10px;
+    content: " ";
+    height: 0;
+    left: 50%;
+    margin-left: -13px;
+    position: absolute;
+    width: 0;
+}
+
+.ect-tool-tip-wrapper.ect-labels-wrap:hover .ect-tip-inr span {
+    opacity: 1;
+    pointer-events: auto;
+}
+
+.ect-tool-tip-wrapper.ect-labels-wrap .ect-tip-inr {
+    display: none;
+    -webkit-transition: .5s ease-in-out;
+    -moz-transition: .5s ease-in-out;
+    -o-transition: .5s ease-in-out;
+    transition: .5s ease-in-out;
+}
+
+.ect-tool-tip-wrapper.ect-labels-wrap:hover .ect-tip-inr {
+    pointer-events: auto;
+    display: block;
+    opacity: 1;
+    -webkit-transition: .5s ease-in-out;
+    -moz-transition: .5s ease-in-out;
+    -o-transition: .5s ease-in-out;
+    transition: .5s ease-in-out;
+}
+
+.ect-tool-tip-wrapper span.ect-labels-canceled,
+.ect-tool-tip-wrapper span.ect-labels-scheduled,
+.ect-tool-tip-wrapper span.ect-labels-postponed {
+    padding: 2px 4px;
+    text-transform: capitalize;
+    font-size: 12px;
+}
+
+span.ect-labels-canceled {
+    color: #DD3333;
+    background-color: #FFE4E4;
+}
+
+span.ect-labels-scheduled {
+    background-color: #dbf9ea;
+    color: #016C35;
+    ;
+}
+
+span.ect-labels-postponed {
+    background-color: #f9efd5;
+    color: #CC9D1C;
+}
+
+@media(max-width:768px) {
+    .ect-tool-tip-wrapper.ect-labels-wrap {
+        display: block;
+    }
+    .ect-tool-tip-wrapper.ect-labels-wrap .ect-tip-inr {
+        padding: 4px;
+        left: 70px;
+        width: 200px;
+    }
+    .ect-tool-tip-wrapper.ect-labels-wrap .ect-tip-inr:after {
+        right: 0;
+        left: 70px;
+    }
+}
+
+
+/*-------------------  Tooltip Style End ---------------- */
+
+
+/*----- Media Query Style Start Here ------*/
+
+@media(max-width:425px) {
+    .ect-event-date-tag {
+        width: 20%;
+    }
+    .ect-event-details {
+        width: 80%;
+    }
+    .ect-right-wrapper {
+        padding-left: 0px;
+        width: 78%;
+    }
+    .ect-left-wrapper {
+        width: 22%;
+    }
+}
+
+@media(min-width:768px) {
+    .style-2 .ect-event-date {
+        width: 30%;
+        margin-right: 5px;
+        padding-right: 5px;
+    }
+    .style-2 .ect-right-wrapper {
+        width: 70%;
+        padding-left: 0px;
+    }
+    .ect-event-date-tag,
+    .ect-left-wrapper {
+        width: 35%;
+    }
+    .ect-event-details,
+    .ect-right-wrapper {
+        width: 65%;
+    }
+}
+
+@media(min-width:1200px) {
+    .style-2 .ect-event-date {
+        width: 15%;
+        margin-right: 15px;
+    }
+    .style-2 .ect-right-wrapper {
+        width: 85%;
+    }
+    .ect-left-wrapper,
+    .ect-event-date-tag {
+        width: 18%;
+    }
+    .ect-right-wrapper,
+    .ect-event-details {
+        width: 82%;
+    }
+}

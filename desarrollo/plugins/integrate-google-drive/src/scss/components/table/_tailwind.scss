@@ -1,0 +1,270 @@
+/* ==========================================================================
+   IGD Tailwind-like Theme for DataTables v2
+   Works with wrapper: .igd-table-container
+   Aims to look clean, striped, rounded, with nice controls.
+   ========================================================================== */
+
+&.theme-tailwind {
+  /* ---- Theme tokens (unchanged) ------------------------------------------ */
+  --igd-radius: 12px;
+  --igd-border: #e5e7eb;
+  --igd-bg: #ffffff;
+  --igd-row-alt: #f9fafb;
+  --igd-hover: #f3f4f6;
+  --igd-text: #374151;
+  --igd-muted: #6b7280;
+  --igd-head-bg: #f3f4f6;
+  --igd-head-text: #374151;
+  --igd-primary: #6366f1;
+  --igd-primary-dark: #4f46e5;
+
+  .dt-container {
+    // ------------------------------------------------------------------------
+    // Layout rows
+    // ------------------------------------------------------------------------
+    .dt-layout-row {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+      margin: 4px 0 8px;
+    }
+
+    // ------------------------------------------------------------------------
+    // Length (select)
+    // ------------------------------------------------------------------------
+    .dt-length select {
+      border: 1px solid #d1d5db;
+      border-radius: 6px;
+      font-size: 14px;
+      line-height: 20px;
+
+      &:focus {
+        border-color: var(--igd-primary);
+        box-shadow: 0 0 0 2px rgba(99, 102, 241, 0.35);
+      }
+    }
+
+    // ------------------------------------------------------------------------
+    // Search
+    // ------------------------------------------------------------------------
+    .dt-search {
+      .dt-input {
+        border: 1px solid #d1d5db;
+        border-radius: 6px;
+        padding: 8px 12px;
+        font-size: 14px;
+        line-height: 20px;
+        outline: none;
+
+        &:focus {
+          border-color: var(--igd-primary);
+          box-shadow: 0 0 0 2px rgba(99, 102, 241, 0.35);
+        }
+      }
+    }
+
+    // ------------------------------------------------------------------------
+    // Buttons
+    // ------------------------------------------------------------------------
+    .dt-buttons {
+
+      .dt-button {
+        border: 1px solid #d1d5db;
+        background: #fff;
+        border-radius: 6px;
+        padding: 6px 12px;
+        font-size: 14px;
+        line-height: 20px;
+        color: var(--igd-text);
+        cursor: pointer;
+        transition: background 0.2s, color 0.2s;
+
+        &:hover {
+          background: var(--igd-hover);
+        }
+
+        &.dt-button-active,
+        &.dt-button-collection {
+          background: var(--igd-primary);
+          border-color: var(--igd-primary-dark);
+          color: #fff;
+        }
+
+        &.disabled {
+          opacity: 0.5;
+          cursor: not-allowed;
+        }
+      }
+    }
+
+    // ------------------------------------------------------------------------
+    // Info
+    // ------------------------------------------------------------------------
+    .dt-info {
+      color: var(--igd-muted);
+      font-size: 14px;
+      margin-top: 4px;
+    }
+
+    // ------------------------------------------------------------------------
+    // Paging
+    // ------------------------------------------------------------------------
+    .dt-paging {
+      .dt-paging-button {
+        border: 1px solid #d1d5db;
+        background: #fff;
+        border-radius: 5px;
+        font-size: 14px;
+        color: var(--igd-text);
+
+        &:hover:not(.disabled):not(.current) {
+          background: var(--igd-hover);
+          color: var(--igd-text) !important;
+        }
+
+        &.current {
+          background: var(--igd-primary);
+          border-color: var(--igd-primary-dark);
+          color: #fff !important;
+          font-weight: 600;
+        }
+
+        &.disabled {
+          background: #f3f4f6;
+          color: #9ca3af !important;
+          border-color: #e5e7eb !important;
+        }
+      }
+    }
+
+    // ------------------------------------------------------------------------
+    // Scroll containers
+    // ------------------------------------------------------------------------
+    .dt-scroll {
+      border: 1px solid var(--igd-border);
+      border-radius: var(--igd-radius);
+      overflow: hidden;
+
+      table {
+        border-collapse: collapse;
+      }
+
+      thead th {
+        border-top: none;
+        border-bottom: 1px solid var(--igd-border);
+
+        &:first-child {
+          border-top-left-radius: var(--igd-radius);
+          border-left: 0;
+        }
+
+        &:last-child {
+          border-top-right-radius: var(--igd-radius);
+        }
+      }
+
+      tbody td {
+        border-bottom: 1px solid var(--igd-border);
+
+        &:first-child {
+          border-left: none;
+        }
+
+        &:last-child {
+          border-right: none;
+        }
+      }
+
+      tbody tr:last-child td {
+        border-bottom: none;
+      }
+
+      tfoot th,
+      tfoot td {
+        border-top: 1px solid var(--igd-border);
+
+        &:first-child {
+          border-bottom-left-radius: var(--igd-radius);
+        }
+
+        &:last-child {
+          border-bottom-right-radius: var(--igd-radius);
+        }
+      }
+
+      .dt-scroll-head table {
+
+        thead {
+          th {
+            background: var(--igd-head-bg);
+          }
+        }
+
+      }
+
+      .dt-scroll-body {
+        border: none;
+
+        table {
+          white-space: nowrap;
+
+          tbody {
+            td {
+              background: var(--igd-bg);
+            }
+          }
+        }
+
+      }
+
+    }
+
+    // ------------------------------------------------------------------------
+    // Base table
+    // ------------------------------------------------------------------------
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 14px;
+      border: none;
+
+      thead th {
+        background: var(--igd-head-bg);
+        color: var(--igd-head-text);
+        font-weight: 600;
+        text-align: left;
+        padding: 12px 16px;
+        border-bottom: 1px solid var(--igd-border);
+
+        .dt-column-title {
+          display: inline-block;
+        }
+      }
+
+      tbody td {
+        padding: 12px 16px;
+        border-bottom: 1px solid var(--igd-border);
+        color: var(--igd-text);
+        background: var(--igd-bg);
+      }
+
+      tbody tr:nth-child(even) td {
+        background: var(--igd-row-alt);
+      }
+
+      tbody tr:hover td {
+        background: var(--igd-hover);
+      }
+
+      //th, td {
+      //  box-shadow: none !important;
+      //}
+
+    }
+
+
+  }
+
+
+}

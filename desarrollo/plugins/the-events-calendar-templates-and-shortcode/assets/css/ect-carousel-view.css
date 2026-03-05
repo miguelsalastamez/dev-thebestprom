@@ -1,0 +1,519 @@
+/*CAROUSEL Common Styles*/
+
+a {
+    text-decoration: none !important;
+}
+
+#ect-carousel-wrapper {
+    width: calc(100% - 44px);
+    height: auto;
+    margin: 10px 22px;
+    padding: 0;
+    box-sizing: border-box;
+    position: relative;
+    max-width: 100%;
+}
+
+#ect-carousel-wrapper * {
+    box-sizing: border-box;
+}
+
+#ect-carousel-wrapper .slick-arrow {
+    position: absolute;
+    top: calc(50% - 18px);
+    width: 36px;
+    height: 36px;
+    background: none;
+    color: #222;
+    box-shadow: 0 2px 11px 0 rgba(0, 0, 0, 0.043);
+    cursor: pointer;
+    z-index: 11;
+    font-size: 24px;
+    vertical-align: middle;
+    padding-top: 4px;
+    opacity: 0.75;
+}
+
+#ect-slider-wrapper .slick-arrow i {
+    background: #fff;
+}
+
+#ect-carousel-wrapper .slick-arrow:hover {
+    opacity: 1;
+}
+
+#ect-carousel-wrapper .slick-arrow.ctl-slick-next {
+    right: -28px;
+}
+
+#ect-carousel-wrapper .slick-arrow.ctl-slick-prev {
+    left: -28px;
+}
+
+#ect-carousel-wrapper .slick-arrow.slick-disabled {
+    color: #888;
+}
+
+#ect-carousel-wrapper .slick-slide:focus {
+    outline: none;
+}
+
+.ect-carousel-event-area {
+    background: #ddd;
+    margin: 0 15px;
+    height: 100%;
+    padding-bottom: 15px;
+    position: relative;
+}
+
+#ect-carousel-wrapper .slick-track {
+    display: flex !important;
+}
+
+.ect-carousel-image,
+.ect-carousel-image a {
+    display: inline-block;
+    height: 220px;
+    overflow: hidden;
+    width: 100%;
+    position: relative;
+}
+
+.ect-carousel-image a:hover {
+    opacity: 0.85;
+}
+
+.ect-carousel-image img {
+    object-fit: cover;
+    width: 100%;
+    height: 220px;
+    object-position: bottom center;
+}
+
+#ect-carousel-wrapper .ect-share-wrapper {
+    position: absolute;
+    right: 7px;
+    bottom: 8px;
+    z-index: 199;
+}
+
+#ect-carousel-wrapper .ect-rate-area {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+}
+
+#ect-carousel-wrapper .style-2 .ect-share-wrapper {
+    top: 15px;
+    left: 15px
+}
+
+#ect-carousel-wrapper .ect-share-wrapper .ect-social-share-list {
+    left: inherit;
+    right: 0;
+}
+
+#ect-carousel-wrapper .ect-share-wrapper .ect-social-share-list:before {
+    left: inherit;
+    right: 6px;
+}
+
+#ect-carousel-wrapper .ect-share-wrapper .ect-social-share-list a {
+    height: auto;
+    width: auto;
+}
+
+.ect-carousel-date {
+    display: inline-block;
+    width: calc(100% - 20px);
+    padding: 20px 10px;
+    background: #222;
+    margin: 0 10px;
+    box-sizing: border-box;
+    position: relative;
+    margin-top: -45px;
+    vertical-align: top;
+}
+
+.ect-carousel-date .ev-day {
+    display: inline-block;
+    vertical-align: middle;
+}
+
+.ect-carousel-date .ev-mo,
+.ect-carousel-date .ev-yr {
+    display: inline-block;
+    line-height: 0.5em;
+    vertical-align: middle;
+}
+
+.ect-carousel-date .ev-time {
+    display: inline-block;
+    font-size: 0.45em;
+    width: 100%;
+    margin-top: 2px;
+}
+
+.ect-carousel-date .ev-time span {
+    display: inline-block;
+}
+
+.ect-carousel-date.custom-arrow:after {
+    border-bottom-color: inherit !Important;
+}
+
+.style-1 .ect-carousel-categories {
+    top: 0;
+    left: 0;
+    position: relative;
+}
+
+.ect-carousel-title,
+.ect-carousel-venue,
+.ect-carousel-cost,
+.ect-carousel-readmore {
+    display: inline-block;
+    width: 100%;
+}
+
+.ect-carousel-title h4 {
+    padding: 0;
+    margin: 0px;
+}
+
+.ect-carousel-title h4 a:hover {
+    opacity: 0.75;
+    filter: alpha(opacity=75);
+}
+
+.carousel-view-venue {
+    display: flex;
+    width: 100%;
+    word-break: break-word;
+}
+
+.carousel-view-venue span.ect-venue-details {
+    width: calc(100% - 42px);
+    vertical-align: top;
+    text-align: left;
+}
+
+.carousel-view-venue span.ect-venue-details span.ect-google {
+    display: inline-block;
+    width: 100%;
+}
+
+.carousel-view-venue span.ect-icon,
+.ect-carousel-cost span.ect-rate-icon {
+    display: inline-block;
+    width: 32px;
+    height: auto;
+    font-size: 18px;
+    vertical-align: top;
+    text-align: center;
+    margin-right: 4px;
+    font-weight: bold;
+}
+
+.style-3 .ect-carousel-cost,
+.style-3 .ect-carousel-readmore {
+    width: 100%;
+    padding-top: 10px;
+}
+
+.ect-carousel-readmore.full-view:not(.style-3) {
+    width: 100%;
+    padding-top: 10px;
+}
+
+.ect-carousel-readmore a {
+    width: 100%;
+    border: 1px solid;
+    padding: 4px;
+    display: inline-block;
+    text-align: center;
+    text-decoration: none;
+    box-shadow: none;
+    font-size: 15px;
+}
+
+.ect-carousel-readmore a:hover {
+    opacity: 0.75;
+    filter: alpha(opacity=75);
+}
+
+.style-1 .ect-carousel-event-area .ect-carousel-content-wrapper {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    text-align: center;
+    gap: 10px;
+}
+
+
+/*Style-1*/
+
+.style-1 .ect-carousel-event-area {
+    border: 1px solid #00000020;
+    border-radius: 8px;
+}
+
+.style-1 .ect-carousel-event-area .ect-carousel-image {
+    border-radius: 8px 8px 0px 0px;
+}
+
+.style-1 .ect-carousel-content-wrapper {
+    padding: 10px 20px;
+}
+
+.style-1 .ect-carousel-date {
+    position: absolute;
+    z-index: 99;
+    top: 25px;
+    left: -24px;
+    width: calc(100% - 35%);
+    padding: 10px 30px;
+    margin-top: 0;
+}
+
+.style-1 .ect-carousel-date:after {
+    border-color: transparent transparent #222;
+    border-style: solid;
+    border-width: 11px;
+    bottom: -10px;
+    content: "";
+    display: inline-block;
+    left: 4.8px;
+    position: absolute;
+    transform: rotate(45deg);
+    width: 0;
+}
+
+.style-1 .ect-carousel-readmore a {
+    border-radius: 8px;
+}
+
+.style-1 .ect-share-wrapper {
+    right: 7px;
+    top: 25px !important;
+}
+
+.style-1 .ect-share-wrapper .ect-social-share-list {
+    width: 45px;
+    padding: 2px;
+    top: -6px !important;
+    left: -50px !important;
+}
+
+.style-1 .ect-share-wrapper .ect-social-share-list a {
+    line-height: 35px;
+}
+
+.style-1 .ect-share-wrapper .ect-social-share-list:before {
+    display: none !important;
+}
+
+
+/*Style-2*/
+
+.style-2 .ect-carousel-event-area {
+    border: 1px solid #00000020;
+    border-radius: 20px;
+    padding: 20px;
+    position: relative;
+}
+
+.style-2 .ect-carousel-event-area .ect-carousel-image {
+    border-radius: 20px 20px 20px 20px;
+}
+
+.style-2 .ect-carousel-event-area .ect-carousel-date {
+    position: absolute;
+    left: 50%;
+    padding: 10px;
+    transform: translate(-50%, -50%);
+    z-index: 9;
+    width: unset;
+    min-width: 60%;
+    display: flex;
+    justify-content: center;
+    border-radius: 8px;
+    margin: unset;
+    margin-top: -5px;
+}
+
+.style-2 .ect-carousel-readmore a {
+    border-radius: 20px;
+}
+
+.style-2 .ect-share-wrapper .ect-social-share-list {
+    width: 45px;
+    padding: 2px;
+    top: -6px !important;
+    left: 38px !important;
+}
+
+.style-2 .ect-share-wrapper .ect-social-share-list a {
+    line-height: 35px;
+}
+
+.style-2 .ect-share-wrapper .ect-social-share-list:before {
+    display: none;
+}
+
+.style-2 .ect-carousel-event-area .ect-carousel-content-wrapper {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    margin-top: 25px;
+    text-align: center;
+    gap: 10px;
+}
+
+
+/*Style-3*/
+
+.style-3 .ect-carousel-event-area {
+    border: 1px solid #00000020;
+    padding: 20px 0px 0px;
+}
+
+.style-3 .ect-carousel-event-area .ect-carousel-content-wrapper {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    margin-top: 10px;
+    text-align: center;
+    gap: 15px;
+    padding: 0px 20px;
+}
+
+.style-3 .ect-carousel-date {
+    padding: 10px;
+    position: absolute;
+    top: 10%;
+    width: calc(100% - 20%);
+    left: 0px;
+    right: 0px;
+    text-align: center;
+    margin: 0 auto;
+}
+
+.style-3 .ect-carousel-event-area .ect-carousel-image {
+    padding: 0px 20px;
+}
+
+.style-3 .ect-carousel-event-area .ect-share-wrapper {
+    right: 25px !important;
+}
+
+.style-3 .ect-carousel-title h4 a {
+    display: inline-block;
+    width: calc(100% - 42px);
+    box-sizing: border-box;
+    vertical-align: top;
+}
+
+.style-3 .ect-carousel-date i.ect-icon-clock {
+    display: inline-block;
+    width: 32px;
+    height: auto;
+    font-size: 24px;
+    vertical-align: top;
+    text-align: center;
+    margin-right: 4px;
+    font-weight: bold;
+}
+
+.style-3 .ect-carousel-footer {
+    padding: 10px 20px 20px;
+    margin-top: 10px;
+    border-top: 1px solid #00000015;
+    background: #00000005;
+}
+
+.style-3 .ect-carousel-cost {
+    text-align: center;
+}
+
+.ect-carousel-description a.ect-events-read-more {
+    display: none;
+}
+
+.ect-carousel-description {
+    display: inline-block;
+    width: 100%;
+    word-break: break-word;
+}
+
+.ect-carousel-description .ect-event-content p {
+    display: inline-block;
+    width: 100%;
+    word-break: break-word;
+    padding: 0;
+    margin: 0px;
+}
+
+
+/*** Style 4 Css*/
+
+.ect-date-schedule {
+    background: white;
+    border: 1px solid #C5C5C5;
+    padding: 2px;
+    position: absolute;
+    bottom: -1rem;
+    right: 1rem;
+}
+
+.ect-date-schedule-wrap {
+    padding: 6px;
+    align-items: center;
+    border: 1px solid #C5C5C5;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+}
+
+.ect-date-schedule .ev-mo {
+    color: #FA5A41;
+    font-size: 0.625rem;
+    letter-spacing: 0.15em;
+    line-height: 0.9;
+}
+
+.ect-date-schedule .ev-day {
+    font-size: 1.5rem;
+    line-height: 1;
+}
+
+.ect-grid-image-style4 {
+    display: inline-block;
+    width: 100%;
+    position: relative;
+}
+
+.ect-date-schedule span {
+    /* display: block; */
+    text-align: center;
+}
+
+.ect-carousel-image-style-4 {
+    display: inline-block;
+    width: 100%;
+    position: relative;
+}
+
+#ect-carousel-wrapper .ect-share-wrapper-style-4 .ect-share-wrapper {
+    left: 10px;
+}
+
+
+/* Media Query Start Here */
+
+@media only screen and (max-width: 769px) {
+    #ect-carousel-wrapper .ect-carousel-date,
+    #ect-carousel-wrapper .ect-carousel-date span {
+        font-size: 11px;
+    }
+}

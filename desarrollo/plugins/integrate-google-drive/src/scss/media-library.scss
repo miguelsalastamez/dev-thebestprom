@@ -1,0 +1,101 @@
+@import "integrations/media-library/tree";
+@import "integrations/media-library/media";
+
+body.upload-php {
+  #wpfooter {
+    display: none;
+  }
+}
+
+#igd-media-folder-filter {
+  display: none !important;
+}
+
+.attachment-details .igd-media-action {
+  display: flex;
+  align-items: center;
+
+  i {
+    margin-right: 5px;
+  }
+
+}
+
+#igd-import-attachments,
+#igd-refresh-attachments {
+  margin-left: 10px;
+  display: inline-flex;
+  align-items: center;
+  vertical-align: middle;
+
+  img {
+    width: 20px;
+    margin-right: 5px;
+  }
+}
+
+
+.media-toolbar {
+
+  #igd-import-attachments {
+    display: none;
+  }
+
+  &.media-toolbar-mode-select {
+    #igd-import-attachments {
+      display: inline-flex;
+    }
+
+    #igd-refresh-attachments {
+      display: none;
+    }
+  }
+
+}
+
+.media-modal-content {
+  .media-toolbar {
+    &:has(#igd-refresh-attachments) {
+      select.attachment-filters {
+        width: auto;
+      }
+
+      .media-toolbar-secondary {
+        width: 100%;
+
+        #igd-refresh-attachments {
+          margin-top: 32px;
+          margin-bottom: 0;
+        }
+
+        .spinner {
+          vertical-align: middle;
+          display: inline-flex;
+          margin-top: 32px;
+        }
+
+      }
+
+    }
+  }
+}
+
+.attachments-browser {
+  .media-toolbar {
+    #igd-refresh-attachments {
+      //position: absolute;
+      //top: 22px;
+    }
+  }
+}
+
+
+// Hide on media-modal selection
+.media-sidebar {
+  .compat-field-igd_media_import,
+  .compat-field-igd_media_replace,
+  .compat-field-igd_media_restore,
+  .compat-field-igd_media_upload {
+    display: none;
+  }
+}

@@ -1,0 +1,248 @@
+#ect-weekly-events-wrapper {
+    display: inline-block;
+    width: 100%;
+    padding: 0;
+    box-sizing: border-box;
+    position: relative;
+    background-color: #F4FCFF;
+    box-sizing: border-box;
+}
+
+#ect-weekly-events-wrapper a{
+   text-decoration: none;
+   border-bottom: none;
+}
+#ect-weekly-events-wrapper .ect-no-event{
+    font-weight: 700;
+    text-align: center;
+    padding: 1rem;
+    /* display: none; */
+}
+.ect-week-days-wrapper {
+    display: flex;
+}
+.ect-image {
+    text-align: left;
+}
+h2.ect-week {
+    text-align: center;
+    padding: 0;
+    margin:0px;
+}
+.ect-week-day {
+    width: 14.28%;
+    padding: 10px;
+    text-align: center;
+}
+.ect-calendar .ect-day, 
+.ect-calendar .ect-date,
+.ect-calendar .ect-month {
+    display:block;
+    font-size: 16px;
+}
+.ect-event {
+    text-align: left;
+}
+.ect-calendar .ect-day {
+    font-size: 24px;
+}
+.ect-event {
+    margin: 15px 5px;
+    padding:7px;
+    background-color: #DBF5FF;
+    border-radius: 8px 8px 8px 8px;
+}
+.ect-event .ect-event-clicker {
+    cursor: pointer;
+}
+.ect-image, .ect-plus-icon {
+    width: 50%;
+    display: inline-block;
+    vertical-align: middle;
+}
+.ect-image img {
+    width: 100%;
+    max-width: 50px;
+    text-align: left;
+}
+.ect-plus-icon {
+    text-align: right;
+    font-size: 20px;
+}
+.ect-plus-icon i:hover {
+    cursor: pointer;
+}
+.ect-title a{
+    margin-top: 15px;
+    color:inherit;
+    word-break: break-word;
+}
+.ect-time{
+    color:inherit;
+}
+/*Popup css*/
+.ect-popup-wrapper {
+    background: #fbfbfb;
+    width: 98%;
+    margin: 0 1%;
+    max-width: 600px;
+    border: 1px solid #ddd;
+    border-radius: 15px;
+    padding: 20px;
+    box-shadow: 0px 0px 8px 1px #845e51;
+    position: absolute;
+    text-align: left;
+    top: 70px;
+    left: calc(50% - 300px);
+    z-index: 10;
+}
+
+
+/*week nxt/prv*/
+.ect-week-nav {
+    display: flex;
+    margin: 20px 50px;
+    justify-content: space-between;
+    align-items: center;
+}
+.ect-no-events {
+    text-align: center;
+}
+button.ect-next, button.ect-prev {
+    background-color: #DBF5FF;
+    border: none;
+    color: #00445E;
+    padding: 5px;
+    margin: 0;
+    cursor: pointer;
+    font-size: 20px;
+    font-size: 25px;
+    line-height: 18px;
+    border-radius: 10px;
+}
+button:focus {
+    outline: 0px;
+}
+
+/* ----------ect Upcoming Events - START---------- */
+#ect-upcoming-events {
+    display: flex;
+    width: 100%;
+    max-width: 1300px;
+    margin: 0 auto;
+	position: relative;
+}
+.ect-next-event {
+    margin: 15px 5px;
+    padding: 10px 20px 20px;
+    background-color: #FFFFFF;
+    border: 1px solid #E5E1E6;
+    border-radius: 8px 8px 8px 8px;
+    flex: 1;
+	display: block;
+}
+.ect-next-img {
+    width: 100%;
+    display: block;
+    text-align: left;
+}
+.ect-next-img img {
+    width: 100%;
+    max-width: 60px;
+    padding: 0;
+    margin: 0;
+}
+h2.ect-next-title {
+    font-size: 24px;
+    line-height: 1.25em;
+    margin: 10px 0 20px;
+    padding: 0;
+    display: inline-block;
+    width: 100%;
+}
+.ect-next-time {
+    width: 100%;
+    display: block;
+    text-align: left;
+    font-size: 20px;
+    line-height: 1.5em;
+}
+
+
+/* --------ect Upcoming Events - END--------- */
+.ect_calendar_events_spinner {
+    display: none;
+    width: 100%;
+    height: 100%;
+    position: absolute;
+    z-index: 99;
+    left: 0;
+    top: 0;
+    overflow: hidden;
+    background: rgb(255,255,255,0.7);
+}
+.ect_spinner_img {
+    position: absolute;
+    top: calc(50% - 32px);
+    left: calc(50% - 32px);
+    text-align: center;
+}
+
+
+/* Media Query SDtyle Start Here */
+@media only screen and (max-width: 768px) {
+    .ect-week-days-wrapper {
+        display: inline-block;
+        width: 100%;
+        padding: 0px 15px;
+    }
+    .ect-week-day {
+        width: 100%;
+        /* margin: 5px; */
+        padding: 0px 10px 15px;
+    }
+    .ect-popup-wrapper {
+        left:0;
+    }
+    .ect-week-nav {
+        position: initial;
+        text-align: center;
+        margin: 20px 15px;
+    }
+    .ect-calendar {
+        padding:15px 0px;
+        background: #00445e;
+        color: #fff;
+    }
+    .ect-event.ect-simple-event,.ect-event.ect-featured-event {
+        text-align: center;
+    }
+
+    .ect-title {
+        font-size: 16px;
+    }
+    #ect-weekly-events-wrapper .ect-no-event {
+        font-size: 20px;
+    }
+    #ect-upcoming-events {
+		display: block;
+	}
+    .enba-countdown {
+		display: none;
+	}
+    .ect-calendar .ect-date,
+    .ect-event .ect-title a,
+    .ect-calendar .ect-month{
+        font-size: 18px;
+    }
+    .ect-calendar .ect-day, .ect-calendar .ect-date, .ect-calendar .ect-month {
+        color: #fff;
+    }
+}
+
+@media(max-width:425px){
+    h2.ect-week {
+        font-size:18px !important;
+    }
+}
+/* Media Query SDtyle Start Here */

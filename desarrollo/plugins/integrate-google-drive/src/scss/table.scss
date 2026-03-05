@@ -1,0 +1,297 @@
+.igd-sheets-all {
+  .igd-table-title {
+    font-size: 20px;
+    font-weight: 600;
+    margin-bottom: 15px;
+  }
+}
+
+.igd-table-container {
+  @import "components/table/tailwind";
+  @import "components/table/simple";
+  @import "components/table/minimal";
+  @import "components/table/bootstrap";
+  @import "components/table/dark";
+  @import "components/table/nord";
+
+  margin-bottom: 30px;
+
+  .dt-layout-row {
+    font-size: 15px;
+
+    &:first-child {
+      margin-bottom: 15px;
+    }
+
+    &:last-child {
+      margin-top: 15px;
+    }
+
+    // search + label inline
+    .dt-search {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+
+      label {
+        margin: 0;
+      }
+
+      input {
+        margin: 0;
+        height: 35px;
+      }
+    }
+
+    // entries per page inline
+    .dt-length {
+      label {
+        margin: 0;
+        display: flex;
+        align-items: center;
+        gap: 6px;
+
+        select {
+          margin: 0;
+          width: 70px;
+        }
+      }
+
+      select {
+        height: 35px;
+        padding: 6px 8px;
+        outline: none;
+        appearance: none;
+        background: #fff url("data:image/svg+xml;utf8,<svg fill='%236b7280' xmlns='http://www.w3.org/2000/svg' viewBox='0 0 20 20'><path d='M5.23 7.21a.75.75 0 011.06.02L10 11.17l3.71-3.94a.75.75 0 111.08 1.04l-4.25 4.5a.75.75 0 01-1.08 0l-4.25-4.5a.75.75 0 01.02-1.06z'/></svg>") no-repeat right 6px center/16px;
+      }
+
+    }
+
+    // buttons
+    .dt-buttons {
+      display: flex;
+      gap: 8px;
+      flex-wrap: wrap;
+      justify-content: flex-end;
+      margin-left: auto;
+
+      .dt-button {
+        height: 35px;
+        margin: 0;
+        line-height: 1.25;
+        padding: 6px 12px;
+        cursor: pointer;
+        user-select: none;
+        transition: background 0.2s, color 0.2s;
+        display: inline-flex;
+        align-items: center;
+        border: 1px solid var(--export-btn-color, #5c637e);
+        border-radius: 5px;
+
+        & > span {
+          display: inline-flex;
+          align-items: center;
+
+          img {
+            margin-right: 6px;
+          }
+
+        }
+
+        &.buttons-copy {
+          --export-btn-color: #5c637e;
+        }
+
+        &.buttons-csv {
+          --export-btn-color: #28a745;
+        }
+
+        &.buttons-excel {
+          --export-btn-color: #217346;
+        }
+
+        &.buttons-pdf {
+          --export-btn-color: #dc3545;
+        }
+
+        &.buttons-print {
+          --export-btn-color: #007bff;
+        }
+
+        &.buttons-edit {
+          --export-btn-color: #6f42c1;
+        }
+
+      }
+    }
+
+    // scroll
+    .dt-scroll {
+      .dt-scroll-body {
+        border-color: var(--igd-border, #ddd);
+      }
+    }
+
+    // pagination
+    .dt-paging {
+      nav {
+        display: flex;
+        gap: 5px;
+        margin-top: 4px;
+
+        .dt-paging-button {
+          padding: 6px 12px;
+          line-height: 1.5;
+          cursor: pointer;
+          user-select: none;
+          transition: background 0.2s, color 0.2s;
+        }
+
+      }
+    }
+
+  }
+
+  &.no-paging {
+    .dt-layout-row {
+      .dt-paging {
+        display: none !important;
+      }
+    }
+  }
+
+  // tables
+  .igd-table {
+    border-collapse: collapse;
+    width: 100%;
+    border-radius: var(--igd-table-radius, 0);
+
+    th, td {
+      padding: 0.75rem;
+      border: 1px solid var(--igd-table-border, #ddd);
+    }
+
+    thead {
+      background-color: var(--igd-table-header-bg, #f5f5f5);
+      color: var(--igd-table-header-text, #333);
+    }
+
+    tbody {
+      color: var(--igd-table-body-text, #222);
+
+      tr:nth-child(even) {
+        background-color: var(--igd-table-row-even, #fff);
+      }
+
+      tr:nth-child(odd) {
+        background-color: var(--igd-table-row-odd, #fafafa);
+      }
+
+      tr:hover {
+        background-color: var(--igd-table-body-hover, #f0f0f0);
+      }
+    }
+
+
+  }
+
+  // sizes
+  &.size-dense {
+    table thead th,
+    table tbody td {
+      padding: 8px 12px;
+    }
+  }
+
+  &.size-compact {
+    table thead th,
+    table tbody td {
+      padding: 6px 10px;
+      font-size: 13px;
+    }
+  }
+
+}
+
+// Tabs
+.igd-sheets-tabs {
+
+  .igd-tabs-nav {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    border-bottom: 1px solid #e5e7eb; // subtle divider
+    overflow-x: auto;
+    scrollbar-width: none; // hide scrollbar in Firefox
+    margin-bottom: 15px;
+
+    &::-webkit-scrollbar {
+      display: none; // hide scrollbar in Chrome/Safari
+    }
+
+    .igd-tab-button {
+      flex-shrink: 0;
+      position: relative;
+      background: transparent;
+      color: #374151; // gray-700
+      border: none;
+      outline: none;
+      font-size: 14px;
+      font-weight: 500;
+      line-height: normal;
+      padding: 12px 15px;
+      border-radius: 6px 6px 0 0;
+      cursor: pointer;
+      transition: all 0.25s ease-in-out;
+
+      &:hover {
+        background: #f3f4f6; // light hover shade
+        color: #111827; // darker on hover
+      }
+
+      &.active {
+        background: #ffffff;
+        color: #111827;
+        box-shadow: 0 -2px 0 0 #6366f1 inset; // subtle bottom indicator
+        font-weight: 600;
+      }
+
+      // Add smooth focus outline
+      &:focus-visible {
+        outline: 2px solid #6366f1;
+        outline-offset: 2px;
+      }
+    }
+  }
+
+  // Optional container styling for tab contents
+  .igd-tabs-content {
+    //background: #ffffff;
+    //border: 1px solid #e5e7eb;
+    //border-top: none;
+    //border-radius: 0 0 8px 8px;
+    //padding: 16px;
+    //margin-top: -1px;
+  }
+
+  .igd-tab-panel {
+    display: none;
+
+    &.active {
+      display: block;
+    }
+  }
+
+  @keyframes fadeIn {
+    from {
+      opacity: 0;
+      transform: translateY(4px);
+    }
+    to {
+      opacity: 1;
+      transform: translateY(0);
+    }
+  }
+
+}
+
