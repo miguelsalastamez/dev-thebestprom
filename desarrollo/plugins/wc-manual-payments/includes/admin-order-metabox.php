@@ -161,39 +161,22 @@ function wcmp_save_payments_metabox_data( $post_id ) {
         }
     }
 
-    // 2. Process New Payment Addition
-    $new_amount = isset( $_POST['wcmp_new_payment_amount'] ) ? (float) $_POST['wcmp_new_payment_amount'] : 0;
-    $transaction_id = isset( $_POST['wcmp_transaction_id'] ) ? sanitize_text_field( $_POST['wcmp_transaction_id'] ) : '';
-    $last_transaction = get_post_meta( $post_id, '_wcmp_last_transaction_id', true );
-
     if ( $new_amount > 0 && $transaction_id && $transaction_id !== $last_transaction ) {
-        $new_payment = array(
-            'date'   => sanitize_text_field( $_POST['wcmp_new_payment_date'] ),
-            'note'   => sanitize_text_field( $_POST['wcmp_new_payment_note'] ),
-            'amount' => $new_amount
-        );
+        $date = sanitize_text_field( $_POST['wcmp_new_payment_date'] );
+        $note = sanitize_text_field( $_POST['wcmp_new_payment_note'] );
 
-        $updated_payments[] = $new_payment;
-        update_post_meta( $post_id, '_wcmp_last_transaction_id', $transaction_id );
-        $something_changed = true;
-
-        // Notify customer (only for NEW payments)
-        wcmp_notify_customer_payment( $post_id, $new_payment );
+        // Use the centralized function
+        if ( wcmp_add_order_payment( $post_id, $new_amount, $note, $date ) ) {
+            update_post_meta( $post_id, '_wcmp_last_transaction_id', $transaction_id );
+            $something_changed = true;
+        }
     }
 
-    // Save if any change occurred
-    if ( $something_changed ) {
+    // Save if any change occurred (for edits/deletions only, as new payments are handled above)
+    if ( $something_changed && ! isset( $new_payment ) ) {
         update_post_meta( $post_id, '_wcmp_payments_history', $updated_payments );
         clean_post_cache( $post_id );
-
-        // Calculate actual total for status update
-        $final_total_paid = 0;
-        foreach ( $updated_payments as $p ) {
-            $final_total_paid += (float) $p['amount'];
-        }
-
-        // Recalculate status with the fresh total
-        wcmp_update_order_status_by_balance( $post_id, $final_total_paid );
+        wcmp_update_order_status_by_balance( $post_id );
     }
 }
 // Replace save_post hook with WooCommerce specific hook for better reliability

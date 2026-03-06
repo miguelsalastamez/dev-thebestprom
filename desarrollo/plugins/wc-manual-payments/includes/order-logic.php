@@ -8,6 +8,41 @@ if ( ! defined( 'ABSPATH' ) ) {
 }
 
 /**
+ * Central function to add a payment to an order
+ * This will be used by Admin Metabox, Stripe Webhook, and Google Sheets
+ */
+function wcmp_add_order_payment( $order_id, $amount, $note, $date = null ) {
+    $order = wc_get_order( $order_id );
+    if ( ! $order ) return false;
+
+    if ( ! $date ) {
+        $date = current_time('Y-m-d');
+    }
+
+    $payments = get_post_meta( $order_id, '_wcmp_payments_history', true ) ?: array();
+    
+    $new_payment = array(
+        'date'   => sanitize_text_field( $date ),
+        'note'   => sanitize_text_field( $note ),
+        'amount' => (float) $amount
+    );
+
+    $payments[] = $new_payment;
+    update_post_meta( $order_id, '_wcmp_payments_history', $payments );
+    
+    // Clear cache
+    clean_post_cache( $order_id );
+
+    // Update status
+    wcmp_update_order_status_by_balance( $order_id );
+
+    // Notify customer
+    wcmp_notify_customer_payment( $order_id, $new_payment );
+
+    return true;
+}
+
+/**
  * Get total payments for an order
  */
 function wcmp_get_order_payments_total( $order_id ) {

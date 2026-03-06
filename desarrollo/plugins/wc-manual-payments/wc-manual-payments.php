@@ -15,6 +15,8 @@ if ( ! defined( 'ABSPATH' ) ) {
 require_once plugin_dir_path( __FILE__ ) . 'includes/order-logic.php';
 require_once plugin_dir_path( __FILE__ ) . 'includes/admin-order-metabox.php';
 require_once plugin_dir_path( __FILE__ ) . 'includes/frontend-display.php';
+require_once plugin_dir_path( __FILE__ ) . 'includes/stripe-handler.php';
+require_once plugin_dir_path( __FILE__ ) . 'includes/admin-reports.php';
 
 /**
  * Register Custom Order Status: Parcialmente Pagado
