@@ -11,11 +11,13 @@ if ( ! defined( 'ABSPATH' ) ) {
  * Add Meta Box to Order Edit Screen
  */
 function wcmp_add_payments_metabox() {
+    $screen = class_exists( '\Automattic\WooCommerce\Internal\DataStores\Orders\CustomOrdersTableController' ) && \Automattic\WooCommerce\Internal\DataStores\Orders\CustomOrdersTableController::is_active() ? wc_get_page_screen_id( 'shop_order' ) : array( 'shop_order', 'edit-shop_order' );
+
     add_meta_box(
         'wcmp_payments_history_box',
         __( 'Registro de Pagos Manuales', 'wc-manual-payments' ),
         'wcmp_payments_metabox_content',
-        'shop_order',
+        $screen,
         'normal',
         'high'
     );
