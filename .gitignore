@@ -6,7 +6,7 @@ backup_*/
 
 # Logs
 *.log
-desarrollo/wp-content/debug.log
+wp-content/debug.log
 
 # Otros
 .DS_Store
