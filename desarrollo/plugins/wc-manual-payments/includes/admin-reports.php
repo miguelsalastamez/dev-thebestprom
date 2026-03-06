@@ -11,16 +11,18 @@ if ( ! defined( 'ABSPATH' ) ) {
  * Add Menu Item to WooCommerce
  */
 function wcmp_add_reports_menu() {
-    add_submenu_page(
-        'woocommerce',
-        __( 'Reportes de Conciliación', 'wc-manual-payments' ),
+    // Also try adding a top-level menu as a fallback
+    add_menu_page(
+        __( 'Conciliación Pagos', 'wc-manual-payments' ),
         __( 'Conciliación Pagos', 'wc-manual-payments' ),
         'manage_woocommerce',
         'wcmp-reports',
-        'wcmp_render_reports_page'
+        'wcmp_render_reports_page',
+        'dashicons-chart-bar',
+        58
     );
 }
-add_action( 'admin_menu', 'wcmp_add_reports_menu', 60 );
+add_action( 'admin_menu', 'wcmp_add_reports_menu', 99 );
 
 /**
  * Render Reports Page
