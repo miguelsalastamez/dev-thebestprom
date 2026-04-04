@@ -1,0 +1,15 @@
+# Changelog - The Best Prom: Actividades
+
+## [6.1.0] - 2026-03-27
+### Agregado
+- **Control de Tómbola**: Implementada sección de recepción de boletos (talones) en el shortcode `[tbp_gestion_rifas]`.
+- **Validación de Tómbola**: Solo permite registrar boletos si el pedido está 100% liquidado y tiene boletos entregados previamente.
+- **Log de Actividades**: Nueva columna `type` en la tabla de logs para diferenciar entregas físicas de recepciones para tómbola.
+- **Reporte Administrativo**: Nueva columna "En tómbola" para seguimiento del progreso por alumno.
+
+### Reparado
+- **Mensajería en Reportes**: Se restauraron los botones de Correo y WhatsApp para todos los pedidos con entregas físicas (se eliminó la restricción de estado 'on-hold').
+- **Notas de Pedido**: Corregida la generación de notas automáticas al cliente tras la recepción de boletos para tómbola.
+
+## [6.0.1] - 2026-03-21
+- Versión inicial con soporte básico para rifas y entregas físicas.

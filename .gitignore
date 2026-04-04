@@ -3,11 +3,32 @@ backup_*/
 *.zip
 *.tar.gz
 *.sql
+*.pdf
 
-# Logs
+# Versiones viejas y backups específicos
+tbp-egresos-v*/
+tbp-actividades-v*/
+El Mejor Prom/
+mails-mkt/
+
+# WordPress Core (No lo subimos, solo folders importantes)
+wp-admin/
+wp-includes/
+wp-config.php
+index.php
+
+# Scripts de prueba locales en raíz
+test*.php
+debug*.php
+diag*.php
+catch-error.php
+get_log_path.php
+read-meta.php
+tbp_test_meta.php
+
+# Logs y VSCode
 *.log
 wp-content/debug.log
-
-# Otros
 .DS_Store
 node_modules/
+.vscode/

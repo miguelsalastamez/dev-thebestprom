@@ -10,67 +10,97 @@ if ( ! defined( 'ABSPATH' ) ) {
 /**
  * Display balance and payments in "My Account > View Order"
  */
-function wcmp_display_order_balance_frontend( $order_id ) {
-    $order = wc_get_order( $order_id );
-    if ( ! $order ) return;
+if ( ! function_exists( 'wcmp_display_order_balance_frontend' ) ) {
+    function wcmp_display_order_balance_frontend( $order_id ) {
+        $order = wc_get_order( $order_id );
+        if ( ! $order ) return;
 
-    $payments = get_post_meta( $order_id, '_wcmp_payments_history', true ) ?: array();
-    $total_order = (float) $order->get_total();
-    $total_paid = wcmp_get_order_payments_total( $order_id );
-    $balance = $total_order - $total_paid;
+        $payments = get_post_meta( $order_id, '_wcmp_payments_history', true );
+        if ( ! is_array( $payments ) ) {
+            $payments = array();
+        }
+        $total_order = (float) $order->get_total();
+        $total_paid = wcmp_get_order_payments_total( $order_id );
+        $balance = $total_order - $total_paid;
 
-    if ( empty( $payments ) ) return; // Don't show if no manual payments exist
-    ?>
-    <section class="woocommerce-customer-details wcmp-payments-section" style="margin-top: 2em; padding: 20px; border: 1px solid #e5e5e5; border-radius: 5px;">
-        <h2 class="woocommerce-column__title"><?php _e( 'Historial de Pagos y Saldo', 'wc-manual-payments' ); ?></h2>
+        // Zen Design Styling
+        echo '<style>
+            .wcmp-zen-card { background: #fff; border: 1px solid #e1e4e8; border-radius: 12px; padding: 25px; box-shadow: 0 4px 15px rgba(0,0,0,0.05); margin-top: 3em; font-family: -apple-system, BlinkMacSystemFont, \"Segoe UI\", Roboto, sans-serif; }
+            .wcmp-zen-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 25px; border-bottom: 2px solid #f1f3f5; padding-bottom: 15px; }
+            .wcmp-zen-header h2 { margin: 0; font-size: 1.25em; color: #2c3e50; font-weight: 600; }
+            .wcmp-zen-summary { display: flex; flex-wrap: wrap; gap: 30px; margin-bottom: 30px; background: #f8fafc; padding: 20px; border-radius: 10px; }
+            .wcmp-summary-item { display: flex; flex-direction: column; }
+            .wcmp-summary-label { font-size: 12px; color: #64748b; text-transform: uppercase; font-weight: 600; letter-spacing: 0.5px; margin-bottom: 5px; }
+            .wcmp-summary-value { font-size: 24px; font-weight: 700; color: #1e293b; }
+            .wcmp-balance-pending { color: #e74c3c; }
+            .wcmp-balance-paid { color: #27ae60; }
+            .wcmp-zen-table { width: 100%; border-collapse: collapse; font-size: 14px; }
+            .wcmp-zen-table th { text-align: left; padding: 12px 10px; color: #94a3b8; font-weight: 600; border-bottom: 1px solid #f1f3f5; }
+            .wcmp-zen-table td { padding: 15px 10px; border-bottom: 1px solid #f8fafc; color: #334155; }
+            .wcmp-zen-table tr:hover { background: #fcfdfe; }
+            .wcmp-badge { background: #e2e8f0; color: #475569; padding: 3px 8px; border-radius: 4px; font-size: 11px; font-weight: 600; }
+            .wcmp-button-receipt { background: #6772e5; color: #fff !important; padding: 6px 12px; border-radius: 6px; font-size: 11px; font-weight: 600; text-decoration: none !important; transition: all 0.2s; display: inline-block; }
+            .wcmp-button-receipt:hover { background: #5469d4; transform: translateY(-1px); box-shadow: 0 4px 8px rgba(103, 114, 229, 0.2); }
+        </style>';
+
+        echo '<section class="wcmp-zen-card">';
+        echo '<div class="wcmp-zen-header"><h2>📊 ' . __( 'Estado de Cuenta y Pagos', 'wc-manual-payments' ) . '</h2></div>';
         
-        <table class="woocommerce-table woocommerce-table--order-details shop_table order_details">
-            <thead>
-                <tr>
-                    <th class="woocommerce-table__product-name product-name"><?php _e( 'Fecha', 'wc-manual-payments' ); ?></th>
-                    <th class="woocommerce-table__product-total product-total"><?php _e( 'Concepto', 'wc-manual-payments' ); ?></th>
-                    <th class="woocommerce-table__product-total product-total"><?php _e( 'Abono', 'wc-manual-payments' ); ?></th>
-                </tr>
-            </thead>
-            <tbody>
-                <?php foreach ( $payments as $payment ) : ?>
-                    <tr>
-                        <td><?php echo esc_html( $payment['date'] ); ?></td>
-                        <td><?php echo esc_html( $payment['note'] ); ?></td>
-                        <td><?php echo wc_price( $payment['amount'] ); ?></td>
-                    </tr>
-                <?php endforeach; ?>
-            </tbody>
-            <tfoot>
-                <tr>
-                    <th colspan="2" scope="row"><?php _e( 'Total Pagado:', 'wc-manual-payments' ); ?></th>
-                    <td><?php echo wc_price( $total_paid ); ?></td>
-                </tr>
-                <tr>
-                    <th colspan="2" scope="row"><?php _e( 'Saldo Pendiente:', 'wc-manual-payments' ); ?></th>
-                    <td style="font-weight: bold; color: <?php echo $balance > 0 ? '#d9534f' : '#5cb85c'; ?>;">
-                        <?php echo wc_price( $balance ); ?>
-                    </td>
-                </tr>
-            </tfoot>
-        </table>
-    </section>
-    <?php
+        echo '<div class="wcmp-zen-summary">';
+        echo '<div class="wcmp-summary-item"><span class="wcmp-summary-label">' . __('Total Compra', 'wc-manual-payments') . '</span><span class="wcmp-summary-value">' . wc_price($total_order) . '</span></div>';
+        echo '<div class="wcmp-summary-item"><span class="wcmp-summary-label">' . __('Total Pagado', 'wc-manual-payments') . '</span><span class="wcmp-summary-value">' . wc_price($total_paid) . '</span></div>';
+        $balance_class = $balance > 0 ? 'wcmp-balance-pending' : 'wcmp-balance-paid';
+        $balance_label = $balance > 0 ? __('Saldo Pendiente', 'wc-manual-payments') : __('PAGADO TOTAL', 'wc-manual-payments');
+        echo '<div class="wcmp-summary-item"><span class="wcmp-summary-label">' . $balance_label . '</span><span class="wcmp-summary-value ' . $balance_class . '">' . wc_price($balance) . '</span></div>';
+        echo '</div>';
+
+        if ( ! empty( $payments ) ) {
+            echo '<table class="wcmp-zen-table">';
+            echo '<thead><tr><th>' . __('Fecha', 'wc-manual-payments') . '</th><th>' . __('Referencia / Nota', 'wc-manual-payments') . '</th><th>' . __('Recibo', 'wc-manual-payments') . '</th><th style="text-align:right;">' . __('Monto', 'wc-manual-payments') . '</th></tr></thead>';
+            echo '<tbody>';
+            foreach ( $payments as $payment ) {
+                $receipt_html = '';
+                if ( ! empty($payment['receipt_url']) ) {
+                    $receipt_html = '<a href="' . esc_url($payment['receipt_url']) . '" target="_blank" class="wcmp-button-receipt">' . __('Ver Recibo', 'wc-manual-payments') . '</a>';
+                }
+
+                echo '<tr>';
+                echo '<td>' . esc_html( $payment['date'] ) . '</td>';
+                echo '<td>' . esc_html( $payment['note'] ) . '</td>';
+                echo '<td>' . $receipt_html . '</td>';
+                echo '<td style="text-align:right; font-weight:600; color:#27ae60;">' . wc_price( $payment['amount'] ) . '</td>';
+                echo '</tr>';
+            }
+            echo '</tbody></table>';
+        } else {
+            echo '<p style="color: #94a3b8; font-style: italic; font-size: 13px;">' . __('No hay abonos manuales registrados aún.', 'wc-manual-payments') . '</p>';
+        }
+        
+        echo '</section>';
+    }
 }
 add_action( 'woocommerce_view_order', 'wcmp_display_order_balance_frontend', 20 );
 
 /**
  * Optional: Inject balance in the order list (My Account > Orders)
  */
-function wcmp_display_balance_in_orders_list( $order ) {
-    $total_order = (float) $order->get_total();
-    $total_paid = wcmp_get_order_payments_total( $order->get_id() );
-    $balance = $total_order - $total_paid;
+if ( ! function_exists( 'wcmp_display_balance_in_orders_list' ) ) {
+    function wcmp_display_balance_in_orders_list( $order_get ) {
+        // Handle different WC versions
+        $order_id = is_numeric($order_get) ? $order_get : (is_object($order_get) ? $order_get->get_id() : 0);
+        $order = is_object($order_get) ? $order_get : wc_get_order($order_id);
+        
+        if (!$order) return;
 
-    if ( $total_paid > 0 ) {
-        echo '<br><small style="color: #666;">' . sprintf( __( 'Pagado: %s', 'wc-manual-payments' ), wc_price( $total_paid ) ) . '</small>';
-        if ( $balance > 0 ) {
-            echo '<br><small style="color: #d9534f;">' . sprintf( __( 'Saldo: %s', 'wc-manual-payments' ), wc_price( $balance ) ) . '</small>';
+        $total_order = (float) $order->get_total();
+        $total_paid = wcmp_get_order_payments_total( $order_id );
+        $balance = $total_order - $total_paid;
+
+        if ( $total_paid > 0 ) {
+            echo '<br><small style="color: #666;">' . sprintf( __( 'Pagado: %s', 'wc-manual-payments' ), wc_price( $total_paid ) ) . '</small>';
+            if ( $balance > 0 ) {
+                echo '<br><small style="color: #d9534f;">' . sprintf( __( 'Saldo: %s', 'wc-manual-payments' ), wc_price( $balance ) ) . '</small>';
+            }
         }
     }
 }

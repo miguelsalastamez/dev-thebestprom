@@ -9,83 +9,131 @@ if ( ! defined( 'ABSPATH' ) ) {
 
 /**
  * Central function to add a payment to an order
- * This will be used by Admin Metabox, Stripe Webhook, and Google Sheets
  */
-function wcmp_add_order_payment( $order_id, $amount, $note, $date = null ) {
-    $order = wc_get_order( $order_id );
-    if ( ! $order ) return false;
+if ( ! function_exists( 'wcmp_add_order_payment' ) ) {
+    /**
+     * @param string $source  'admin' (metabox), 'stripe', 'sheets'. Admin no es bloqueado.
+     * @return true|'blocked'|false
+     */
+    function wcmp_add_order_payment( $order_id, $amount, $note, $date = null, $transaction_id = '', $source = 'admin', $receipt_url = '' ) {
+        $order = wc_get_order( $order_id );
+        if ( ! $order ) return false;
 
-    if ( ! $date ) {
-        $date = current_time('Y-m-d');
+        // PROTECCIÓN v1.5.9: Bloquear pagos automáticos a pedidos ya pagados/procesando
+        $protected_statuses = array( 'processing', 'completed' );
+        if ( $source !== 'admin' && in_array( $order->get_status(), $protected_statuses ) ) {
+            return 'blocked'; // Será enviado a huérfanos por el caller
+        }
+
+        if ( ! $date ) {
+            $date = current_time('Y-m-d');
+        }
+
+        $payments = get_post_meta( $order_id, '_wcmp_payments_history', true );
+        if ( ! is_array( $payments ) ) {
+            $payments = array();
+        }
+        
+        // 1. DUPLICATE CHECK: Verificamos si este Transaction ID ya existe en el historial
+        if ( ! empty( $transaction_id ) ) {
+            foreach ( $payments as $p ) {
+                if ( isset( $p['transaction_id'] ) && $p['transaction_id'] === $transaction_id ) {
+                    return true; // Ya procesado, no duplicamos pero retornamos true (éxito)
+                }
+            }
+        }
+
+        $new_payment = array(
+            'date'           => sanitize_text_field( $date ),
+            'note'           => sanitize_text_field( $note ),
+            'amount'         => (float) $amount,
+            'transaction_id' => sanitize_text_field( $transaction_id ),
+            'source'         => sanitize_text_field( $source ),
+            'receipt_url'    => esc_url_raw( $receipt_url )
+        );
+
+        $payments[] = $new_payment;
+        update_post_meta( $order_id, '_wcmp_payments_history', $payments );
+        
+        // Mantener rastro de la última transacción para diagnósticos rápidos
+        if ( ! empty( $transaction_id ) ) {
+            update_post_meta( $order_id, '_wcmp_last_transaction_id', $transaction_id );
+        }
+
+        // Clear cache
+        clean_post_cache( $order_id );
+
+        // Update status (Force override as it is a NEW payment)
+        wcmp_update_order_status_by_balance( $order_id, null, true );
+
+        // Notify customer
+        wcmp_notify_customer_payment( $order_id, $new_payment );
+
+        return true;
     }
-
-    $payments = get_post_meta( $order_id, '_wcmp_payments_history', true ) ?: array();
-    
-    $new_payment = array(
-        'date'   => sanitize_text_field( $date ),
-        'note'   => sanitize_text_field( $note ),
-        'amount' => (float) $amount
-    );
-
-    $payments[] = $new_payment;
-    update_post_meta( $order_id, '_wcmp_payments_history', $payments );
-    
-    // Clear cache
-    clean_post_cache( $order_id );
-
-    // Update status
-    wcmp_update_order_status_by_balance( $order_id );
-
-    // Notify customer
-    wcmp_notify_customer_payment( $order_id, $new_payment );
-
-    return true;
 }
 
 /**
  * Get total payments for an order
  */
-function wcmp_get_order_payments_total( $order_id ) {
-    $payments = get_post_meta( $order_id, '_wcmp_payments_history', true );
-    if ( ! is_array( $payments ) ) {
-        return 0;
-    }
+if ( ! function_exists( 'wcmp_get_order_payments_total' ) ) {
+    function wcmp_get_order_payments_total( $order_id ) {
+        $payments = get_post_meta( $order_id, '_wcmp_payments_history', true );
+        if ( ! is_array( $payments ) ) {
+            return 0;
+        }
 
-    $total = 0;
-    foreach ( $payments as $payment ) {
-        $total += (float) $payment['amount'];
-    }
+        $total = 0;
+        foreach ( $payments as $payment ) {
+            $total += (float) $payment['amount'];
+        }
 
-    return $total;
+        return $total;
+    }
 }
 
 /**
  * Update order status based on payments
  */
-function wcmp_update_order_status_by_balance( $order_id, $total_paid = null ) {
-    $order = wc_get_order( $order_id );
-    if ( ! $order ) {
-        return;
-    }
-
-    $total_order = (float) $order->get_total();
-    if ( is_null( $total_paid ) ) {
-        $total_paid = wcmp_get_order_payments_total( $order_id );
-    }
-    $current_status = $order->get_status();
-
-    if ( $total_paid <= 0 ) {
-        return;
-    }
-
-    if ( $total_paid >= $total_order ) {
-        if ( 'completed' !== $current_status ) {
-            $order->update_status( 'completed', __( 'Pago total recibido (Manual).', 'wc-manual-payments' ) );
+if ( ! function_exists( 'wcmp_update_order_status_by_balance' ) ) {
+    function wcmp_update_order_status_by_balance( $order_id, $total_paid = null, $force = false ) {
+        $order = wc_get_order( $order_id );
+        if ( ! $order ) {
+            return;
         }
-    } elseif ( $total_paid > 0 ) {
-        // Use the custom status slug: p-pagado
-        if ( 'p-pagado' !== $current_status ) {
-            $order->update_status( 'p-pagado', __( 'Pago parcial recibido (Manual).', 'wc-manual-payments' ) );
+
+        $total_order = round((float)$order->get_total(), 2);
+        if ( is_null( $total_paid ) ) {
+            $total_paid = round(wcmp_get_order_payments_total( $order_id ), 2);
+        } else {
+            $total_paid = round((float)$total_paid, 2);
+        }
+        
+        $current_status = $order->get_status();
+
+        // LÓGICA DE ESTADOS CIRCULAR v1.5.8
+        if ( $total_paid <= 0 ) {
+            // Si no hay pagos y el estado actual es uno de los nuestros, regresamos a "En Espera"
+            if ( in_array( $current_status, array( 'p-pagado', 'completed' ) ) ) {
+                $order->update_status( 'on-hold', __( 'Sin pagos registrados. Regresando a estado base.', 'wc-manual-payments' ) );
+            }
+            return;
+        }
+
+        // EXCEPCIÓN v1.5.5/v1.5.6: Solo respetamos el estado "En Espera" (On Hold) si NO es un pago forzado (edición simple)
+        if ( 'on-hold' === $current_status && ! $force ) {
+            return;
+        }
+
+        if ( $total_paid >= $total_order ) {
+            if ( 'completed' !== $current_status ) {
+                $order->update_status( 'completed', __( 'Pago total recibido (Manual).', 'wc-manual-payments' ) );
+            }
+        } else {
+            // Use the custom status slug: p-pagado
+            if ( 'p-pagado' !== $current_status ) {
+                $order->update_status( 'p-pagado', __( 'Pago parcial recibido (Manual).', 'wc-manual-payments' ) );
+            }
         }
     }
 }
@@ -93,29 +141,75 @@ function wcmp_update_order_status_by_balance( $order_id, $total_paid = null ) {
 /**
  * Notify customer about payment
  */
-function wcmp_notify_customer_payment( $order_id, $payment_data ) {
-    $order = wc_get_order( $order_id );
-    if ( ! $order ) return;
+if ( ! function_exists( 'wcmp_notify_customer_payment' ) ) {
+    function wcmp_notify_customer_payment( $order_id, $payment_data ) {
+        $order = wc_get_order( $order_id );
+        if ( ! $order ) return;
 
-    $date = $payment_data['date'];
-    $note = $payment_data['note'];
-    $amount_formatted = wc_price( $payment_data['amount'] );
-    
-    // Build the message requested by user
-    $message = "Estimado Usuario, te informamos que hemos recibido y acreditado un pago con los siguientes datos:\n";
-    $message .= "{$date} {$note} {$amount_formatted}\n\n";
-    $message .= "Tu pedido cambiará de estatus según los pagos registrados.\n";
-    $message .= "Estos son los estatus:\n";
-    $message .= "*En Espera: El pedido se realizó con éxito pero no hemos recibido su pago.\n";
-    $message .= "*Parcialmente pagado: cuando recibimos un pago parcial de su pedido.\n";
-    $message .= "*Completado: Cuando hemos recibido el monto total de su pedido.\n\n";
-    $message .= "Los pagos que cubren el monto total del valor de tu pedido hechos con tarjeta, son acreditados automáticamente y su estatus es Pagado con Tarjeta ó completado.\n";
-    $message .= "Para ver detalles de tu pedido ingresa a\n";
-    $message .= "https://thebestprom.com/mi-cuenta\n\n";
-    $message .= "Nota: En tus próximos pagos No Olvides poner tu número de pedido:\n";
-    $message .= "EJEMPLO:(P-{$order->get_order_number()})\n\n";
-    $message .= "Atte. Equipo The Best Prom .";
+        $date = $payment_data['date'];
+        $note = $payment_data['note'];
+        $amount_formatted = wc_price( $payment_data['amount'] );
+        $customer_name = $order->get_billing_first_name();
+        
+        $total_order    = (float)$order->get_total();
+        $total_paid     = wcmp_get_order_payments_total( $order_id );
+        $is_fully_paid  = ( $total_paid >= ($total_order - 0.01) ); // Tolerancia de centavos
 
-    // Add customer note
-    $order->add_order_note( $message, 1 ); // 1 = is_customer_note
+        // Nuevo Formato Dinámico v1.5.4
+        $message = sprintf( __( "¡Buenas noticias, %s! 🚀\nHemos recibido y acreditado tu pago con éxito. Aquí tienes el resumen:\n\n", 'wc-manual-payments' ), $customer_name );
+        $message .= sprintf( "📅 Fecha: %s\n", $date );
+        $message .= sprintf( "💰 Monto: %s\n", strip_tags($amount_formatted) );
+        $message .= sprintf( "📝 Concepto: %s\n\n", $note );
+        
+        $message .= "📦 Estatus de tu pedido\n";
+        $message .= "Tu pedido se actualizará automáticamente:\n\n";
+        $message .= "✅ Completado: Si el monto cubre el total.\n";
+        $message .= "⏳ Parcialmente pagado: Si aún queda un saldo pendiente.\n\n";
+        
+        if ( $is_fully_paid ) {
+            $message .= "🎉 ¡FELICIDADES! Tu pedido está COMPLETAMENTE PAGADO.\n\n";
+        } else {
+            $balance = $total_order - $total_paid;
+            $message .= sprintf( "⚠️ Saldo restante: %s\n\n", strip_tags(wc_price($balance)) );
+        }
+
+        $message .= sprintf( "Recuerda: Para tus próximos pagos, usa siempre tu número de pedido (#%s) como referencia para agilizar el proceso.\n\n", $order->get_order_number() );
+        
+        $message .= "Puedes ver los detalles aquí:\n";
+        $message .= "👉 " . home_url('/mi-cuenta') . "\n\n";
+        
+        $message .= "¡Gracias por tu compra!\n";
+        $message .= "Equipo The Best Prom.";
+
+        // Agregar como nota al cliente (esto dispara el email de WC si está configurado)
+        $order->add_order_note( $message, 1 ); 
+    }
+}
+
+/**
+ * Link an orphan payment to a real order
+ */
+if ( ! function_exists( 'wcmp_link_orphan_payment' ) ) {
+    function wcmp_link_orphan_payment( $orphan_index, $target_order_id ) {
+        $orphans = get_option( 'wcmp_orphan_payments', array() );
+        
+        if ( ! isset( $orphans[ $orphan_index ] ) ) {
+            return false;
+        }
+
+        $orphan = $orphans[ $orphan_index ];
+        $amount = (float) $orphan['amount'];
+        $note   = $orphan['ref'] . ' (' . $orphan['name'] . ') [VINCULADO]';
+        $date   = date('Y-m-d', strtotime($orphan['date'] ?? current_time('mysql')));
+
+        // Add as a normal payment
+        if ( wcmp_add_order_payment( $target_order_id, $amount, $note, $date ) ) {
+            // Remove from orphans
+            unset( $orphans[ $orphan_index ] );
+            update_option( 'wcmp_orphan_payments', array_values( $orphans ) );
+            return true;
+        }
+
+        return false;
+    }
 }
