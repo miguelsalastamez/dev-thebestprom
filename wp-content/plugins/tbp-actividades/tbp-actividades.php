@@ -3,11 +3,12 @@
  * Plugin Name: The Best Prom - Actividades
  * Plugin URI: https://dev.thebestprom.com
  * Description: Hub de actividades para eventos de graduación (Rifas, Asientos, Fotografía).
- * Version: 6.5.8
+ * Version: 6.5.9
  * Author: Antigravity Team
  * Text Domain: tbp-actividades
  *
  * Changelog:
+ * 6.5.9 - Feature: Carga de nominados vía Excel (XLSX/CSV) en el editor de Premiaciones.
  * 6.5.5 - Feature: Soporte para 'event_id' manual en shortcode y URL para forzar visualización.
  * 6.5.4 - Debug: Volcado de llaves meta de ítems para análisis de pedidos conflictivos.
  * 6.5.3 - UI: Cuadro de información de shortcode e integración en el editor de Premiaciones.

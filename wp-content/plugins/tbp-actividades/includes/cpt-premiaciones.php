@@ -48,6 +48,8 @@ function tbp_actividades_premiaciones_admin_scripts( $hook ) {
     global $post;
     if ( ( $hook == 'post-new.php' || $hook == 'post.php' ) && $post->post_type == 'tbp_premiaciones' ) {
         wp_enqueue_media();
+        // SheetJS for Excel Parsing (Client-side)
+        wp_enqueue_script( 'xlsx-cdn', 'https://cdn.sheetjs.com/xlsx-latest/package/dist/xlsx.full.min.js', array(), 'latest', true );
     }
 }
 add_action( 'admin_enqueue_scripts', 'tbp_actividades_premiaciones_admin_scripts' );
@@ -147,6 +149,11 @@ function tbp_actividades_premiacion_settings_callback( $post ) {
         <tr>
             <th><label for="tbp_nominees_raw"><?php _e( 'Lista de Nominados (Nombre | Grupo)', 'tbp-actividades' ); ?></label></th>
             <td>
+                <div style="margin-bottom: 10px;">
+                    <button type="button" id="tbp-upload-nominees-btn" class="button button-secondary">📂 <?php _e( 'Subir Excel / CSV', 'tbp-actividades' ); ?></button>
+                    <input type="file" id="tbp-nominees-file-input" style="display:none;" accept=".xlsx, .xls, .csv" />
+                    <span id="tbp-upload-status" style="margin-left: 10px; font-size: 11px; color: #666;"></span>
+                </div>
                 <textarea id="tbp_nominees_raw" name="tbp_nominees_raw" rows="10" style="width:100%; font-family:monospace;" placeholder="Juan Perez | Sistemas&#10;Maria Lopez | Ventas"><?php echo esc_textarea( $nominees_raw ); ?></textarea>
                 <p class="description"><?php _e( 'Uno por línea. El grupo debe coincidir con el campo de asistente.', 'tbp-actividades' ); ?></p>
             </td>
@@ -248,6 +255,66 @@ function tbp_actividades_premiacion_settings_callback( $post ) {
             });
 
             frame.open();
+        });
+
+        // --- EXCEL/CSV UPLOAD LOGIC ---
+        $('#tbp-upload-nominees-btn').on('click', function() {
+            $('#tbp-nominees-file-input').click();
+        });
+
+        $('#tbp-nominees-file-input').on('change', function(e) {
+            var file = e.target.files[0];
+            if (!file) return;
+
+            var reader = new FileReader();
+            var status = $('#tbp-upload-status');
+            status.text('<?php _e('Procesando archivo...', 'tbp-actividades'); ?>').css('color', '#666');
+
+            reader.onload = function(e) {
+                try {
+                    var data = new Uint8Array(e.target.result);
+                    var workbook = XLSX.read(data, {type: 'array'});
+                    var firstSheetName = workbook.SheetNames[0];
+                    var worksheet = workbook.Sheets[firstSheetName];
+                    var jsonData = XLSX.utils.sheet_to_json(worksheet, {header: 1});
+
+                    var nomineesTextarea = $('#tbp_nominees_raw');
+                    var currentContent = nomineesTextarea.val().trim();
+                    var newNominees = [];
+
+                    jsonData.forEach(function(row, idx) {
+                        if (row.length >= 2) {
+                            var name = String(row[0]).trim();
+                            var group = String(row[1]).trim();
+                            
+                            // Basic validation: skip headers if they look like "Nombre" or "Grupo"
+                            if (idx === 0 && (name.toLowerCase() === 'nombre' || name.toLowerCase() === 'name')) {
+                                return;
+                            }
+
+                            if (name && group) {
+                                newNominees.push(name + ' | ' + group);
+                            }
+                        }
+                    });
+
+                    if (newNominees.length > 0) {
+                        var addedLines = newNominees.join('\n');
+                        var finalContent = currentContent ? currentContent + '\n' + addedLines : addedLines;
+                        nomineesTextarea.val(finalContent);
+                        status.text('<?php _e('¡Carga exitosa!', 'tbp-actividades'); ?> (' + newNominees.length + ' <?php _e('añadidos', 'tbp-actividades'); ?>)').css('color', '#27ae60');
+                    } else {
+                        status.text('<?php _e('No se encontraron nominados válidos.', 'tbp-actividades'); ?>').css('color', '#a00');
+                    }
+                } catch (err) {
+                    console.error(err);
+                    status.text('<?php _e('Error al leer el archivo.', 'tbp-actividades'); ?>').css('color', '#a00');
+                }
+                // Clear input to allow same file re-upload
+                $('#tbp-nominees-file-input').val('');
+            };
+
+            reader.readAsArrayBuffer(file);
         });
     });
     </script>
