@@ -36,9 +36,9 @@ define( 'TBP_ACTIVIDADES_URL', plugin_dir_url( __FILE__ ) );
 // Include necessary files
 require_once TBP_ACTIVIDADES_PATH . 'includes/database.php';
 require_once TBP_ACTIVIDADES_PATH . 'includes/cpt-rifas.php';
-// [SAFEGUARD V6.5.7] Módulo de Premiaciones Desactivado Temporalmente
-// require_once TBP_ACTIVIDADES_PATH . 'includes/cpt-premiaciones.php';
-// require_once TBP_ACTIVIDADES_PATH . 'includes/premiaciones-functions.php';
+// Módulo de Premiaciones Re-activado
+require_once TBP_ACTIVIDADES_PATH . 'includes/cpt-premiaciones.php';
+require_once TBP_ACTIVIDADES_PATH . 'includes/premiaciones-functions.php';
 require_once TBP_ACTIVIDADES_PATH . 'includes/eventbrite-webhook.php';
 require_once TBP_ACTIVIDADES_PATH . 'includes/physical-management.php';
 require_once TBP_ACTIVIDADES_PATH . 'includes/local-raffle-handler.php';
@@ -70,7 +70,6 @@ function tbp_actividades_register_menu() {
         'edit.php?post_type=tbp_rifas'
     );
 
-    /* [SAFEGUARD]
     add_submenu_page(
         'tbp-actividades',
         __( 'Premiaciones', 'tbp-actividades' ),
@@ -78,7 +77,6 @@ function tbp_actividades_register_menu() {
         'manage_woocommerce',
         'edit.php?post_type=tbp_premiaciones'
     );
-    */
 
     add_submenu_page(
         'tbp-actividades',
@@ -124,7 +122,6 @@ function tbp_actividades_register_menu() {
         'tbp_actividades_plantillas_page'
     );
 
-    /* [SAFEGUARD]
     add_submenu_page(
         'tbp-actividades',
         __( 'Reporte de Premiaciones', 'tbp-actividades' ),
@@ -133,7 +130,6 @@ function tbp_actividades_register_menu() {
         'tbp-actividades-reporte-premiaciones',
         'tbp_actividades_premiaciones_report_page'
     );
-    */
 }
 add_action( 'admin_menu', 'tbp_actividades_register_menu' );
 add_action( 'admin_init', 'tbp_actividades_register_settings' );
