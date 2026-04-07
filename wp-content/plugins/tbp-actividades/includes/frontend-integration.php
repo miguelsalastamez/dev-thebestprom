@@ -383,17 +383,21 @@ function tbp_actividades_render_voting_form($premiacion_id, $group_name, $order_
                 data: form.serialize() + '&action=tbp_actividades_submit_vote',
                 success: function(response) {
                     if (response.success) {
-                        $('#tbp-modal-dynamic-content').html('<div style="text-align:center; padding: 30px;"><h2 style="color:#27ae60;">¡Gracias por tu voto!</h2><p>Actualizando resultados...</p></div>');
-                        // Refresh status
+                        // Standalone page: reload the page so results are shown
+                        var wrapper = form.closest('.tbp-voting-shortcode-wrapper');
+                        wrapper.html('<div style="text-align:center; padding: 40px;"><div style="font-size: 60px; margin-bottom: 15px;">🏆</div><h2 style="color:#27ae60; margin-bottom: 10px;"><?php _e('¡Gracias por tu voto!', 'tbp-actividades'); ?></h2><p style="color:#666;"><?php _e('Tu votación fue registrada exitosamente. Cargando resultados...', 'tbp-actividades'); ?></p></div>');
                         setTimeout(function() {
-                            $('.tbp_actividades').filter(function() {
-                                return $(this).closest('tr').find('.woocommerce-orders-table__cell-order-number a').text().replace('#', '').trim() == '<?php echo $order_id; ?>';
-                            }).first().click();
-                        }, 1500);
+                            location.reload();
+                        }, 2000);
                     } else {
-                        alert(response.data || 'Error al enviar voto');
+                        alert(response.data || '<?php _e('Error al enviar voto', 'tbp-actividades'); ?>');
                         btn.prop('disabled', false).text(originalText);
                     }
+                },
+                error: function(xhr, status, error) {
+                    console.error('Vote AJAX error:', status, error, xhr.responseText);
+                    alert('<?php _e('Error de conexión. Intenta de nuevo.', 'tbp-actividades'); ?>');
+                    btn.prop('disabled', false).text(originalText);
                 }
             });
         });
@@ -469,16 +473,29 @@ function tbp_actividades_submit_vote_ajax() {
     global $wpdb;
     $table = $wpdb->prefix . 'tbp_premiaciones_votos';
 
+    // Ensure table exists (self-healing)
+    if ( $wpdb->get_var("SHOW TABLES LIKE '$table'") !== $table ) {
+        tbp_actividades_create_db_tables();
+    }
+
+    $inserted = 0;
     foreach ( $votes as $cat_idx => $nominee_name ) {
-        $wpdb->insert( $table, array(
+        $nominee_name = sanitize_text_field( $nominee_name );
+        if ( empty( $nominee_name ) ) continue; // skip blank votes
+        $result = $wpdb->insert( $table, array(
             'premiacion_id' => $premiacion_id,
             'event_id'      => $event_id,
             'category_id'   => sanitize_text_field( $cat_idx ),
-            'nominee_name'  => sanitize_text_field( $nominee_name ),
+            'nominee_name'  => $nominee_name,
             'user_id'       => $user_id,
             'order_id'      => $order_id,
             'group_name'    => $group_name,
         ) );
+        if ( $result ) $inserted++;
+    }
+
+    if ( $inserted === 0 ) {
+        wp_send_json_error( 'No se pudo registrar el voto. Verifica que hayas seleccionado todos los nominados.' );
     }
 
     wp_send_json_success();
