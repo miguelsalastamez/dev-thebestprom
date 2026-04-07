@@ -9,6 +9,62 @@ if ( ! defined( 'ABSPATH' ) ) {
 }
 
 /**
+ * Helper: Find a Premiacion post linked to an order (uses 7-layer engine, optimized for speed)
+ */
+function tbp_actividades_get_premiacion_for_order( $order_id ) {
+    static $cache = [];
+    if ( isset( $cache[ $order_id ] ) ) return $cache[ $order_id ];
+
+    $order = wc_get_order( $order_id );
+    if ( ! $order ) { $cache[ $order_id ] = null; return null; }
+
+    $tribe_event_id = 0;
+
+    // Fast path: try order and product meta first
+    $tribe_event_id = get_post_meta( $order_id, '_tribe_tickets_event', true );
+    if ( ! $tribe_event_id ) $tribe_event_id = get_post_meta( $order_id, '_tribe_wooticket_event', true );
+
+    if ( ! $tribe_event_id ) {
+        foreach ( $order->get_items() as $item ) {
+            $p_id = $item->get_product_id();
+            $tribe_event_id = get_post_meta( $p_id, '_tribe_tickets_event', true );
+            if ( ! $tribe_event_id ) $tribe_event_id = get_post_meta( $p_id, '_tribe_wooticket_event', true );
+            if ( $tribe_event_id ) break;
+        }
+    }
+
+    // Slow path: use Tribe API to match tickets → event from our premiaciones
+    if ( ! $tribe_event_id && class_exists( 'Tribe__Tickets__Tickets' ) ) {
+        $product_ids = array_map( fn( $i ) => $i->get_product_id(), iterator_to_array( $order->get_items() ) );
+        $all_prem    = get_posts( [ 'post_type' => 'tbp_premiaciones', 'posts_per_page' => -1, 'fields' => 'ids' ] );
+        foreach ( $all_prem as $prem_id ) {
+            $linked_event = get_post_meta( $prem_id, '_tbp_event_id', true );
+            if ( ! $linked_event ) continue;
+            $tickets = Tribe__Tickets__Tickets::get_all_event_tickets( $linked_event );
+            foreach ( $tickets as $ticket ) {
+                $tid = is_object( $ticket ) ? ( $ticket->ID ?? 0 ) : intval( $ticket );
+                if ( in_array( $tid, $product_ids, true ) ) {
+                    $tribe_event_id = $linked_event;
+                    break 2;
+                }
+            }
+        }
+    }
+
+    if ( ! $tribe_event_id ) { $cache[ $order_id ] = null; return null; }
+
+    $premiaciones = get_posts( [
+        'post_type'      => 'tbp_premiaciones',
+        'meta_query'     => [ [ 'key' => '_tbp_event_id', 'value' => $tribe_event_id ] ],
+        'posts_per_page' => 1,
+    ] );
+
+    $result = ! empty( $premiaciones ) ? $premiaciones[0] : null;
+    $cache[ $order_id ] = $result;
+    return $result;
+}
+
+/**
  * Add "Actividades" button to My Account -> Orders actions
  */
 add_filter( 'woocommerce_my_account_my_orders_actions', 'tbp_actividades_add_client_order_actions', 10, 2 );
@@ -17,6 +73,16 @@ function tbp_actividades_add_client_order_actions( $actions, $order ) {
         'url'  => '#',
         'name' => __( 'ACTIVIDADES', 'tbp-actividades' ),
     );
+
+    // Dynamic PREMIACIONES button — only if a premiacion exists for this order
+    if ( tbp_actividades_get_premiacion_for_order( $order->get_id() ) ) {
+        $voting_url = home_url( '/premiaciones/' ) . '?order_id=' . $order->get_id();
+        $actions['tbp_premiaciones'] = array(
+            'url'  => esc_url( $voting_url ),
+            'name' => __( 'PREMIACIONES', 'tbp-actividades' ),
+        );
+    }
+
     return $actions;
 }
 
@@ -65,6 +131,16 @@ function tbp_actividades_render_client_modal() {
         }
         .woocommerce-orders-table__cell-order-actions a.tbp_actividades:hover {
             background-color: #e67e22 !important;
+        }
+        /* Premiaciones button */
+        .woocommerce-orders-table__cell-order-actions a.tbp_premiaciones {
+            background-color: #2c3e50 !important;
+            color: #f39c12 !important;
+            font-weight: bold !important;
+        }
+        .woocommerce-orders-table__cell-order-actions a.tbp_premiaciones:hover {
+            background-color: #1a252f !important;
+            color: #f39c12 !important;
         }
         .tbp-modal-section.tbp-highlight-section { background: #fff8eb; border: 2px dashed #f39c12; border-radius: 12px; padding: 20px; margin-bottom: 25px; }
         .tbp-modal-section.tbp-highlight-section h3 { color: #d35400; margin-top: 0; }
