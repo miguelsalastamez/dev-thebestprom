@@ -383,11 +383,13 @@ function tbp_actividades_render_voting_form($premiacion_id, $group_name, $order_
                 data: form.serialize() + '&action=tbp_actividades_submit_vote',
                 success: function(response) {
                     if (response.success) {
-                        // Standalone page: reload the page so results are shown
                         var wrapper = form.closest('.tbp-voting-shortcode-wrapper');
                         wrapper.html('<div style="text-align:center; padding: 40px;"><div style="font-size: 60px; margin-bottom: 15px;">🏆</div><h2 style="color:#27ae60; margin-bottom: 10px;"><?php _e('¡Gracias por tu voto!', 'tbp-actividades'); ?></h2><p style="color:#666;"><?php _e('Tu votación fue registrada exitosamente. Cargando resultados...', 'tbp-actividades'); ?></p></div>');
+                        // Redirect with ?voted=1 to force results view (bypasses admin bypass)
                         setTimeout(function() {
-                            location.reload();
+                            var url = new URL(window.location.href);
+                            url.searchParams.set('voted', '1');
+                            window.location.href = url.toString();
                         }, 2000);
                     } else {
                         alert(response.data || '<?php _e('Error al enviar voto', 'tbp-actividades'); ?>');
@@ -719,9 +721,10 @@ function tbp_actividades_voting_shortcode( $atts ) {
     echo '<h2 style="text-align:center; color: #2c3e50; margin-bottom: 25px;">🏆 ' . esc_html($prem->post_title) . '</h2>';
 
     if ( $user_group ) {
-        // Admins can vote multiple times
-        $has_voted = !current_user_can('manage_options') && tbp_actividades_has_user_voted(get_current_user_id(), $tribe_event_id);
-        
+        // Check if user just voted (via ?voted=1 redirect) OR has voted (non-admin check)
+        $just_voted   = isset( $_GET['voted'] ) && $_GET['voted'] === '1';
+        $has_voted    = $just_voted || ( ! current_user_can('manage_options') && tbp_actividades_has_user_voted( get_current_user_id(), $tribe_event_id ) );
+
         if ($has_voted) {
             tbp_actividades_render_voting_results($prem->ID, $user_group);
         } else {
