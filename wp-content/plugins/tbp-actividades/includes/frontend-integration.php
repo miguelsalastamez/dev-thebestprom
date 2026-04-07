@@ -350,7 +350,7 @@ function tbp_actividades_render_voting_form($premiacion_id, $group_name, $order_
     foreach ($categories as $idx => $cat) {
         echo '<div style="border: 1px solid #eee; border-radius: 8px; padding: 15px; background: #fafafa;">';
         if (!empty($cat['img'])) {
-            echo '<div style="width: 100%; height: 120px; background-image: url(\''.esc_url($cat['img']).'\'); background-size: cover; background-position: center; border-radius: 6px; margin-bottom: 10px;"></div>';
+            echo '<div style="width: 100%; padding-bottom: 100%; background-image: url(\''.esc_url($cat['img']).'\'); background-size: cover; background-position: center; border-radius: 8px; margin-bottom: 12px; position: relative;"></div>';
         }
         echo '<h4 style="margin: 0 0 5px 0;">'.esc_html($cat['title']).'</h4>';
         echo '<p style="font-size: 12px; color: #666; margin-bottom: 10px;">'.esc_html($cat['desc']).'</p>';
@@ -513,8 +513,9 @@ function tbp_actividades_voting_shortcode( $atts ) {
     // Super-Robust search for Tribe Event ID
     $tribe_event_id = 0;
     
-    // DEBUG for Admins
-    if ( current_user_can('manage_options') ) {
+    // Debug output disabled in production
+    $show_debug = false; // Set to true temporarily for local debugging only
+    if ( $show_debug && current_user_can('manage_options') ) {
         echo '<div style="background:#222; color:#0f0; padding:15px; font-family:monospace; font-size:11px; margin:20px 0; border-radius:8px; border-left: 5px solid #0f0;">';
         echo '<strong>[DEBUG ADMIN]</strong> Análisis del Pedido #' . $order_id . '<br><br>';
     }
@@ -524,7 +525,7 @@ function tbp_actividades_voting_shortcode( $atts ) {
     if (!$tribe_event_id) $tribe_event_id = get_post_meta($order_id, '_tribe_wooticket_event', true);
     if (!$tribe_event_id) $tribe_event_id = get_post_meta($order_id, '_event_id', true);
 
-    if ( current_user_can('manage_options') ) echo '1. ID Evento en Meta del Pedido: ' . ($tribe_event_id ?: 'No hallado') . '<br>';
+    if ( $show_debug && current_user_can('manage_options') ) echo '1. ID Evento en Meta del Pedido: ' . ($tribe_event_id ?: 'No hallado') . '<br>';
 
     // 2. Check each order item meta
     if (!$tribe_event_id) {
@@ -540,7 +541,7 @@ function tbp_actividades_voting_shortcode( $atts ) {
             if (!$tribe_event_id) $tribe_event_id = wc_get_order_item_meta( $item_id, '_tribe_wooticket_event', true );
             if ($tribe_event_id) break;
         }
-        if ( current_user_can('manage_options') ) echo '2. ID Evento en Meta de Items: ' . ($tribe_event_id ?: 'No hallado') . '<br>';
+        if ( $show_debug && current_user_can('manage_options') ) echo '2. ID Evento en Meta de Items: ' . ($tribe_event_id ?: 'No hallado') . '<br>';
     }
 
     // 3. Check each product meta
@@ -551,7 +552,7 @@ function tbp_actividades_voting_shortcode( $atts ) {
             if (!$tribe_event_id) $tribe_event_id = get_post_meta($p_id, '_tribe_wooticket_event', true);
             if ($tribe_event_id) break;
         }
-        if ( current_user_can('manage_options') ) echo '3. ID Evento en Meta de Productos: ' . ($tribe_event_id ?: 'No hallado') . '<br>';
+        if ( $show_debug && current_user_can('manage_options') ) echo '3. ID Evento en Meta de Productos: ' . ($tribe_event_id ?: 'No hallado') . '<br>';
     }
 
     // 4. Fallback: Search for attendee posts linked to this order
@@ -565,7 +566,7 @@ function tbp_actividades_voting_shortcode( $atts ) {
             $tribe_event_id = get_post_meta($attendee_id, '_tribe_tickets_event', true);
             if (!$tribe_event_id) $tribe_event_id = get_post_meta($attendee_id, '_event_id', true);
         }
-        if ( current_user_can('manage_options') ) echo '4. ID Evento en Post de Asistente: ' . ($tribe_event_id ?: 'No hallado') . '<br>';
+        if ( $show_debug && current_user_can('manage_options') ) echo '4. ID Evento en Post de Asistente: ' . ($tribe_event_id ?: 'No hallado') . '<br>';
     }
 
     // 5. Reverse lookup: Find tribe_events that list this product as a ticket
@@ -605,7 +606,7 @@ function tbp_actividades_voting_shortcode( $atts ) {
             }
             if ($event_id_found) $tribe_event_id = $event_id_found;
         }
-        if ( current_user_can('manage_options') ) echo '5. ID Evento por búsqueda inversa (Evento→Producto): ' . ($tribe_event_id ?: 'No hallado') . '<br>';
+        if ( $show_debug && current_user_can('manage_options') ) echo '5. ID Evento por búsqueda inversa (Evento→Producto): ' . ($tribe_event_id ?: 'No hallado') . '<br>';
     }
 
     // 6. Check wp_tribe_wooticket table if exists (ET+ WooCommerce attendees)
@@ -631,7 +632,7 @@ function tbp_actividades_voting_shortcode( $atts ) {
             ");
             if ($event_via_parent) $tribe_event_id = $event_via_parent;
         }
-        if ( current_user_can('manage_options') ) echo '6. ID Evento vía post_parent del producto: ' . ($tribe_event_id ?: 'No hallado') . '<br>';
+        if ( $show_debug && current_user_can('manage_options') ) echo '6. ID Evento vía post_parent del producto: ' . ($tribe_event_id ?: 'No hallado') . '<br>';
     }
 
     // 7. Last resort: match by tbp_premiaciones event meta against ALL premiaciones
@@ -659,10 +660,10 @@ function tbp_actividades_voting_shortcode( $atts ) {
                 }
             }
         }
-        if ( current_user_can('manage_options') ) echo '7. ID Evento vía API Tribe (tickets del evento): ' . ($tribe_event_id ?: 'No hallado') . '<br>';
+        if ( $show_debug && current_user_can('manage_options') ) echo '7. ID Evento vía API Tribe (tickets del evento): ' . ($tribe_event_id ?: 'No hallado') . '<br>';
     }
 
-    if ( current_user_can('manage_options') ) echo '</div>';
+    if ( $show_debug && current_user_can('manage_options') ) echo '</div>';
 
     // Apply Override if provided
     if ($event_id_override) {
