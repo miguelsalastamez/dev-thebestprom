@@ -47,6 +47,42 @@ function tbp_actividades_marketing_page() {
             </div>
         </div>
 
+        <!-- Sandbox Mode: Always Visible -->
+        <div id="wcmp-mkt-sandbox-wrap" style="background: #fff8e1; border: 1px solid #ffe082; padding: 20px; border-radius: 4px; margin-top: 20px;">
+            <h3 style="margin-top:0;">🧪 <?php _e( 'Modo Sandbox: Validar Diseño y Entregabilidad', 'tbp-actividades' ); ?></h3>
+            <p><?php _e( 'Usa esta sección para enviarte correos de prueba. Verifica cómo se ven tus plantillas de Canva o tus mensajes manuales antes de lanzarlos.', 'tbp-actividades' ); ?></p>
+            
+            <div style="display:flex; gap:20px; flex-wrap:wrap;">
+                <div style="flex:1; min-width:300px;">
+                    <label style="display:block; margin-bottom:5px; font-weight:600;"><?php _e( 'Asunto de Prueba:', 'tbp-actividades' ); ?></label>
+                    <input type="text" id="wcmp-mkt-subject-test" class="regular-text" style="width:100%;" placeholder="Ej: Prueba de diseño">
+                </div>
+                <div style="flex:1; min-width:300px;">
+                    <label style="display:block; margin-bottom:5px; font-weight:600;"><?php _e( 'Enviar a:', 'tbp-actividades' ); ?></label>
+                    <div style="display:flex; gap:10px;">
+                        <input type="email" id="wcmp-mkt-test-email" class="regular-text" style="flex:1;" placeholder="tu-correo@ejemplo.com">
+                        <button type="button" class="button button-secondary" id="wcmp-mkt-btn-send-test"><?php _e( 'Enviar Prueba', 'tbp-actividades' ); ?></button>
+                    </div>
+                </div>
+            </div>
+            
+            <div style="margin-top:15px;">
+                <label style="display:block; margin-bottom:5px; font-weight:600;"><?php _e( 'Mensaje o Plantilla a Probar:', 'tbp-actividades' ); ?></label>
+                <?php $mkt_templates = get_option( 'tbp_marketing_templates', array() ); ?>
+                <select id="wcmp-mkt-template-test" style="width:100%; margin-bottom:10px;">
+                    <option value=""><?php _e( '-- Usar Editor Manual (Abajo) --', 'tbp-actividades' ); ?></option>
+                    <?php if ( ! empty( $mkt_templates ) ) : ?>
+                        <?php foreach ( $mkt_templates as $tid => $tdata ) : ?>
+                            <option value="<?php echo esc_attr( $tid ); ?>">Plantilla Canva: <?php echo esc_html( $tdata['name'] ); ?></option>
+                        <?php endforeach; ?>
+                    <?php endif; ?>
+                </select>
+                <div id="wcmp-mkt-editor-test-wrap">
+                    <?php wp_editor( '', 'wcmp_mkt_message_test', array('media_buttons' => true, 'textarea_rows' => 5) ); ?>
+                </div>
+            </div>
+        </div>
+
         <!-- Step 1: Upload -->
         <div id="wcmp-mkt-step-1" style="background: #fff; border: 1px solid #ccd0d4; padding: 20px; border-radius: 4px; margin-top: 20px;">
             <h3><?php _e( '1. Subir archivo de contactos', 'tbp-actividades' ); ?></h3>
@@ -97,15 +133,6 @@ function tbp_actividades_marketing_page() {
             <div id="wcmp-mkt-editor-wrap">
                 <p><strong><?php _e( 'Etiquetas disponibles:', 'tbp-actividades' ); ?></strong> <code>[nombre]</code></p>
                 <?php wp_editor( '', 'wcmp_mkt_message', array('media_buttons' => true, 'textarea_rows' => 8) ); ?>
-            </div>
-
-            <div style="margin-top:20px; padding: 15px; background: #fff8e1; border: 1px solid #ffe082; border-radius: 4px;">
-                <p style="margin-top:0;"><strong>🧪 <?php _e( 'Modo Sandbox: Enviar Prueba', 'tbp-actividades' ); ?></strong></p>
-                <div style="display:flex; gap:10px;">
-                    <input type="email" id="wcmp-mkt-test-email" class="regular-text" style="flex:1;" placeholder="correo@ejemplo.com">
-                    <button type="button" class="button button-secondary" id="wcmp-mkt-btn-send-test"><?php _e( 'Enviar Prueba', 'tbp-actividades' ); ?></button>
-                </div>
-                <p class="description"><?php _e( 'Usa esto para verificar si tu mensaje llega a la bandeja de entrada o a Junk.', 'tbp-actividades' ); ?></p>
             </div>
 
             <div style="margin-top:20px; padding: 15px; background: #f1f8ff; border: 1px solid #c2e0ff; border-radius: 4px;">
@@ -339,10 +366,10 @@ function tbp_actividades_marketing_page() {
             });
         });
 
-        // Test Sending Logic
         $('#wcmp-mkt-btn-send-test').on('click', function() {
             var email = $('#wcmp-mkt-test-email').val().trim();
-            var subject = $('#wcmp-mkt-subject').val().trim();
+            var subject = $('#wcmp-mkt-subject-test').val().trim();
+            var tid = $('#wcmp-mkt-template-test').val();
             
             if (!email || !subject) {
                 alert('Ingresa un correo de prueba y un asunto.');
@@ -359,8 +386,8 @@ function tbp_actividades_marketing_page() {
                     action: 'tbp_actividades_send_test_mkt',
                     email: email,
                     subject: subject,
-                    template_id: $('#wcmp-mkt-template').val(),
-                    message: (typeof tinymce != "undefined" && tinymce.get("wcmp_mkt_message")) ? tinymce.get("wcmp_mkt_message").getContent() : $('#wcmp_mkt_message').val(),
+                    template_id: tid,
+                    message: (typeof tinymce != "undefined" && tinymce.get("wcmp_mkt_message_test")) ? tinymce.get("wcmp_mkt_message_test").getContent() : $('#wcmp_mkt_message_test').val(),
                     _ajax_nonce: '<?php echo wp_create_nonce("tbp_ext_mkt"); ?>'
                 },
                 success: function(res) {
@@ -371,6 +398,11 @@ function tbp_actividades_marketing_page() {
                     $btn.prop('disabled', false).text('Enviar Prueba');
                 }
             });
+        });
+
+        $('#wcmp-mkt-template-test').on('change', function() {
+            if ($(this).val() !== '') $('#wcmp-mkt-editor-test-wrap').slideUp();
+            else $('#wcmp-mkt-editor-test-wrap').slideDown();
         });
 
         function processNextMkt() {
