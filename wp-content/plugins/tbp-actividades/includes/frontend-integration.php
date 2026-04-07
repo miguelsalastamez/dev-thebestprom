@@ -531,7 +531,7 @@ function tbp_actividades_voting_shortcode( $atts ) {
     if (!$tribe_event_id) {
         foreach($order->get_items() as $item_id => $item) {
             $p_id = $item->get_product_id();
-            if ( current_user_can('manage_options') ) {
+            if ( $show_debug && current_user_can('manage_options') ) {
                 $item_meta_keys = array_keys(get_metadata('order_item', $item_id));
                 echo '&nbsp;&nbsp;- Item: ' . $item->get_name() . ' (Prod: '.$p_id.')<br>';
                 echo '&nbsp;&nbsp;- Meta Keys: ' . implode(', ', $item_meta_keys) . '<br>';
