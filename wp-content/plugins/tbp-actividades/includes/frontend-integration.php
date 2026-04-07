@@ -422,9 +422,9 @@ function tbp_actividades_render_voting_form($premiacion_id, $group_name, $order_
     echo '<input type="hidden" name="order_id" value="'.esc_attr($order_id).'">';
     echo '<input type="hidden" name="group_name" value="'.esc_attr($group_name).'">';
 
-    echo '<div style="display: grid; grid-template-columns: 1fr; gap: 15px;">';
+    echo '<div class="tbp-categories-grid">';
     foreach ($categories as $idx => $cat) {
-        echo '<div style="border: 1px solid #eee; border-radius: 8px; padding: 15px; background: #fafafa;">';
+        echo '<div class="tbp-category-card">';
         if (!empty($cat['img'])) {
             echo '<div style="width: 100%; padding-bottom: 100%; background-image: url(\''.esc_url($cat['img']).'\'); background-size: cover; background-position: center; border-radius: 8px; margin-bottom: 12px; position: relative;"></div>';
         }
@@ -793,7 +793,7 @@ function tbp_actividades_voting_shortcode( $atts ) {
     $user_group = tbp_actividades_get_user_group($order_id, $prem->ID);
 
     ob_start();
-    echo '<div class="tbp-voting-shortcode-wrapper" style="max-width: 600px; margin: 20px auto; padding: 30px; background: #fff; border-radius: 12px; box-shadow: 0 10px 30px rgba(0,0,0,0.1); border-top: 5px solid #f39c12;">';
+    echo '<div class="tbp-voting-shortcode-wrapper">';
     echo '<h2 style="text-align:center; color: #2c3e50; margin-bottom: 25px;">🏆 ' . esc_html($prem->post_title) . '</h2>';
 
     if ( $user_group ) {
@@ -817,9 +817,41 @@ function tbp_actividades_voting_shortcode( $atts ) {
     
     ?>
     <style>
+        /* Voting Page Wrapper */
+        .tbp-voting-shortcode-wrapper {
+            max-width: 960px;
+            margin: 20px auto;
+            padding: 30px;
+            background: #fff;
+            border-radius: 12px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.1);
+            border-top: 5px solid #f39c12;
+        }
+        /* Category cards grid: 2 columns on desktop */
+        .tbp-categories-grid {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 20px;
+            margin-bottom: 20px;
+        }
+        .tbp-category-card {
+            border: 1px solid #eee;
+            border-radius: 10px;
+            padding: 15px;
+            background: #fafafa;
+            transition: box-shadow 0.2s ease;
+        }
+        .tbp-category-card:hover {
+            box-shadow: 0 4px 16px rgba(0,0,0,0.08);
+        }
         .tbp-voting-shortcode-wrapper select { width: 100%; padding: 12px; border-radius: 8px; border: 1px solid #ddd; margin-top: 5px; font-size: 14px; }
-        .tbp-voting-shortcode-wrapper .button-primary { background: #27ae60 !important; border: none !important; padding: 15px !important; width: 100%; font-weight: bold; cursor: pointer; border-radius: 8px; color: #fff; font-size: 16px; margin-top: 20px; }
+        .tbp-voting-shortcode-wrapper .button-primary { background: #27ae60 !important; border: none !important; padding: 15px !important; width: 100%; font-weight: bold; cursor: pointer; border-radius: 8px; color: #fff; font-size: 16px; margin-top: 10px; }
         .tbp-voting-shortcode-wrapper h4 { color: #2c3e50; font-size: 16px; margin-top: 0; }
+        /* Mobile: 1 column */
+        @media (max-width: 640px) {
+            .tbp-voting-shortcode-wrapper { padding: 16px; margin: 10px; }
+            .tbp-categories-grid { grid-template-columns: 1fr; gap: 15px; }
+        }
     </style>
     <?php
 
