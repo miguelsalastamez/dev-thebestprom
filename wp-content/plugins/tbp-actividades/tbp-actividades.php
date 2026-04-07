@@ -3,11 +3,13 @@
  * Plugin Name: The Best Prom - Actividades
  * Plugin URI: https://dev.thebestprom.com
  * Description: Hub de actividades para eventos de graduación (Rifas, Asientos, Fotografía).
- * Version: 6.6.0
+ * Version: 6.8.0
  * Author: Antigravity Team
  * Text Domain: tbp-actividades
  *
  * Changelog:
+ * 6.7.0 - Feature: Módulo MARKETING profesional para listas externas (XLSX/CSV) y envíos por lotes.
+ * 6.6.1 - Feature: Etiquetas financieras [monto], [pagado], [saldo] integradas en el motor de mensajería.
  * 6.6.0 - Fix: Motor de detección de 7 capas para vincular pedido↔evento sin depender de asistentes (ET+).
  * 6.5.9 - Feature: Carga de nominados vía Excel (XLSX/CSV) en el editor de Premiaciones.
  * 6.5.5 - Feature: Soporte para 'event_id' manual en shortcode y URL para forzar visualización.
@@ -31,7 +33,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 }
 
 // Define constants
-define( 'TBP_ACTIVIDADES_VERSION', '6.5.8' );
+define( 'TBP_ACTIVIDADES_VERSION', '6.8.0' );
 define( 'TBP_ACTIVIDADES_PATH', plugin_dir_path( __FILE__ ) );
 define( 'TBP_ACTIVIDADES_URL', plugin_dir_url( __FILE__ ) );
 
@@ -49,6 +51,8 @@ require_once TBP_ACTIVIDADES_PATH . 'includes/frontend-integration.php';
 require_once TBP_ACTIVIDADES_PATH . 'includes/messaging.php';
 require_once TBP_ACTIVIDADES_PATH . 'includes/template-manager.php';
 require_once TBP_ACTIVIDADES_PATH . 'includes/admin-reports.php';
+require_once TBP_ACTIVIDADES_PATH . 'includes/admin-marketing.php';
+require_once TBP_ACTIVIDADES_PATH . 'includes/admin-analytics.php';
 
 /**
  * Register Main Menu
@@ -113,6 +117,15 @@ function tbp_actividades_register_menu() {
         'manage_options', // Keep settings as admin only
         'tbp-actividades-settings',
         'tbp_actividades_settings_page'
+    );
+
+    add_submenu_page(
+        'tbp-actividades',
+        __( 'MARKETING (Listas externas)', 'tbp-actividades' ),
+        __( 'MARKETING', 'tbp-actividades' ),
+        'manage_woocommerce',
+        'tbp-actividades-marketing',
+        'tbp_actividades_marketing_page'
     );
 
     add_submenu_page(

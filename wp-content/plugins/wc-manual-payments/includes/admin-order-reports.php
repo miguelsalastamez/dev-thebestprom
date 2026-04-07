@@ -22,9 +22,10 @@ add_action( 'admin_menu', function() {
 }, 100 );
 
 
-function wcmp_get_baseline_orders_data() {
+function wcmp_get_baseline_orders_data( $ids_only = false ) {
     try {
         $limit = isset($_GET['report_limit']) ? intval($_GET['report_limit']) : 50;
+        $exporting = ( isset($_GET['export_wcmp_xlsx']) || $ids_only ) ? true : false;
 
     // BLOQUEO INICIAL: Si no se ha dado clic en filtrar, retornamos vacío para no colgar la base de datos
     $is_filtering = isset($_GET['wcmp_filter_active']) || isset($_GET['paged']) || isset($_GET['orderby']);
@@ -78,7 +79,7 @@ function wcmp_get_baseline_orders_data() {
             'type'    => 'shop_order',
             'orderby' => $orderby,
             'order'   => $order_dir,
-            'return'  => 'objects',
+            'return'  => $ids_only ? 'ids' : 'objects',
         );
 
         if ( $exporting ) {
@@ -113,7 +114,7 @@ function wcmp_get_baseline_orders_data() {
             $args['status'] = $manual_statuses;
         }
 
-        // Apply HTML date filters
+        // Aplicar filtros de fecha HTML
         $date_from = isset($_GET['date_from']) ? sanitize_text_field($_GET['date_from']) : '';
         $date_to   = isset($_GET['date_to']) ? sanitize_text_field($_GET['date_to']) : '';
         $date_type = isset($_GET['date_type']) ? sanitize_text_field($_GET['date_type']) : 'date_created';
@@ -128,6 +129,37 @@ function wcmp_get_baseline_orders_data() {
                 $date_query_str = '<=' . $date_to;
             }
             $args[ $date_type ] = $date_query_str;
+        }
+
+        // Filtro de Tómbola (Con Rifa / Sin Rifa)
+        $raffle_filter = isset($_GET['raffle_filter']) ? sanitize_text_field($_GET['raffle_filter']) : '';
+        if ( ! empty( $raffle_filter ) ) {
+            $meta_query = isset($args['meta_query']) ? $args['meta_query'] : array();
+            
+            if ( $raffle_filter === 'with_raffle' ) {
+                $meta_query[] = array(
+                    'key'     => '_tbp_boletos_tombola',
+                    'value'   => 0,
+                    'compare' => '>',
+                    'type'    => 'NUMERIC'
+                );
+            } elseif ( $raffle_filter === 'no_raffle' ) {
+                // Para "Sin Rifa", buscamos que no exista el meta o que sea 0
+                $meta_query[] = array(
+                    'relation' => 'OR',
+                    array(
+                        'key'     => '_tbp_boletos_tombola',
+                        'compare' => 'NOT EXISTS'
+                    ),
+                    array(
+                        'key'     => '_tbp_boletos_tombola',
+                        'value'   => 0,
+                        'compare' => '<=',
+                        'type'    => 'NUMERIC'
+                    )
+                );
+            }
+            $args['meta_query'] = $meta_query;
         }
 
         // Búsqueda Libre de Textos (Nombre de Cliente, Email, o #Pedido numérico)
@@ -152,6 +184,10 @@ function wcmp_get_baseline_orders_data() {
 
         $query_results = wc_get_orders( $args );
         
+        if ( $ids_only ) {
+            return $query_results; // Retorna array de IDs
+        }
+
         // Manejar estructura según si se pidió paginación o no
         if ( ! $exporting ) {
             $orders = $query_results->orders;
@@ -469,6 +505,15 @@ function wcmp_render_baseline_order_reports_page() {
                     </select>
                 </div>
 
+                <div style="display: flex; flex-direction: column; gap: 5px;">
+                    <label style="font-weight: 600; font-size: 12px; color: #50575e;"><?php _e( '¿En Tómbola? (Rifa):', 'wc-manual-payments' ); ?></label>
+                    <select name="raffle_filter" style="min-width: 150px; height: 30px;">
+                        <option value=""><?php _e( 'Todos', 'wc-manual-payments' ); ?></option>
+                        <option value="with_raffle" <?php selected(isset($_GET['raffle_filter']) ? $_GET['raffle_filter'] : '', 'with_raffle'); ?>><?php _e( 'Solo CON Rifa', 'wc-manual-payments' ); ?></option>
+                        <option value="no_raffle" <?php selected(isset($_GET['raffle_filter']) ? $_GET['raffle_filter'] : '', 'no_raffle'); ?>><?php _e( 'Solo SIN Rifa', 'wc-manual-payments' ); ?></option>
+                    </select>
+                </div>
+
                 <div style="display: flex; flex-direction: column; gap: 5px; flex-grow: 1;">
                     <label style="font-weight: 600; font-size: 12px; color: #50575e;"><?php _e( 'Buscar Cliente o # Pedido:', 'wc-manual-payments' ); ?></label>
                     <div style="position: relative;">
@@ -517,6 +562,12 @@ function wcmp_render_baseline_order_reports_page() {
                     <button type="submit" name="export_wcmp_xlsx" value="1" class="button" style="height: 30px; border-color: #1e8c38; color: #1e8c38; font-weight: 600;">
                         <span class="dashicons dashicons-media-spreadsheet" style="margin-top: 3px;"></span> <?php _e( 'Exportar a XLSX', 'wc-manual-payments' ); ?>
                     </button>
+
+                    <?php if ( $is_filtering && $total_orders > 0 ) : ?>
+                    <button type="button" class="button button-primary" id="wcmp-open-messaging" style="height: 30px; background: #673ab7; border-color: #512da8;">
+                        <span class="dashicons dashicons-email-alt" style="margin-top: 3px;"></span> <?php _e( 'Centro de Mensajes', 'wc-manual-payments' ); ?>
+                    </button>
+                    <?php endif; ?>
                 </div>
             </form>
         </div>
@@ -529,6 +580,62 @@ function wcmp_render_baseline_order_reports_page() {
                 <?php _e( 'Por favor utiliza los filtros de arriba y oprime <strong>Filtrar Pedidos</strong> para comenzar a cargar transacciones. Esto asegura que el servidor se mantenga súper veloz en todo momento.', 'wc-manual-payments' ); ?>
             </div>
         <?php else : ?>
+
+            <!-- Panel de Mensajes Masivos -->
+            <div id="wcmp-messaging-panel" style="display:none; background:#fff; border:1px solid #ccd0d4; padding:20px; border-radius:4px; margin-bottom:20px; box-shadow:0 1px 3px rgba(0,0,0,0.1);">
+                <h2 style="margin-top:0; border-bottom:1px solid #eee; padding-bottom:10px; color:#673ab7;"><?php _e( 'Centro de Mensajes Masivos', 'wc-manual-payments' ); ?> (<strong id="wcmp-sel-count"><?php echo number_format($total_orders); ?></strong> <?php _e( 'destinatarios filtrados', 'wc-manual-payments'); ?>)</h2>
+                
+                <p style="margin-bottom:10px;"><strong><?php _e( 'Asunto del Correo:', 'wc-manual-payments' ); ?></strong></p>
+                <input type="text" id="wcmp-bulk-subject" class="regular-text" style="width:100%; margin-bottom:15px;" placeholder="Ej. Aviso sobre tu Saldo Pendiente">
+
+                <?php $mkt_templates = get_option( 'tbp_marketing_templates', array() ); ?>
+                <p style="margin-bottom:10px;"><strong><?php _e( 'Plantilla a enviar (Opcional Canva):', 'wc-manual-payments' ); ?></strong></p>
+                <select id="wcmp-bulk-template" style="width:100%; margin-bottom:15px; border: 1px solid #ccc; padding: 4px 8px; border-radius: 4px;">
+                    <option value=""><?php _e( '-- Escribir Mensaje Manualmente (Abajo) --', 'wc-manual-payments' ); ?></option>
+                    <?php if ( ! empty( $mkt_templates ) ) : ?>
+                        <?php foreach ( $mkt_templates as $tid => $tdata ) : ?>
+                            <option value="<?php echo esc_attr( $tid ); ?>">Plantilla Canva: <?php echo esc_html( $tdata['name'] ); ?></option>
+                        <?php endforeach; ?>
+                    <?php endif; ?>
+                </select>
+
+                <div id="wcmp-manual-editor-wrap">
+                    <p style="margin-bottom:5px;"><strong><?php _e( 'Variables (clic para insertar):', 'wc-manual-payments' ); ?></strong></p>
+                    <div style="margin-bottom:15px; display:flex; gap:5px; flex-wrap:wrap;">
+                        <button type="button" class="button button-small wcmp-insert-var" data-var="[nombre]">Nombre</button>
+                        <button type="button" class="button button-small wcmp-insert-var" data-var="[pedido]"># Pedido</button>
+                        <button type="button" class="button button-small wcmp-insert-var" data-var="[monto]">Monto Total</button>
+                        <button type="button" class="button button-small wcmp-insert-var" data-var="[pagado]">Pagado</button>
+                        <button type="button" class="button button-small wcmp-insert-var" data-var="[saldo]">Saldo Pendiente</button>
+                    </div>
+
+                    <?php
+                    wp_editor( '', 'wcmp_bulk_message', array('media_buttons' => true, 'textarea_rows' => 8) );
+                    ?>
+                </div>
+
+                <div style="margin-top:20px; padding: 15px; background: #fff8e1; border: 1px solid #ffe082; border-radius: 4px;">
+                    <p style="margin-top:0;"><strong>🧪 <?php _e( 'Modo Sandbox: Enviar Prueba', 'wc-manual-payments' ); ?></strong></p>
+                    <div style="display:flex; gap:10px;">
+                        <input type="email" id="wcmp-bulk-test-email" class="regular-text" style="flex:1;" placeholder="comprobacion@tu-mail.com">
+                        <button type="button" class="button button-secondary" id="wcmp-btn-bulk-send-test"><?php _e( 'Enviar Prueba', 'wc-manual-payments' ); ?></button>
+                    </div>
+                    <p class="description"><?php _e( 'Verifica cómo se reemplazan las variables financieros ([saldo], [monto]) en tu bandeja de entrada.', 'wc-manual-payments' ); ?></p>
+                </div>
+
+                <div style="margin-top:20px; display:flex; align-items:center; gap:15px;">
+                    <button type="button" class="button button-primary" id="wcmp-btn-send-bulk" style="background:#673ab7; border-color:#512da8;"><?php _e( '¡Enviar a Todos los Filtrados!', 'wc-manual-payments' ); ?></button>
+                    <button type="button" class="button" id="wcmp-btn-cancel-bulk"><?php _e( 'Cancelar', 'wc-manual-payments' ); ?></button>
+                </div>
+                
+                <!-- Progress Bar -->
+                <div id="wcmp-bulk-progress-wrapper" style="display:none; margin-top:20px;">
+                    <p><strong id="wcmp-bulk-status-text" style="color:#00875a;"><?php _e( 'Preparando envíos...', 'wc-manual-payments' ); ?></strong> (<span id="wcmp-bulk-progress-count">0</span> / <span id="wcmp-bulk-total-count">0</span>)</p>
+                    <div style="width:100%; background:#e9ecef; border-radius:4px; height:20px; overflow:hidden;">
+                        <div id="wcmp-bulk-progress-bar" style="width:0%; background:#28a745; height:100%; transition:width 0.3s ease;"></div>
+                    </div>
+                </div>
+            </div>
 
             <!-- Totales Globales Header -->
             <div style="background: #fff; border: 1px solid #ccd0d4; padding: 20px; border-radius: 4px; box-shadow: 0 1px 1px rgba(0,0,0,.04); display: flex; gap: 40px; margin-bottom: 20px;">
@@ -573,6 +680,7 @@ function wcmp_render_baseline_order_reports_page() {
             <table class="wp-list-table widefat fixed striped wcmp-data-table">
                 <thead>
                     <tr>
+                        <th style="width: 30px; text-align:center;"><input type="checkbox" id="wcmp-cb-select-all" checked></th>
                         <th style="width: 80px;"><a href="<?php echo wcmp_report_sort_url('id'); ?>"><strong><?php _e( '# Pedido', 'wc-manual-payments' ); ?></strong></a></th>
                         <th style="width: 120px;"><a href="<?php echo wcmp_report_sort_url('status'); ?>"><strong><?php _e( 'Status', 'wc-manual-payments' ); ?></strong></a></th>
                         <th style="width: 120px;"><a href="<?php echo wcmp_report_sort_url('date'); ?>"><strong><?php _e( 'Fecha', 'wc-manual-payments' ); ?></strong></a></th>
@@ -599,6 +707,7 @@ function wcmp_render_baseline_order_reports_page() {
                             $sum_balance += $row['balance'];
                         ?>
                             <tr>
+                                <td style="text-align:center;"><input type="checkbox" class="wcmp-cb-row" value="<?php echo esc_attr( $row['id'] ); ?>" checked></td>
                                 <td><a href="<?php echo esc_url( get_edit_post_link( $row['id'] ) ); ?>"><strong>#<?php echo esc_html( $row['id'] ); ?></strong></a></td>
                                 <td><?php echo esc_html( $row['status'] ); ?></td>
                                 <td><small><?php echo esc_html( $row['date'] ); ?></small></td>
@@ -647,15 +756,231 @@ function wcmp_render_baseline_order_reports_page() {
             <?php endif; ?>
         <?php endif; ?> <!-- /is_filtering closure -->
         
-        <!-- Select2 Injection -->
-        <link href="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/css/select2.min.css" rel="stylesheet" />
-        <script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js"></script>
-        <style>
-            .select2-container--default .select2-selection--multiple { border: 1px solid #8c8f94; min-height: 30px; border-radius: 3px; }
-            .select2-container--default.select2-container--focus .select2-selection--multiple { border-color: #2271b1; box-shadow: 0 0 0 1px #2271b1; }
-        </style>
         <script>
         jQuery(document).ready(function($) {
+            // UI Toggle
+            $('#wcmp-open-messaging').on('click', function() {
+                $('#wcmp-messaging-panel').slideToggle();
+            });
+            $('#wcmp-btn-cancel-bulk').on('click', function() {
+                $('#wcmp-messaging-panel').slideUp();
+            });
+
+            // Select All Toggle
+            $('#wcmp-cb-select-all').on('change', function() {
+                $('.wcmp-cb-row').prop('checked', $(this).is(':checked'));
+                updateSelCount();
+            });
+            $(document).on('change', '.wcmp-cb-row', function() {
+                updateSelCount();
+            });
+
+            function updateSelCount() {
+                var count = $('.wcmp-cb-row:checked').length;
+                // Si estamos en una página parcial pero el total filtrado es mayor, 
+                // el botón de "Enviar a todos" sigue siendo la opción principal.
+            }
+
+            // Smart Tags Insertion
+            $('.wcmp-insert-var').on('click', function() {
+                var val = $(this).data('var');
+                if (typeof tinymce != "undefined" && tinymce.get("wcmp_bulk_message") && !tinymce.get("wcmp_bulk_message").isHidden()) {
+                    tinymce.get("wcmp_bulk_message").execCommand('mceInsertContent', false, val);
+                } else {
+                    var $txt = $('#wcmp_bulk_message');
+                    var caretPos = $txt[0].selectionStart || $txt.val().length;
+                    var textAreaTxt = $txt.val();
+                    $txt.val(textAreaTxt.substring(0, caretPos) + val + textAreaTxt.substring(caretPos) );
+                }
+            });
+
+            // Test Sending Logic
+            $('#wcmp-btn-bulk-send-test').on('click', function() {
+                var email = $('#wcmp-bulk-test-email').val().trim();
+                var subject = $('#wcmp-bulk-subject').val().trim();
+                
+                if (!email || !subject) {
+                    alert('Ingresa un correo de prueba y un asunto.');
+                    return;
+                }
+
+                $(this).prop('disabled', true).text('Enviando...');
+                var $btn = $(this);
+
+                $.ajax({
+                    url: ajaxurl,
+                    type: 'POST',
+                    data: {
+                        action: 'tbp_actividades_send_test_mkt',
+                        email: email,
+                        subject: subject,
+                        template_id: $('#wcmp-bulk-template').val(),
+                        message: (typeof tinymce != "undefined" && tinymce.get("wcmp_bulk_message") && !tinymce.get("wcmp_bulk_message").isHidden()) ? tinymce.get("wcmp_bulk_message").getContent() : $('#wcmp_bulk_message').val(),
+                        _ajax_nonce: '<?php echo wp_create_nonce("tbp_ext_mkt"); ?>'
+                    },
+                    success: function(res) {
+                        if (res.success) alert('¡Correo de prueba enviado con éxito!');
+                        else alert('Error: ' + res.data);
+                    },
+                    complete: function() {
+                        $btn.prop('disabled', false).text('Enviar Prueba');
+                    }
+                });
+            });
+
+            // Template Toggle
+            $('#wcmp-bulk-template').on('change', function() {
+                if ( $(this).val() !== '' ) {
+                    $('#wcmp-manual-editor-wrap').slideUp();
+                } else {
+                    $('#wcmp-manual-editor-wrap').slideDown();
+                }
+            });
+
+            // AJAX Batch Execution
+            var bulk_queue = [];
+            var bulk_total = 0;
+            var bulk_subject = '';
+            var bulk_message = '';
+            var bulk_batch_size = 25;
+            var bulk_current_batch_count = 0;
+            var bulk_pause_ms = 60000; // 60 segundos
+            
+            $('#wcmp-btn-send-bulk').on('click', function() {
+                var template_id = $('#wcmp-bulk-template').val();
+                bulk_subject = $('#wcmp-bulk-subject').val().trim();
+                
+                if ( template_id === '' ) {
+                    if (typeof tinymce != "undefined" && tinymce.get("wcmp_bulk_message") && !tinymce.get("wcmp_bulk_message").isHidden()) {
+                        bulk_message = tinymce.get("wcmp_bulk_message").getContent();
+                    } else {
+                        bulk_message = $('#wcmp_bulk_message').val();
+                    }
+                    if (!bulk_subject || !bulk_message) {
+                        alert('El asunto y el mensaje son obligatorios.');
+                        return;
+                    }
+                } else {
+                    bulk_message = '';
+                    if (!bulk_subject) {
+                        alert('El asunto es obligatorio.');
+                        return;
+                    }
+                }
+
+                // Determinar si enviamos a "Seleccionados en pantalla" o "Todos los filtrados"
+                var selected_ids = [];
+                $('.wcmp-cb-row:checked').each(function() {
+                    selected_ids.push($(this).val());
+                });
+
+                if ( selected_ids.length === 0 ) {
+                    alert('No hay pedidos seleccionados.');
+                    return;
+                }
+
+                // SI el número de seleccionados es igual al de la página, pero hay más en el total,
+                // preguntamos si quiere enviar a ABSOLUTAMENTE TODOS los que cumplen el filtro.
+                var total_filtered = parseInt($('#wcmp-sel-count').text().replace(/,/g, ''));
+                var use_all_filtered = false;
+
+                if ( total_filtered > selected_ids.length ) {
+                    if ( confirm('Has filtrado un total de ' + total_filtered + ' pedidos. ¿Deseas enviar este mensaje a TODOS ellos (incluso los de otras páginas)?\n\nPresiona OK para Enviar a TODOS (' + total_filtered + ')\nPresiona CANCELAR para enviar solo a los ' + selected_ids.length + ' visibles.') ) {
+                        use_all_filtered = true;
+                    }
+                } else {
+                    if ( ! confirm('¿Enviar mensaje a los ' + selected_ids.length + ' pedidos seleccionados?') ) return;
+                }
+
+                $('#wcmp-btn-send-bulk, #wcmp-btn-cancel-bulk').prop('disabled', true);
+                $('#wcmp-bulk-progress-wrapper').slideDown();
+                $('#wcmp-bulk-status-text').text('Obteniendo lista de IDs...');
+                
+                if ( use_all_filtered ) {
+                    // Obtener todos los IDs vía AJAX (reutilizando los argumentos de la URL actual)
+                    var current_query = window.location.search;
+                    $.ajax({
+                        url: ajaxurl + current_query + '&action=wcmp_get_all_filtered_order_ids',
+                        success: function(res) {
+                            if ( res.success ) {
+                                startBulkProcess(res.data);
+                            } else {
+                                alert('Error al obtener IDs: ' + res.data);
+                                resetUI();
+                            }
+                        }
+                    });
+                } else {
+                    startBulkProcess(selected_ids);
+                }
+            });
+
+            function startBulkProcess(ids) {
+                bulk_queue = ids;
+                bulk_total = ids.length;
+                $('#wcmp-bulk-total-count').text(bulk_total);
+                $('#wcmp-bulk-progress-count').text('0');
+                $('#wcmp-bulk-progress-bar').css('width', '0%');
+                $('#wcmp-bulk-status-text').text('Enviando...');
+                bulk_current_batch_count = 0;
+                processNext();
+            }
+
+            function processNext() {
+                if ( bulk_queue.length === 0 ) {
+                    $('#wcmp-bulk-status-text').text('¡Envío Masivo Completado!');
+                    alert('Proceso finalizado con éxito.');
+                    resetUI();
+                    return;
+                }
+
+                var order_id = bulk_queue.shift();
+                var current_idx = bulk_total - bulk_queue.length;
+
+                $.ajax({
+                    url: ajaxurl,
+                    type: 'POST',
+                    data: {
+                        action: 'tbp_actividades_send_bulk_message',
+                        order_id: order_id,
+                        subject: bulk_subject,
+                        message: bulk_message,
+                        template_id: $('#wcmp-bulk-template').val(),
+                        _ajax_nonce: '<?php echo wp_create_nonce("tbp_bulk_msg"); ?>'
+                    },
+                    complete: function() {
+                        $('#wcmp-bulk-progress-count').text(current_idx);
+                        var pct = (current_idx / bulk_total) * 100;
+                        $('#wcmp-bulk-progress-bar').css('width', pct + '%');
+                        
+                        bulk_current_batch_count++;
+                        if ( bulk_current_batch_count >= bulk_batch_size && bulk_queue.length > 0 ) {
+                            bulk_current_batch_count = 0;
+                            pauseProcess();
+                        } else {
+                            setTimeout(processNext, 300);
+                        }
+                    }
+                });
+            }
+
+            function pauseProcess() {
+                var sec = bulk_pause_ms / 1000;
+                var timer = setInterval(function() {
+                    sec--;
+                    $('#wcmp-bulk-status-text').text('Pausa Anti-Spam: Reanudando en ' + sec + 's...');
+                    if ( sec <= 0 ) {
+                        clearInterval(timer);
+                        $('#wcmp-bulk-status-text').text('Enviando siguiente bloque...');
+                        processNext();
+                    }
+                }, 1000);
+            }
+
+            function resetUI() {
+                $('#wcmp-btn-send-bulk, #wcmp-btn-cancel-bulk').prop('disabled', false);
+            }
+
             if ( $.fn.select2 ) {
                 $('.wcmp-product-select2, .wcmp-event-select2, .wcmp-status-select2').select2({
                     allowClear: true

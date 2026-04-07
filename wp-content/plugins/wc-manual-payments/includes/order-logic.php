@@ -213,3 +213,25 @@ if ( ! function_exists( 'wcmp_link_orphan_payment' ) ) {
         return false;
     }
 }
+
+/**
+ * AJAX Handler to get all filtered Order IDs
+ */
+add_action( 'wp_ajax_wcmp_get_all_filtered_order_ids', 'wcmp_get_all_filtered_order_ids_ajax' );
+function wcmp_get_all_filtered_order_ids_ajax() {
+    if ( ! current_user_can( 'manage_woocommerce' ) ) {
+        wp_send_json_error( 'Acceso denegado' );
+    }
+
+    if ( ! function_exists( 'wcmp_get_baseline_orders_data' ) ) {
+        require_once plugin_dir_path( __FILE__ ) . 'admin-order-reports.php';
+    }
+
+    $all_ids = wcmp_get_baseline_orders_data( true ); // true = ids_only
+    
+    if ( is_array( $all_ids ) ) {
+        wp_send_json_success( $all_ids );
+    } else {
+        wp_send_json_error( 'Error al obtener IDs filtrados' );
+    }
+}

@@ -155,9 +155,24 @@ function tbp_actividades_send_bulk_message_ajax() {
     if ( ! $order ) wp_send_json_error( 'Pedido no encontrado' );
 
     $delivered = intval( get_post_meta( $order_id, '_tbp_entregas_fisicas', true ) );
-    $total_val = $order->get_total();
-    $total_txt = '$' . number_format( (float) $total_val, 2 );
+    $total_val = (float) $order->get_total();
+    $total_txt = wc_price( $total_val );
     
+    // Calcular Pagado y Saldo usando la lógica del plugin de pagos manuales
+    $paid_val  = 0;
+    if ( function_exists( 'wcmp_get_order_payments_total' ) ) {
+        $wcmp_payments = wcmp_get_order_payments_total( $order_id );
+        $ord_status    = $order->get_status();
+        if ( in_array( $ord_status, array( 'processing', 'completed' ) ) && $wcmp_payments <= 0 ) {
+            $paid_val = $total_val;
+        } else {
+            $paid_val = $wcmp_payments;
+        }
+    }
+    
+    $paid_txt    = wc_price( $paid_val );
+    $balance_txt = wc_price( max( 0, $total_val - $paid_val ) );
+
     $name      = $order->get_billing_first_name() . ' ' . $order->get_billing_last_name();
     $email     = $order->get_billing_email();
 
@@ -171,8 +186,8 @@ function tbp_actividades_send_bulk_message_ajax() {
     $date_str = $last_delivery_date ? date_i18n( 'd \d\e F \d\e Y', strtotime( $last_delivery_date ) ) : __( 'recientemente', 'tbp-actividades' );
 
     // Shortcode Replacements
-    $search  = array( '[nombre]', '[pedido]', '[boletos]', '[fecha_entrega]', '[monto]' );
-    $replace = array( $name, '#' . $order_id, $delivered, $date_str, $total_txt );
+    $search  = array( '[nombre]', '[pedido]', '[boletos]', '[fecha_entrega]', '[monto]', '[pagado]', '[saldo]' );
+    $replace = array( $name, '#' . $order_id, $delivered, $date_str, strip_tags($total_txt), strip_tags($paid_txt), strip_tags($balance_txt) );
     
     $final_subject = str_ireplace( $search, $replace, $subject );
     $final_message = str_ireplace( $search, $replace, $message );
