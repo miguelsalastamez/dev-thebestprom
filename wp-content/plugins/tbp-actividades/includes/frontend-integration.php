@@ -557,19 +557,109 @@ function tbp_actividades_voting_shortcode( $atts ) {
     // 4. Fallback: Search for attendee posts linked to this order
     if (!$tribe_event_id) {
         global $wpdb;
-        $attendee_id = $wpdb->get_var( $wpdb->prepare( "
-            SELECT post_id FROM {$wpdb->postmeta} 
+        $attendee_id = $wpdb->get_var( $wpdb->prepare("
+            SELECT post_id FROM {$wpdb->postmeta}
             WHERE meta_key = '_tribe_wooticket_order' AND (meta_value = %s OR meta_value = %d)
             LIMIT 1", $order_id, $order_id ) );
-        
         if ($attendee_id) {
             $tribe_event_id = get_post_meta($attendee_id, '_tribe_tickets_event', true);
-            if (!$tribe_event_id) {
-                // Try parent post for Event Tickets Plus
-                $tribe_event_id = get_post_meta($attendee_id, '_event_id', true);
-            }
+            if (!$tribe_event_id) $tribe_event_id = get_post_meta($attendee_id, '_event_id', true);
         }
         if ( current_user_can('manage_options') ) echo '4. ID Evento en Post de Asistente: ' . ($tribe_event_id ?: 'No hallado') . '<br>';
+    }
+
+    // 5. Reverse lookup: Find tribe_events that list this product as a ticket
+    if (!$tribe_event_id) {
+        global $wpdb;
+        $product_ids = [];
+        foreach ($order->get_items() as $item) {
+            $product_ids[] = $item->get_product_id();
+        }
+        if (!empty($product_ids)) {
+            $placeholders = implode(',', array_fill(0, count($product_ids), '%d'));
+            // ET+ stores ticket product IDs in event meta as a serialized array
+            $event_id_found = $wpdb->get_var( $wpdb->prepare("
+                SELECT DISTINCT pm.post_id
+                FROM {$wpdb->postmeta} pm
+                INNER JOIN {$wpdb->posts} p ON pm.post_id = p.ID
+                WHERE p.post_type = 'tribe_events'
+                AND pm.meta_key IN ('_tribe_wooticket', '_tribe_tickets_list')
+                AND pm.meta_value IN ($placeholders)
+                LIMIT 1
+            ", ...$product_ids) );
+
+            if (!$event_id_found) {
+                // Also search for serialized arrays containing the product ID
+                foreach ($product_ids as $pid) {
+                    $event_id_found = $wpdb->get_var( $wpdb->prepare("
+                        SELECT DISTINCT pm.post_id
+                        FROM {$wpdb->postmeta} pm
+                        INNER JOIN {$wpdb->posts} p ON pm.post_id = p.ID
+                        WHERE p.post_type = 'tribe_events'
+                        AND pm.meta_key LIKE %s
+                        AND pm.meta_value LIKE %s
+                        LIMIT 1
+                    ", '%ticket%', '%' . $wpdb->esc_like('"' . $pid . '"') . '%') );
+                    if ($event_id_found) break;
+                }
+            }
+            if ($event_id_found) $tribe_event_id = $event_id_found;
+        }
+        if ( current_user_can('manage_options') ) echo '5. ID Evento por búsqueda inversa (Evento→Producto): ' . ($tribe_event_id ?: 'No hallado') . '<br>';
+    }
+
+    // 6. Check wp_tribe_wooticket table if exists (ET+ WooCommerce attendees)
+    if (!$tribe_event_id) {
+        global $wpdb;
+        $product_ids = [];
+        foreach ($order->get_items() as $item) {
+            $product_ids[] = $item->get_product_id();
+        }
+        if (!empty($product_ids)) {
+            // ET+ stores ticket→event in postmeta of the TICKET/PRODUCT with key _tribe_wooticket_main_date or similar
+            // Also check via tribe_tickets CPT children of tribe_events
+            $placeholders = implode(',', array_fill(0, count($product_ids), '%d'));
+            $event_via_parent = $wpdb->get_var("
+                SELECT DISTINCT p.post_parent
+                FROM {$wpdb->posts} p
+                WHERE p.ID IN ($placeholders)
+                AND p.post_parent > 0
+                AND EXISTS (
+                    SELECT 1 FROM {$wpdb->posts} ep WHERE ep.ID = p.post_parent AND ep.post_type = 'tribe_events'
+                )
+                LIMIT 1
+            ");
+            if ($event_via_parent) $tribe_event_id = $event_via_parent;
+        }
+        if ( current_user_can('manage_options') ) echo '6. ID Evento vía post_parent del producto: ' . ($tribe_event_id ?: 'No hallado') . '<br>';
+    }
+
+    // 7. Last resort: match by tbp_premiaciones event meta against ALL premiaciones
+    if (!$tribe_event_id) {
+        // Get all premiaciones and check if any of the products in this order
+        // are tickets for the linked event
+        global $wpdb;
+        $all_premiaciones = get_posts(['post_type' => 'tbp_premiaciones', 'posts_per_page' => -1, 'fields' => 'ids']);
+        $product_ids_in_order = [];
+        foreach ($order->get_items() as $item) {
+            $product_ids_in_order[] = $item->get_product_id();
+        }
+        foreach ($all_premiaciones as $prem_id) {
+            $linked_event = get_post_meta($prem_id, '_tbp_event_id', true);
+            if (!$linked_event) continue;
+            // Get tickets for this event using Tribe API
+            if (class_exists('Tribe__Tickets__Tickets')) {
+                $tickets = Tribe__Tickets__Tickets::get_all_event_tickets($linked_event);
+                foreach ($tickets as $ticket) {
+                    $ticket_product_id = is_object($ticket) ? ($ticket->ID ?? ($ticket->ticket_id ?? 0)) : intval($ticket);
+                    if (in_array($ticket_product_id, $product_ids_in_order)) {
+                        $tribe_event_id = $linked_event;
+                        break 2;
+                    }
+                }
+            }
+        }
+        if ( current_user_can('manage_options') ) echo '7. ID Evento vía API Tribe (tickets del evento): ' . ($tribe_event_id ?: 'No hallado') . '<br>';
     }
 
     if ( current_user_can('manage_options') ) echo '</div>';
