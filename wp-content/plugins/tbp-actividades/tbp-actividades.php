@@ -3,7 +3,7 @@
  * Plugin Name: The Best Prom - Actividades
  * Plugin URI: https://dev.thebestprom.com
  * Description: Hub de actividades para eventos de graduación (Rifas, Asientos, Fotografía).
- * Version: 6.8.0
+ * Version: 6.8.6
  * Author: Antigravity Team
  * Text Domain: tbp-actividades
  *
@@ -33,7 +33,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 }
 
 // Define constants
-define( 'TBP_ACTIVIDADES_VERSION', '6.8.0' );
+define( 'TBP_ACTIVIDADES_VERSION', '6.8.6' );
 define( 'TBP_ACTIVIDADES_PATH', plugin_dir_path( __FILE__ ) );
 define( 'TBP_ACTIVIDADES_URL', plugin_dir_url( __FILE__ ) );
 

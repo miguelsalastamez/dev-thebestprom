@@ -73,7 +73,21 @@ if ( ! function_exists( 'wcmp_display_order_balance_frontend' ) ) {
             }
             echo '</tbody></table>';
         } else {
-            echo '<p style="color: #94a3b8; font-style: italic; font-size: 13px;">' . __('No hay abonos manuales registrados aún.', 'wc-manual-payments') . '</p>';
+            // RETRO-COMPATIBILIDAD v1.8.21: Mostrar fila informativa si está pagado por pasarela
+            if ( in_array( $order->get_status(), array( 'processing', 'completed' ) ) ) {
+                echo '<table class="wcmp-zen-table">';
+                echo '<thead><tr><th>' . __('Fecha', 'wc-manual-payments') . '</th><th>' . __('Referencia / Nota', 'wc-manual-payments') . '</th><th>' . __('Recibo', 'wc-manual-payments') . '</th><th style="text-align:right;">' . __('Monto', 'wc-manual-payments') . '</th></tr></thead>';
+                echo '<tbody>';
+                echo '<tr>';
+                echo '<td>' . ( $order->get_date_paid() ? $order->get_date_paid()->date_i18n('d/m/Y') : $order->get_date_created()->date_i18n('d/m/Y') ) . '</td>';
+                echo '<td>' . sprintf( __('Pago acreditado vía %s (Pasarela)', 'wc-manual-payments'), $order->get_payment_method_title() ) . '</td>';
+                echo '<td><span class="wcmp-badge">' . __('Automático', 'wc-manual-payments') . '</span></td>';
+                echo '<td style="text-align:right; font-weight:600; color:#27ae60;">' . wc_price( $order->get_total() ) . '</td>';
+                echo '</tr>';
+                echo '</tbody></table>';
+            } else {
+                echo '<p style="color: #94a3b8; font-style: italic; font-size: 13px;">' . __('No hay abonos manuales registrados aún.', 'wc-manual-payments') . '</p>';
+            }
         }
         
         echo '</section>';

@@ -133,7 +133,42 @@ function tbp_egresos_po_details_html( $post ) {
         .tbp-history-table .total-row { font-weight: bold; background: #fafafa; }
         .tbp-btn-social { text-decoration: none; font-size: 10px; display: block; margin-bottom: 3px; color: #2271b1; }
         .tbp-btn-social:hover { text-decoration: underline; }
+        .tbp-btn-social:hover { text-decoration: underline; }
+
+        /* Signature Modal Styles */
+        .tbp-signature-modal { display:none; position:fixed; z-index:99999; left:0; top:0; width:100%; height:100%; background:rgba(0,0,0,0.7); backdrop-filter: blur(4px); }
+        .tbp-signature-content { background:#fff; margin:10% auto; padding:30px; border-radius:12px; width:100%; max-width:400px; box-shadow:0 10px 30px rgba(0,0,0,0.3); border:1px solid #ddd; position:relative; animation: tbpFadeIn 0.3s ease-out; }
+        @keyframes tbpFadeIn { from { opacity:0; transform: translateY(-20px); } to { opacity:1; transform: translateY(0); } }
+        .tbp-signature-header { text-align:center; margin-bottom:20px; }
+        .tbp-signature-header i { font-size:40px; color:#d32f2f; margin-bottom:10px; display:block; }
+        .tbp-signature-header h2 { margin:0; font-size:20px; color:#333; }
+        .tbp-signature-body label { display:block; margin-bottom:5px; font-weight:bold; font-size:12px; color:#666; }
+        .tbp-signature-body input { width:100%; margin-bottom:15px; padding:10px; border:1px solid #ccc; border-radius:4px; font-size:14px; }
+        .tbp-signature-footer { display:flex; gap:10px; justify-content:flex-end; margin-top:10px; }
+        .tbp-signature-footer .button { padding:8px 20px; }
     </style>
+
+    <!-- Digital Signature Modal -->
+    <div id="tbp-signature-modal" class="tbp-signature-modal">
+        <div class="tbp-signature-content">
+            <div class="tbp-signature-header">
+                <span style="font-size:40px; display:block; margin-bottom:10px;">🛡️</span>
+                <h2>FIRMA DIGITAL REQUERIDA</h2>
+                <p style="font-size:13px; color:#666;">Se requiere autorización del Administrador General para exceder el límite financiero.</p>
+            </div>
+            <div class="tbp-signature-body">
+                <label>Usuario Administrador</label>
+                <input type="text" id="tbp_sig_user" placeholder="Admin username...">
+                <label>Contraseña de Seguridad</label>
+                <input type="password" id="tbp_sig_pass" placeholder="••••••••">
+            </div>
+            <div id="tbp-sig-msg" style="margin-bottom:15px; font-size:12px; color:#d32f2f; display:none; text-align:center; padding:8px; background:#fff1f0; border-radius:4px;"></div>
+            <div class="tbp-signature-footer">
+                <button type="button" class="button" onclick="jQuery('#tbp-signature-modal').hide();">Cancelar</button>
+                <button type="button" class="button button-primary" id="tbp-btn-confirm-signature" style="background:#d32f2f !important; border-color:#b71c1c !important;">✍️ Firmar y Autorizar</button>
+            </div>
+        </div>
+    </div>
 
     <div class="tbp-po-grid">
         <div class="tbp-po-field">
@@ -328,7 +363,16 @@ function tbp_egresos_po_details_html( $post ) {
                     <?php foreach ( $payments as $p ) : ?>
                         <tr>
                             <td><?php echo date('d/m/Y', strtotime($p->fecha ?: 'now')); ?></td>
-                            <td style="text-transform:uppercase;"><?php echo esc_html( $p->forma ?: 'N/A' ); ?></td>
+                            <td style="text-transform:uppercase;">
+                                <?php echo esc_html( $p->forma ?: 'N/A' ); ?>
+                                <?php 
+                                $forced_by = get_post_meta( $p->ID, '_tbp_forced_by', true );
+                                if ( $forced_by ) {
+                                    $admin = get_userdata( $forced_by );
+                                    echo '<br/><span style="color:#d32f2f; font-size:9px; font-weight:bold;">🛡️ AUTORIZACIÓN ESPECIAL: ' . esc_html( $admin->display_name ) . '</span>';
+                                }
+                                ?>
+                            </td>
                             <td><?php echo nl2br(esc_html( $p->concepto ?: 'Sin concepto' )); ?></td>
                             <td style="font-weight:bold;"><?php echo wc_price( $p->monto ); ?></td>
                             <td style="text-align:center;">
@@ -385,35 +429,85 @@ function tbp_egresos_po_details_html( $post ) {
             var po_id = <?php echo $post->ID; ?>;
             var edit_id = $('#tbp_edit_pago_id').val();
             
-            var action = (edit_id > 0) ? 'tbp_egresos_update_payment' : 'tbp_egresos_register_payment';
-            
-            var data = {
-                action: action,
-                pago_id: edit_id,
-                po_id: po_id,
-                amount: amount,
-                date: $('#tbp_payment_date').val(),
-                method: $('#tbp_payment_method').val(),
-                ref: $('#tbp_payment_ref').val(),
-                file_url: $('#tbp_payment_file_url').val(),
-                nonce: '<?php echo wp_create_nonce("tbp_egresos_payment_nonce"); ?>'
-            };
-            
             if ( isNaN(amount) || amount <= 0 ) {
                 alert('Ingresa un monto válido.');
                 return;
             }
-            
-            // If NEW, check balance. If EDIT, balance check is harder but handled server-side
+
+            // --- SECURITY LOGIC v5.3.0 ---
+            // If amount > balance, we need a signature
             if ( edit_id == 0 && amount > (balance + 0.10) ) {
-                alert('🚫 SEGURIDAD FINANCIERA: No puedes pagar más del saldo autorizado ($' + balance.toFixed(2) + ').');
+                $('#tbp-signature-modal').fadeIn();
                 return;
             }
             
-            if ( !confirm('¿Estás seguro de guardar esta información?') ) return;
+            savePaymentProcess(0); // Standard save
+        });
+
+        // Handler for Signature Confirmation
+        $('#tbp-btn-confirm-signature').on('click', function(){
+            var btnSig = $(this);
+            var user = $('#tbp_sig_user').val();
+            var pass = $('#tbp_sig_pass').val();
             
+            if ( !user || !pass ) {
+                $('#tbp-sig-msg').text('Ingresa tus credenciales completas.').show();
+                return;
+            }
+
+            btnSig.prop('disabled', true).text('Validando Firma...');
+            $('#tbp-sig-msg').hide();
+
+            $.ajax({
+                url: ajaxurl,
+                type: 'POST',
+                data: {
+                    action: 'tbp_egresos_verify_signature',
+                    user: user,
+                    pass: pass,
+                    nonce: '<?php echo wp_create_nonce("tbp_egresos_payment_nonce"); ?>'
+                },
+                success: function(res) {
+                    if (res.success) {
+                        $('#tbp-sig-msg').css({'color':'#52c41a', 'background':'#f6ffed'}).text('✅ Firma validada: ' + res.data.user_name).show();
+                        setTimeout(function(){
+                            $('#tbp-signature-modal').hide();
+                            savePaymentProcess(res.data.user_id); // Save with forced ID
+                        }, 800);
+                    } else {
+                        $('#tbp-sig-msg').text('🚫 Error: ' + res.data).show();
+                        btnSig.prop('disabled', false).text('✍️ Firmar y Autorizar');
+                    }
+                },
+                error: function() {
+                    $('#tbp-sig-msg').text('Error de conexión.').show();
+                    btnSig.prop('disabled', false).text('✍️ Firmar y Autorizar');
+                }
+            });
+        });
+
+        function savePaymentProcess(forcedById) {
+            var btn = $('#tbp-btn-save-payment');
+            var edit_id = $('#tbp_edit_pago_id').val();
+            var action = (edit_id > 0) ? 'tbp_egresos_update_payment' : 'tbp_egresos_register_payment';
+
+            var data = {
+                action: action,
+                pago_id: edit_id,
+                po_id: <?php echo $post->ID; ?>,
+                amount: parseFloat($('#tbp_payment_amount').val()),
+                date: $('#tbp_payment_date').val(),
+                method: $('#tbp_payment_method').val(),
+                ref: $('#tbp_payment_ref').val(),
+                file_url: $('#tbp_payment_file_url').val(),
+                forced_by: forcedById,
+                nonce: '<?php echo wp_create_nonce("tbp_egresos_payment_nonce"); ?>'
+            };
+
+            if ( !confirm('¿Estás seguro de registrar esta operación?') ) return;
+
             btn.prop('disabled', true).text('Guardando...');
-            
+
             $.ajax({
                 url: ajaxurl,
                 type: 'POST',
@@ -432,7 +526,7 @@ function tbp_egresos_po_details_html( $post ) {
                     btn.prop('disabled', false).text(edit_id > 0 ? '🔄 Actualizar Pago' : '💾 Guardar Pago');
                 }
             });
-        });
+        }
 
         // Edit Payment Action
         $('.tbp-edit-payment').on('click', function(){

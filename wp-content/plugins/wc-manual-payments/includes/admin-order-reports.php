@@ -73,7 +73,8 @@ function wcmp_get_baseline_orders_data( $ids_only = false ) {
         $paged = isset($_GET['paged']) ? max(1, intval($_GET['paged'])) : 1;
         $orderby = isset($_GET['orderby']) ? sanitize_text_field($_GET['orderby']) : 'date';
         $order_dir = isset($_GET['order']) ? sanitize_text_field($_GET['order']) : 'DESC';
-        $exporting = isset($_GET['export_wcmp_xlsx']) ? true : false;
+        
+        // v1.8.22 Fix: No sobrescribir $exporting aquí, ya se definió al inicio considerando $ids_only
 
         $args = array(
             'type'    => 'shop_order',
@@ -249,26 +250,30 @@ function wcmp_get_baseline_orders_data( $ids_only = false ) {
         }
 
         if ( $exporting ) {
+            set_time_limit(600);
+            ini_set('memory_limit', '512M');
+            
             require_once dirname(__FILE__) . '/lib/SimpleXLSXGen.php';
+            
+            $all_order_ids = array_column($results, 'id');
+            $batch_attendees = [];
+            if ( function_exists('tbp_actividades_get_batch_attendees_meta') ) {
+                $batch_attendees = tbp_actividades_get_batch_attendees_meta($all_order_ids);
+            }
             
             $dynamic_headers = array();
             $master_export_data = array();
 
             // Pass 1: Prepare Flattened Data and Collect Unique Meta Labels
             foreach ( $results as $r ) {
-                $order = wc_get_order( $r['id'] );
-                if ( ! $order ) continue;
-
-                $attendees = array();
-                if ( function_exists('tbp_actividades_get_order_attendees_meta') ) {
-                    $attendees = tbp_actividades_get_order_attendees_meta( $r['id'], $order );
-                }
+                $order_id = $r['id'];
+                $attendees = isset($batch_attendees[$order_id]) ? $batch_attendees[$order_id] : [];
 
                 if ( empty($attendees) ) {
                     // One row per order if no attendees
-                    $master_export_data[] = array( 'order' => $r, 'attendee' => null );
+                    $master_export_data[] = array( 'order' => $r, 'attendee_map' => null );
                 } else {
-                    foreach ( $attendees as $att_id => $groups ) {
+                    foreach ( $attendees as $source_id => $groups ) {
                         // Support for multiple guests in one source (tbp-actividades logic)
                         if ( ! empty($groups) ) {
                             reset($groups);
@@ -281,15 +286,18 @@ function wcmp_get_baseline_orders_data( $ids_only = false ) {
                         foreach ( $groups as $guest ) {
                             if ( ! is_array($guest) ) continue;
                             
-                            $master_export_data[] = array( 'order' => $r, 'attendee' => $guest );
-                            
+                            $guest_map = [];
                             foreach ( $guest as $key => $val ) {
                                 $label = is_array($val) ? ($val['label'] ?? $key) : $key;
-                                $label = ucwords(str_replace(array('-', '_'), ' ', $label));
-                                if ( ! in_array($label, $dynamic_headers) ) {
-                                    $dynamic_headers[] = $label;
+                                $normalized_label = ucwords(str_replace(array('-', '_'), ' ', $label));
+                                $guest_map[$normalized_label] = is_array($val) ? ($val['value'] ?? '') : $val;
+                                
+                                if ( ! in_array($normalized_label, $dynamic_headers) ) {
+                                    $dynamic_headers[] = $normalized_label;
                                 }
                             }
+                            
+                            $master_export_data[] = array( 'order' => $r, 'attendee_map' => $guest_map );
                         }
                     }
                 }
@@ -305,7 +313,7 @@ function wcmp_get_baseline_orders_data( $ids_only = false ) {
 
             foreach ( $master_export_data as $entry ) {
                 $r = $entry['order'];
-                $att = $entry['attendee'];
+                $att_map = $entry['attendee_map'];
 
                 $row = array(
                     $r['id'],
@@ -318,20 +326,9 @@ function wcmp_get_baseline_orders_data( $ids_only = false ) {
                     $r['balance']
                 );
 
-                // Add dynamic meta values
+                // Add dynamic meta values using the map (O(1) lookup instead of nested loops)
                 foreach ( $dynamic_headers as $h ) {
-                    $found_val = '';
-                    if ( $att ) {
-                        foreach ( $att as $k => $v ) {
-                            $curr_label = is_array($v) ? ($v['label'] ?? $k) : $k;
-                            $curr_label = ucwords(str_replace(array('-', '_'), ' ', $curr_label));
-                            if ( $curr_label === $h ) {
-                                $found_val = is_array($v) ? ($v['value'] ?? '') : $v;
-                                break;
-                            }
-                        }
-                    }
-                    $row[] = $found_val;
+                    $row[] = isset($att_map[$h]) ? $att_map[$h] : '';
                 }
                 $rows[] = $row;
             }

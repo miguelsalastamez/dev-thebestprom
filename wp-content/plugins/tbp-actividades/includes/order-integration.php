@@ -181,13 +181,29 @@ function tbp_actividades_get_order_attendees_meta( $order_id, $order ) {
     $attendees = [];
     $sourced_products = [];
 
-    // 1. Check Database deep links (Attendee Posts) - THE SOURCE OF TRUTH
+    // 1. Check Database deep links (Attendee Posts/Tables) - THE SOURCE OF TRUTH
     $search_values = array( $order_id, strval($order_id) );
+    $order_items_ids = [];
     foreach( $order->get_items() as $item_id => $item ) {
         $search_values[] = $item_id;
         $search_values[] = strval($item_id);
+        $order_items_ids[] = intval($item_id);
     }
     
+    // NEW: Check Tribe dedicated table if it exists (modern ET+)
+    $tec_table = $wpdb->prefix . 'tec_tickets_attendees';
+    $tec_results = [];
+    if ( $wpdb->get_var("SHOW TABLES LIKE '$tec_table'") === $tec_table ) {
+        $item_placeholders = !empty($order_items_ids) ? implode(',', array_fill(0, count($order_items_ids), '%d')) : '0';
+        $tec_query = $wpdb->prepare("
+            SELECT post_id 
+            FROM $tec_table 
+            WHERE order_id = %d 
+            OR order_item_id IN ($item_placeholders)
+        ", $order_id, ...$order_items_ids);
+        $tec_results = $wpdb->get_col($tec_query);
+    }
+
     $placeholders = implode(',', array_fill(0, count($search_values), '%s'));
     $linked_posts = $wpdb->get_col( $wpdb->prepare("
         SELECT DISTINCT pm.post_id 
@@ -195,13 +211,23 @@ function tbp_actividades_get_order_attendees_meta( $order_id, $order ) {
         JOIN {$wpdb->posts} p ON pm.post_id = p.ID
         WHERE pm.meta_value IN ($placeholders)
         AND p.post_type IN ('tribe_wooticket', 'tribe_rsvp', 'attendee', 'tec_attendee')
+        AND pm.meta_key IN ('_tribe_wooticket_order', '_tribe_tickets_item_id', '_tribe_tickets_order')
     ", ...$search_values) );
     
     $direct_posts = get_posts( array(
-        'post_type'      => array('tribe_wooticket', 'tribe_rsvp', 'attendee'), 
+        'post_type'      => array('tribe_wooticket', 'tribe_rsvp', 'attendee', 'tec_attendee'), 
         'meta_query'     => array(
+            'relation' => 'OR',
             array(
                 'key'   => '_tribe_wooticket_order',
+                'value' => $order_id
+            ),
+            array(
+                'key'   => '_tribe_tickets_order',
+                'value' => $order_id
+            ),
+            array(
+                'key'   => '_tec_tickets_commerce_order',
                 'value' => $order_id
             )
         ),
@@ -210,7 +236,7 @@ function tbp_actividades_get_order_attendees_meta( $order_id, $order ) {
         'post_status'    => 'any'
     ) );
 
-    $all_post_ids = array_unique(array_merge($linked_posts, $direct_posts));
+    $all_post_ids = array_unique(array_merge($linked_posts, $direct_posts, $tec_results));
     
     foreach ( $all_post_ids as $p_id ) {
         $meta = get_post_meta( $p_id, '_tribe_tickets_meta', true );
@@ -247,15 +273,168 @@ function tbp_actividades_get_order_attendees_meta( $order_id, $order ) {
 }
 
 /**
+ * Optimized version for batch processing (XLSX Export)
+ * Returns a map of [order_id => [attendees]]
+ */
+function tbp_actividades_get_batch_attendees_meta( $order_ids ) {
+    global $wpdb;
+    if ( empty($order_ids) ) return [];
+
+    $results_map = [];
+    $order_ids = array_map('intval', $order_ids);
+    
+    // 1. Fetch Order Item IDs to increase search surface (Optional but accurate)
+    $order_ids_sql = implode(',', $order_ids);
+    $item_ids = $wpdb->get_col("SELECT order_item_id FROM {$wpdb->prefix}woocommerce_order_items WHERE order_id IN ($order_ids_sql)");
+    
+    $search_values = array_merge($order_ids, $item_ids);
+    if ( empty($search_values) ) return [];
+
+    $placeholders = implode(',', array_fill(0, count($search_values), '%s'));
+    
+    // 2. Fetch all linked Attendee Post IDs in ONE query
+    $linked_data = $wpdb->get_results( $wpdb->prepare("
+        SELECT pm.post_id, pm.meta_value as linked_id
+        FROM {$wpdb->postmeta} pm
+        JOIN {$wpdb->posts} p ON pm.post_id = p.ID
+        WHERE pm.meta_value IN ($placeholders)
+        AND p.post_type IN ('tribe_wooticket', 'tribe_rsvp', 'attendee', 'tec_attendee')
+        AND pm.meta_key IN ('_tribe_wooticket_order', '_tribe_tickets_item_id')
+        GROUP BY pm.post_id
+    ", ...$search_values) );
+
+    // Map attendee post IDs back to order IDs
+    $item_to_order = [];
+    if ( ! empty($item_ids) ) {
+        $item_to_order_rows = $wpdb->get_results("SELECT order_item_id, order_id FROM {$wpdb->prefix}woocommerce_order_items WHERE order_item_id IN (".implode(',', $item_ids).")");
+        foreach($item_to_order_rows as $it) $item_to_order[$it->order_item_id] = $it->order_id;
+    }
+
+    $all_att_post_ids = [];
+    foreach ( $linked_data as $row ) {
+        $oid = false;
+        if ( in_array(intval($row->linked_id), $order_ids) ) {
+            $oid = intval($row->linked_id);
+        } else if ( isset($item_to_order[$row->linked_id]) ) {
+            $oid = intval($item_to_order[$row->linked_id]);
+        }
+        
+        if ( $oid ) {
+            $all_att_post_ids[] = $row->post_id;
+            if ( ! isset($results_map[$oid]) ) $results_map[$oid] = [];
+            $results_map[$oid][$row->post_id] = null;
+        }
+    }
+
+    // 3. Bulk fetch Metadata
+    if ( ! empty($all_att_post_ids) ) {
+        $meta_rows = $wpdb->get_results("SELECT post_id, meta_value FROM {$wpdb->postmeta} WHERE post_id IN (".implode(',', $all_att_post_ids).") AND meta_key = '_tribe_tickets_meta'");
+        $meta_cache = [];
+        foreach($meta_rows as $m) $meta_cache[$m->post_id] = maybe_unserialize($m->meta_value);
+
+        foreach ( $results_map as $oid => &$group ) {
+            foreach ( $group as $att_id => $val ) {
+                if ( isset($meta_cache[$att_id]) ) {
+                    $group[$att_id] = $meta_cache[$att_id];
+                } else {
+                    unset($group[$att_id]);
+                }
+            }
+        }
+    }
+
+    // 4. Batch Check direct Order Meta as fallback
+    $order_meta_rows = $wpdb->get_results("SELECT post_id as order_id, meta_value FROM {$wpdb->postmeta} WHERE post_id IN ($order_ids_sql) AND meta_key = '_tribe_tickets_meta'");
+    foreach ( $order_meta_rows as $om ) {
+        $o_id = intval($om->order_id);
+        if ( ! empty($results_map[$o_id]) ) continue;
+        
+        $meta = maybe_unserialize($om->meta_value);
+        if ( is_array($meta) && !empty($meta) ) {
+            $results_map[$o_id] = [];
+            foreach ( $meta as $prod_id => $guests ) {
+                if ( is_array($guests) ) {
+                    $results_map[$o_id]["order_" . $o_id . "_prod_" . $prod_id] = $guests;
+                }
+            }
+        }
+    }
+
+    return $results_map;
+}
+
+/**
  * Renders the HTML form
  */
 function tbp_actividades_render_attendee_editor( $order_id, $order ) {
     $attendees = tbp_actividades_get_order_attendees_meta( $order_id, $order );
     
+    echo '<div style="margin-bottom:10px; font-size:9px; color:#ccc; text-align:right;">Engine v6.8.6</div>';
+
+    // TOOLS FOR ADMINS: Reset/Repair
+    if ( current_user_can('manage_options') ) {
+        echo '<div style="background:#f8f9fa; border:1px solid #ddd; padding:10px; border-radius:4px; margin-bottom:15px; display:flex; justify-content:space-between; align-items:center;">';
+        echo '<span style="font-size:11px; color:#666;">🔧 <strong>Herramientas Admin:</strong></span>';
+        echo '<div>';
+        if ( !empty($attendees) ) {
+            echo '<button type="button" class="button button-link tbp-btn-reset-attendees" data-order-id="' . $order_id . '" style="color:#dc3232; font-size:11px; text-decoration:none;">🗑️ BORRAR Y RESETEAR TODO</button>';
+        } else {
+             echo '<button type="button" class="button button-secondary tbp-btn-init-attendees" data-order-id="' . $order_id . '" style="font-size:11px;">[+] INICIALIZAR CAMPOS</button>';
+        }
+        echo '</div>';
+        echo '</div>';
+    }
+
     if ( empty( $attendees ) ) {
-        echo '<p><small>No hay datos de asistentes capturados todavía o el formato no es compatible.</small></p>';
+        echo '<div style="background:#fff5f5; border:1px solid #feb2b2; padding:15px; border-radius:4px;">';
+        echo '<p style="margin:0; color:#c53030; font-weight:600;"><small><strong>Aviso:</strong> No hay datos de asistentes capturados todavía o el formato no es compatible.</small></p>';
+        if ( current_user_can('manage_options') ) {
+             echo '<p style="margin:5px 0 10px 0; font-size:11px; color:#718096;">🔍 Diag para Admin: No se detectaron posts vinculados ni meta en items para ID #' . $order_id . '</p>';
+        }
+        echo '</div>';
+        ?>
+        <script>
+        jQuery(document).ready(function($){
+            $('.tbp-btn-init-attendees').on('click', function(e){
+                e.preventDefault();
+                var btn = $(this);
+                if(!confirm('¿Deseas inicializar manualmente los campos de asistente para este pedido?')) return;
+                btn.prop('disabled', true).text('Cargando...');
+                $.ajax({
+                    url: ajaxurl, type: 'POST',
+                    data: { action: 'tbp_actividades_init_manual_attendees', order_id: btn.data('order-id'), _ajax_nonce: '<?php echo wp_create_nonce("tbp_init_att"); ?>' },
+                    success: function(res) {
+                        if(res.success) { alert('Campos inicializados.'); location.reload(); }
+                        else { alert('Error: ' + res.data); btn.prop('disabled', false).text('[+] INICIALIZAR CAMPOS'); }
+                    }
+                });
+            });
+        });
+        </script>
+        <?php
         return;
     }
+
+    if ( current_user_can('manage_options') ) : ?>
+        <script>
+        jQuery(document).ready(function($){
+            $('.tbp-btn-reset-attendees').on('click', function(e){
+                e.preventDefault();
+                var btn = $(this);
+                if(!confirm('¡PELIGRO! Esto borrará permanentemente todos los datos de asistentes. ¿Estás SEGURO?')) return;
+                btn.prop('disabled', true).text('Borrando...');
+                $.ajax({
+                    url: ajaxurl, type: 'POST',
+                    data: { action: 'tbp_actividades_force_reset_attendees', order_id: btn.data('order-id'), _ajax_nonce: '<?php echo wp_create_nonce("tbp_reset_att"); ?>' },
+                    success: function(res) {
+                        if(res.success) { alert('Tickets borrados.'); location.reload(); }
+                        else { alert('Error: ' + res.data); btn.prop('disabled', false).text('🗑️ BORRAR Y RESETEAR TODO'); }
+                    }
+                });
+            });
+        });
+        </script>
+    <?php endif;
 
     echo '<div style="background:#fdfdfd; border:1px solid #ddd; padding:10px; border-radius:4px;">';
     wp_nonce_field( 'tbp_save_attendees_nonce', 'tbp_attendees_nonce' );
@@ -263,7 +442,6 @@ function tbp_actividades_render_attendee_editor( $order_id, $order ) {
     $counter = 1;
     foreach ( $attendees as $source_id => $meta_groups ) {
         try {
-            // 1. Identify Product ID to fetch schema
             $product_id = false;
             if ( strpos($source_id, 'order_') === 0 && strpos($source_id, '_prod_') !== false ) {
                 preg_match('/_prod_(\d+)/', $source_id, $m);
@@ -273,203 +451,93 @@ function tbp_actividades_render_attendee_editor( $order_id, $order ) {
                 $item = $order->get_item($item_id);
                 if ($item) $product_id = $item->get_product_id();
             } else {
-                // It's an attendee post ID
                 $product_id = get_post_meta( $source_id, '_tribe_wooticket_product', true );
             }
             
-            // 2. Load Schema safely
             $schema = [];
             if ( $product_id ) {
                 $raw_schema = get_post_meta( $product_id, '_tribe_tickets_meta', true );
-
                 if ( is_array($raw_schema) ) {
                     foreach($raw_schema as $def) {
-                        if ( ! is_array($def) ) continue; // PREVENT FATAL ERROR
+                        if ( ! is_array($def) ) continue;
                         $slug = isset($def['slug']) ? sanitize_title($def['slug']) : sanitize_title($def['label'] ?? '');
-                        if ( empty($slug) && isset($def['label']) ) {
-                            $slug = sanitize_title($def['label']);
-                        }
+                        if ( empty($slug) && isset($def['label']) ) $slug = sanitize_title($def['label']);
                         $schema[$slug] = $def;
-                        if(isset($def['label'])) {
-                            $schema[sanitize_title($def['label'])] = $def;
-                        }
+                        if(isset($def['label'])) $schema[sanitize_title($def['label'])] = $def;
                     }
                 }
             }
 
-            // 2.5 NORMALIZE: Se le da formato de grupo si vienen campos sueltos (tickets ya emitidos)
             if ( ! empty($meta_groups) ) {
                 reset($meta_groups);
                 $first_key = key($meta_groups);
-                // Si la primera llave NO es numérica y NO es 'Datos', asumimos que es un array plano de campos
-                if ( ! is_numeric($first_key) && $first_key !== 'Datos' ) {
-                    $meta_groups = array( 'Datos' => $meta_groups );
-                }
+                if ( ! is_numeric($first_key) && $first_key !== 'Datos' ) $meta_groups = array( 'Datos' => $meta_groups );
             }
 
             foreach ( $meta_groups as $guest_index => $guest_data ) {
-                if ( ! is_array($guest_data) ) {
-                    $guest_data = [ $guest_index => $guest_data ];
-                    $guest_index = 'Datos';
-                }
+                if ( ! is_array($guest_data) ) { $guest_data = [ $guest_index => $guest_data ]; $guest_index = 'Datos'; }
                 
                 echo '<div style="margin-bottom:15px; padding-bottom:10px; border-bottom:1px dashed #ccc;">';
                 echo '<strong style="color:#0073aa;font-size:13px;">🎟️ Asistente ' . $counter . ' <span style="font-size:10px;color:#999;">(Ref DB: ' . esc_html($source_id) . ')</span></strong>';
+                echo '<table class="form-table" style="margin-top:5px; width:100%;">';
                 
-                echo '<table class="form-table" style="margin-top:5px; width:100%; border-spacing: 0;">';
                 foreach ( $guest_data as $field_key => $field_value ) {
                     if ( ! is_string($field_key) && ! is_numeric($field_key) ) continue;
-                    
                     $display_key = strval($field_key);
                     $actual_value = $field_value;
                     $is_complex_array = false;
 
                     if ( is_array($field_value) && isset($field_value['label']) ) {
                         $display_key = strval($field_value['label']);
-                        $actual_value = isset($field_value['value']) ? $field_value['value'] : '';
+                        $actual_value = $field_value['value'] ?? '';
                         $is_complex_array = true;
                     } else if ( is_array($field_value) ) {
                         $actual_value = wp_json_encode($field_value);
                     } else {
-                        $display_key = str_replace( array('-', '_'), ' ', $display_key );
-                        $display_key = ucwords( $display_key );
+                        $display_key = ucwords(str_replace(['-', '_'], ' ', $display_key));
                     }
                     
-                    // Desplegar arrays múltiples de Event Tickets Plus o separaciones por coma
-                    if ( !is_array($actual_value) && strpos(strval($actual_value), ',') !== false && $field_type === 'checkbox' ) {
-                        $actual_values_array = array_map('trim', explode(',', strval($actual_value)));
-                    } else {
-                        $actual_values_array = is_array($actual_value) ? $actual_value : array($actual_value);
-                    }
-
-                    $actual_values_normalized = array_map(function($v) {
-                        return is_scalar($v) ? trim(strval($v)) : '';
-                    }, $actual_values_array);
-
-                    $actual_value_str = isset($actual_values_normalized[0]) ? $actual_values_normalized[0] : '';
-                    if ( count($actual_values_normalized) > 1 ) {
-                        $actual_value_str = implode(', ', $actual_values_normalized);
-                    }
-
-                    if ( $is_complex_array ) {
-                        $input_name = sprintf('tbp_att_meta[%s][%s][%s][value]', esc_attr($source_id), esc_attr($guest_index), esc_attr($field_key));
-                    } else {
-                        $input_name = sprintf('tbp_att_meta[%s][%s][%s]', esc_attr($source_id), esc_attr($guest_index), esc_attr($field_key));
-                    }
-                    
-                    $field_type    = 'text';
+                    $field_type = 'text';
                     $field_options = [];
-                    $lookup_key    = strtolower(sanitize_title($field_key));
-                    $lookup_key_un = str_replace('-', '_', $lookup_key);
-                    
-                    // Encontrar la definición en el schema (buscando por slug-limpio, slug-original o label)
-                    $field_def = false;
-                    if ( isset($schema[$lookup_key]) ) $field_def = $schema[$lookup_key];
-                    else if ( isset($schema[$lookup_key_un]) ) $field_def = $schema[$lookup_key_un];
-                    else if ( isset($schema[$field_key]) ) $field_def = $schema[$field_key];
-                    else {
-                        // Búsqueda exhaustiva por si acaso
-                        foreach($schema as $s_key => $s_val) {
-                            if (strtolower($s_key) == $lookup_key || strtolower($s_key) == $lookup_key_un) {
-                                $field_def = $s_val;
-                                break;
-                            }
-                        }
-                    }
+                    $lookup_key = strtolower(sanitize_title($field_key));
+                    $field_def = $schema[$lookup_key] ?? ($schema[str_replace('-', '_', $lookup_key)] ?? ($schema[$field_key] ?? false));
                     
                     if ( is_array($field_def) ) {
                         $field_type = $field_def['type'] ?? 'text';
-                        
-                        // ET+ usualmente anida las opciones en extra['options']
-                        $field_options = [];
-                        if ( isset($field_def['extra']['options']) && is_array($field_def['extra']['options']) ) {
-                            $field_options = $field_def['extra']['options'];
-                        } else {
-                            $raw_opts = $field_def['extra'] ?? ($field_def['options'] ?? ($field_def['values'] ?? ''));
-                            if ( is_array($raw_opts) ) {
-                                $field_options = $raw_opts;
-                            } else if ( !empty($raw_opts) ) {
-                                $tmp = maybe_unserialize($raw_opts);
-                                $field_options = is_array($tmp) ? $tmp : array_map('trim', explode("\n", strval($raw_opts)));
-                            }
+                        $raw_opts = $field_def['extra']['options'] ?? ($field_def['extra'] ?? ($field_def['options'] ?? ($field_def['values'] ?? '')));
+                        $field_options = is_array($raw_opts) ? $raw_opts : ( !empty($raw_opts) ? array_map('trim', explode("\n", strval(maybe_unserialize($raw_opts)))) : [] );
+                        $norm_opts = [];
+                        foreach($field_options as $k => $v) {
+                            if (is_array($v)) { $l=$v['label']??($v['name']??$k); $val=$v['value']??($v['slug']??$l); $norm_opts[trim(strval($val))]=trim(strval($l)); }
+                            else { $norm_opts[trim(strval($v))]=trim(strval($v)); }
                         }
+                        $field_options = $norm_opts;
+                    }
+                    
+                    $input_name = $is_complex_array ? sprintf('tbp_att_meta[%s][%s][%s][value]', $source_id, $guest_index, $field_key) : sprintf('tbp_att_meta[%s][%s][%s]', $source_id, $guest_index, $field_key);
+                    $actual_vals = is_array($actual_value) ? $actual_value : (strpos(strval($actual_value), ',')!==false && $field_type==='checkbox' ? array_map('trim', explode(',', strval($actual_value))) : [$actual_value]);
+                    $actual_vals = array_map(function($v){ return is_scalar($v)?trim(strval($v)):''; }, $actual_vals);
+                    $val_str = implode(', ', $actual_vals);
 
-                        // Normalizar opciones (ET+ usa tanto arrays simples como arrays de objetos)
-                        $normalized_options = [];
-                        foreach ( $field_options as $key => $val ) {
-                            if ( is_array($val) ) {
-                                $opt_label = $val['label'] ?? ($val['name'] ?? ($val['text'] ?? $key));
-                                $opt_value = $val['value'] ?? ($val['slug'] ?? ($val['id'] ?? $opt_label));
-                                $normalized_options[trim(strval($opt_value))] = trim(strval($opt_label));
-                            } else {
-                                $normalized_options[trim(strval($val))] = trim(strval($val));
-                            }
-                        }
-                        $field_options = $normalized_options;
-                    }
-                    
-                    echo '<tr>';
-                    echo '<td style="padding:4px 0; width:40%; font-size:12px; font-weight:600; color:#444;">' . esc_html( $display_key ) . '</td>';
-                    echo '<td style="padding:4px 0;">';
-                    
-                    if ( $field_type === 'select' || $field_type === 'dropdown' ) {
-                        echo '<select name="' . $input_name . '" style="width:100%; font-size:12px;">';
-                        echo '<option value="">' . esc_html__('Selecciona una opción', 'tbp-actividades') . '</option>';
-                        foreach($field_options as $opt_val => $opt_label) {
-                            $is_selected = in_array( $opt_val, $actual_values_normalized ) || in_array( $opt_label, $actual_values_normalized );
-                            $selected = $is_selected ? 'selected="selected"' : '';
-                            echo '<option value="'.esc_attr($opt_val).'" '.$selected.'>'.esc_html($opt_label).'</option>';
-                        }
+                    echo '<tr><td style="padding:4px 0;width:40%;font-size:12px;font-weight:600;">'.esc_html($display_key).'</td><td>';
+                    if ( in_array($field_type, ['select', 'dropdown']) ) {
+                        echo '<select name="'.$input_name.'" style="width:100%;font-size:12px;"><option value="">Selecciona...</option>';
+                        foreach($field_options as $ov=>$ol) { $sel=in_array($ov, $actual_vals)||in_array($ol, $actual_vals)?'selected':''; echo '<option value="'.esc_attr($ov).'" '.$sel.'>'.esc_html($ol).'</option>'; }
                         echo '</select>';
-                    } else if ( $field_type === 'radio' ) {
-                        echo '<div style="margin-top:5px;">';
-                        foreach($field_options as $opt_val => $opt_label) {
-                            $is_selected = in_array( $opt_val, $actual_values_normalized ) || in_array( $opt_label, $actual_values_normalized );
-                            $checked = $is_selected ? 'checked="checked"' : '';
-                            echo '<label style="display:inline-block; margin-right:15px; font-size:12px; cursor:pointer;">';
-                            echo '<input type="radio" name="' . $input_name . '" value="'.esc_attr($opt_val).'" '.$checked.' style="margin-top:-2px;" /> ' . esc_html($opt_label);
-                            echo '</label>';
-                        }
-                        echo '</div>';
-                    } else if ( $field_type === 'checkbox' ) {
-                        echo '<div style="margin-top:5px;">';
-                        if ( empty($field_options) ) {
-                             $checked = !empty($actual_value_str) ? 'checked' : '';
-                             echo '<input type="checkbox" name="' . $input_name . '" value="1" '.$checked.' />';
-                        } else {
-                             foreach($field_options as $opt_val => $opt_label) {
-                                  $is_selected = in_array( $opt_val, $actual_values_normalized ) || in_array( $opt_label, $actual_values_normalized );
-                                  $checked = $is_selected ? 'checked="checked"' : '';
-                                  echo '<label style="display:block; font-size:12px; margin-bottom:3px; cursor:pointer;">';
-                                  echo '<input type="checkbox" name="' . $input_name . '[]" value="'.esc_attr($opt_val).'" '.$checked.' style="margin-top:-2px;" /> ' . esc_html($opt_label);
-                                  echo '</label>';
-                             }
-                        }
-                        echo '</div>';
-                    } else if ( $field_type === 'textarea' ) {
-                        echo '<textarea name="' . $input_name . '" style="width:100%; font-size:12px;" rows="3">' . esc_textarea( $actual_value_str ) . '</textarea>';
-                    } else if ( in_array($field_type, ['date', 'number', 'email', 'url']) ) {
-                        echo '<input type="'.esc_attr($field_type).'" name="' . $input_name . '" value="' . esc_attr( $actual_value_str ) . '" style="width:100%; font-size:12px;" />';
-                    } else {
-                        echo '<input type="text" name="' . $input_name . '" value="' . esc_attr( $actual_value_str ) . '" style="width:100%; font-size:12px;" />';
-                    }
-                    
-                    echo '</td>';
-                    echo '</tr>';
+                    } else if ($field_type==='radio' || $field_type==='checkbox') {
+                        $suffix = $field_type==='checkbox' && !empty($field_options) ? '[]' : '';
+                        foreach($field_options as $ov=>$ol) { $sel=in_array($ov, $actual_vals)||in_array($ol, $actual_vals)?'checked':''; echo '<label style="display:block;font-size:11px;"><input type="'.$field_type.'" name="'.$input_name.$suffix.'" value="'.esc_attr($ov).'" '.$sel.' /> '.esc_html($ol).'</label>'; }
+                        if(empty($field_options)) { $sel=!empty($val_str)?'checked':''; echo '<input type="checkbox" name="'.$input_name.'" value="1" '.$sel.' />'; }
+                    } else if ($field_type==='textarea') { echo '<textarea name="'.$input_name.'" style="width:100%;font-size:12px;" rows="2">'.esc_textarea($val_str).'</textarea>'; }
+                    else { $type = in_array($field_type, ['date','number','email','url']) ? $field_type : 'text'; echo '<input type="'.$type.'" name="'.$input_name.'" value="'.esc_attr($val_str).'" style="width:100%;font-size:12px;" />'; }
+                    echo '</td></tr>';
                 }
-                echo '</table>';
-                
-                echo '</div>';
+                echo '</table></div>';
                 $counter++;
             }
-        } catch (\Throwable $e) {
-            echo '<div style="color:red; font-size:11px;">Error procesando asistente: ' . esc_html($e->getMessage()) . '</div>';
-            $counter++;
-        }
+        } catch (\Throwable $e) { echo '<div style="color:red;">Error: '.esc_html($e->getMessage()).'</div>'; $counter++; }
     }
-    
-    echo '<p><small>Haz clic en <strong>Actualizar</strong> el pedido (arriba a la derecha) para guardar permanentemente los cambios en Event Tickets Plus.</small></p>';
-    echo '</div>';
+    echo '<p><small>Haz clic en <strong>Actualizar</strong> para guardar.</small></p></div>';
 }
 
 /**
@@ -477,105 +545,95 @@ function tbp_actividades_render_attendee_editor( $order_id, $order ) {
  */
 add_action( 'woocommerce_process_shop_order_meta', 'tbp_actividades_save_attendee_editor', 60, 1 );
 function tbp_actividades_save_attendee_editor( $post_id ) {
-    if ( ! current_user_can( 'edit_shop_order', $post_id ) ) {
-        return;
-    }
-    
-    if ( ! isset( $_POST['tbp_attendees_nonce'] ) || ! wp_verify_nonce( $_POST['tbp_attendees_nonce'], 'tbp_save_attendees_nonce' ) ) {
-        return;
-    }
-    
-    if ( ! isset( $_POST['tbp_att_meta'] ) || ! is_array( $_POST['tbp_att_meta'] ) ) {
-        return;
-    }
+    if ( ! current_user_can( 'edit_shop_order', $post_id ) ) return;
+    if ( ! isset( $_POST['tbp_attendees_nonce'] ) || ! wp_verify_nonce( $_POST['tbp_attendees_nonce'], 'tbp_save_attendees_nonce' ) ) return;
+    if ( ! isset( $_POST['tbp_att_meta'] ) || ! is_array( $_POST['tbp_att_meta'] ) ) return;
 
     foreach ( $_POST['tbp_att_meta'] as $source_id => $guest_groups ) {
-        
-        // --- Handle Direct Order Meta ---
         if ( strpos($source_id, 'order_') === 0 && strpos($source_id, '_prod_') !== false ) {
             preg_match('/order_(\d+)_prod_(\d+)/', $source_id, $matches);
             if ( !empty($matches) ) {
-                $o_id = intval($matches[1]);
-                $p_id = intval($matches[2]);
+                $o_id = intval($matches[1]); $p_id = intval($matches[2]);
                 $original_meta = get_post_meta( $o_id, '_tribe_tickets_meta', true );
                 if ( ! is_array( $original_meta ) ) $original_meta = [];
-                
-                foreach ( $guest_groups as $guest_index => $fields ) {
-                    if ( ! isset($original_meta[$p_id][$guest_index]) ) $original_meta[$p_id][$guest_index] = [];
+                foreach ( $guest_groups as $gi => $fields ) {
+                    if ( ! isset($original_meta[$p_id][$gi]) ) $original_meta[$p_id][$gi] = [];
                     foreach( $fields as $k => $v ) {
-                         if ( is_array($v) && isset($v['value']) ) {
-                             if ( ! isset($original_meta[$p_id][$guest_index][$k]) || ! is_array($original_meta[$p_id][$guest_index][$k]) ) $original_meta[$p_id][$guest_index][$k] = [];
-                             $original_meta[$p_id][$guest_index][$k]['value'] = sanitize_text_field($v['value']);
-                         } else {
-                             $original_meta[$p_id][$guest_index][$k] = sanitize_text_field($v);
-                         }
+                         if ( is_array($v) && isset($v['value']) ) { $original_meta[$p_id][$gi][$k]['value'] = sanitize_text_field($v['value']); }
+                         else { $original_meta[$p_id][$gi][$k] = sanitize_text_field($v); }
                     }
                 }
                 update_post_meta( $o_id, '_tribe_tickets_meta', $original_meta );
             }
-            continue; // Skip the rest of the loop for this source
+            continue;
         }
-        // --- End Handle Direct Order Meta ---
 
-        $original_meta = [];
-        $is_item = false;
-        
-        if ( strpos($source_id, 'item_') === 0 ) {
-            $is_item = true;
-            $item_id = str_replace('item_', '', $source_id);
-            $original_meta = wc_get_order_item_meta( $item_id, '_tribe_tickets_meta', true );
-        } else {
-            $p_id = intval($source_id);
-            $original_meta = get_post_meta( $p_id, '_tribe_tickets_meta', true );
-        }
-        
+        $is_item = strpos($source_id, 'item_') === 0;
+        $id = $is_item ? str_replace('item_', '', $source_id) : intval($source_id);
+        $original_meta = $is_item ? wc_get_order_item_meta( $id, '_tribe_tickets_meta', true ) : get_post_meta( $id, '_tribe_tickets_meta', true );
         if ( ! is_array( $original_meta ) ) $original_meta = [];
 
-        foreach ( $guest_groups as $guest_index => $fields ) {
-            if ( $guest_index === 'Datos' ) {
-                foreach( $fields as $k => $v ) {
-                    if ( is_array($v) && isset($v['value']) ) {
-                        // Complex array
-                        if ( ! is_array($original_meta[$k]) ) $original_meta[$k] = [];
-                        $original_meta[$k]['value'] = sanitize_text_field($v['value']);
-                    } else {
-                        $original_meta[$k] = sanitize_text_field($v);
-                    }
-                }
-            } else {
-                if ( ! isset($original_meta[$guest_index]) ) $original_meta[$guest_index] = [];
-                
-                foreach( $fields as $k => $v ) {
-                    if ( is_array($v) && isset($v['value']) ) {
-                        if ( ! isset($original_meta[$guest_index][$k]) || ! is_array($original_meta[$guest_index][$k]) ) $original_meta[$guest_index][$k] = [];
-                        $original_meta[$guest_index][$k]['value'] = sanitize_text_field($v['value']);
-                    } else {
-                        $original_meta[$guest_index][$k] = sanitize_text_field($v);
-                    }
-                }
+        foreach ( $guest_groups as $gi => $fields ) {
+            $dest =& $original_meta;
+            if ( $gi !== 'Datos' ) { if(!isset($dest[$gi])) $dest[$gi]=[]; $dest =& $dest[$gi]; }
+            foreach( $fields as $k => $v ) {
+                if ( is_array($v) && isset($v['value']) ) { if(!is_array($dest[$k])) $dest[$k]=[]; $dest[$k]['value'] = sanitize_text_field($v['value']); }
+                else { $dest[$k] = sanitize_text_field($v); }
             }
         }
         
-        if ( $is_item ) {
-            wc_update_order_item_meta( $item_id, '_tribe_tickets_meta', $original_meta );
-        } else {
-            update_post_meta( $p_id, '_tribe_tickets_meta', $original_meta );
-            
+        if ( $is_item ) wc_update_order_item_meta( $id, '_tribe_tickets_meta', $original_meta );
+        else {
+            update_post_meta( $id, '_tribe_tickets_meta', $original_meta );
             global $wpdb;
             $tec_table = $wpdb->prefix . 'tec_tickets_attendees_meta';
             if ( $wpdb->get_var("SHOW TABLES LIKE '$tec_table'") === $tec_table ) {
-                foreach ( $guest_groups as $guest_index => $fields ) {
-                    foreach($fields as $k => $v) {
-                        $wpdb->update( 
-                            $tec_table, 
-                            array( 'meta_value' => sanitize_text_field($v) ), 
-                            array( 'attendee_id' => $p_id, 'meta_key' => $k ), 
-                            array( '%s' ), 
-                            array( '%d', '%s' ) 
-                        );
-                    }
+                foreach ( $guest_groups as $gi => $fields ) {
+                    foreach($fields as $k => $v) { $wpdb->update( $tec_table, [ 'meta_value' => sanitize_text_field($v) ], [ 'attendee_id' => $id, 'meta_key' => $k ], [ '%s' ], [ '%d', '%s' ] ); }
                 }
             }
         }
     }
+}
+
+add_action( 'wp_ajax_tbp_actividades_init_manual_attendees', 'tbp_actividades_init_manual_attendees_ajax' );
+function tbp_actividades_init_manual_attendees_ajax() {
+    check_ajax_referer( 'tbp_init_att', '_ajax_nonce' );
+    if ( ! current_user_can('manage_options') ) wp_send_json_error('Permisos');
+    $order_id = intval($_POST['order_id']); $order = wc_get_order($order_id);
+    if ( ! $order ) wp_send_json_error('No order');
+    $init_meta = [];
+    foreach ( $order->get_items() as $item ) {
+        $product_id = $item->get_product_id();
+        $schema = get_post_meta($product_id, '_tribe_tickets_meta', true);
+        if ( is_array($schema) ) {
+            $qty = $item->get_quantity();
+            if ( ! isset($init_meta[$product_id]) ) $init_meta[$product_id] = [];
+            for ($i = 0; $i < $qty; $i++) {
+                $guest_data = [];
+                foreach($schema as $field) { if(isset($field['label'])) $guest_data[$field['label']] = ''; }
+                if ( !empty($guest_data) ) $init_meta[$product_id][] = $guest_data;
+            }
+        }
+    }
+    if ( empty($init_meta) ) wp_send_json_error('No schema');
+    update_post_meta( $order_id, '_tribe_tickets_meta', $init_meta );
+    wp_send_json_success();
+}
+
+add_action( 'wp_ajax_tbp_actividades_force_reset_attendees', 'tbp_actividades_force_reset_attendees_ajax' );
+function tbp_actividades_force_reset_attendees_ajax() {
+    check_ajax_referer( 'tbp_reset_att', '_ajax_nonce' );
+    if ( ! current_user_can('manage_options') ) wp_send_json_error('Permisos');
+    $order_id = intval($_POST['order_id']); $order = wc_get_order($order_id);
+    if ( ! $order ) wp_send_json_error('No order');
+    $attendees = tbp_actividades_get_order_attendees_meta( $order_id, $order );
+    foreach ( $attendees as $sid => $data ) { if ( is_numeric($sid) ) wp_delete_post( $sid, true ); }
+    delete_post_meta( $order_id, '_tribe_tickets_meta' );
+    delete_post_meta( $order_id, '_tribe_tickets_event' );
+    foreach ( $order->get_items() as $iid => $item ) { wc_delete_order_item_meta( $item->get_id(), '_tribe_tickets_meta' ); wc_delete_order_item_meta( $item->get_id(), '_tribe_tickets_generated' ); }
+    global $wpdb;
+    $tec_table = $wpdb->prefix . 'tec_tickets_attendees';
+    if ( $wpdb->get_var("SHOW TABLES LIKE '$tec_table'") === $tec_table ) $wpdb->delete( $tec_table, [ 'order_id' => $order_id ], [ '%d' ] );
+    wp_send_json_success();
 }

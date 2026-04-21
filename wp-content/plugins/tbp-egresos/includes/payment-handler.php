@@ -330,7 +330,9 @@ function tbp_egresos_ajax_register_payment() {
 
     // Server-Side Security Check
     $balance = tbp_egresos_get_po_balance( $po_id );
-    if ( $amount > ( $balance + 0.10 ) ) { // Tolerance
+    $forced_by = isset( $_POST['forced_by'] ) ? intval( $_POST['forced_by'] ) : 0;
+
+    if ( $amount > ( $balance + 0.10 ) && ! $forced_by ) { 
         wp_send_json_error( '🚫 SEGURIDAD FINANCIERA: El monto excede el saldo autorizado.' );
     }
 
@@ -338,7 +340,7 @@ function tbp_egresos_ajax_register_payment() {
     $pago_id = wp_insert_post( array(
         'post_type'   => 'tbp_pago',
         'post_status' => 'publish',
-        'post_title'  => 'Pago a PO #' . $po_id . ' - ' . date('d/m/Y', strtotime($date)),
+        'post_title'  => 'Pago a PO #' . $po_id . ' - ' . date('d/m/Y', strtotime($date)) . ( $forced_by ? ' [AUTORIZACIÓN ESPECIAL]' : '' ),
     ) );
 
     if ( is_wp_error( $pago_id ) ) {
@@ -354,10 +356,41 @@ function tbp_egresos_ajax_register_payment() {
     update_post_meta( $pago_id, '_tbp_concepto_pago', $ref );
     update_post_meta( $pago_id, '_tbp_file_evidencia', $file_url );
 
+    if ( $forced_by ) {
+        update_post_meta( $pago_id, '_tbp_forced_by', $forced_by );
+        update_post_meta( $pago_id, '_tbp_signature_date', current_time('mysql') );
+    }
+
     // Trigger PO recompute of paid total
     tbp_egresos_update_po_paid_total( $po_id );
 
     wp_send_json_success( 'Pago registrado con éxito.' );
+}
+
+/**
+ * AJAX Handler: Verify Admin Signature (Digital re-auth)
+ */
+add_action( 'wp_ajax_tbp_egresos_verify_signature', 'tbp_egresos_ajax_verify_signature' );
+function tbp_egresos_ajax_verify_signature() {
+    check_ajax_referer( 'tbp_egresos_payment_nonce', 'nonce' );
+    
+    $user_login = sanitize_text_field( $_POST['user'] );
+    $user_pass = $_POST['pass'];
+    
+    $user = wp_authenticate( $user_login, $user_pass );
+    
+    if ( is_wp_error( $user ) ) {
+        wp_send_json_error( 'Credenciales incorrectas. Firma inválida.' );
+    }
+    
+    if ( ! user_can( $user, 'manage_options' ) ) {
+        wp_send_json_error( 'El usuario no tiene rango administrativo para firmar.' );
+    }
+    
+    wp_send_json_success( array(
+        'user_id'   => $user->ID,
+        'user_name' => $user->display_name
+    ) );
 }
 
 function tbp_egresos_update_po_paid_total( $po_id ) {

@@ -2,7 +2,7 @@
 /**
  * Plugin Name: WooCommerce Manual Payments Tracking
  * Description: Permite registrar abonos manuales en pedidos de WooCommerce, controlando el saldo y actualizando el estado automáticamente.
- * Version: 1.8.18
+ * Version: 1.8.22
  * Author: Antigravity
  * Text Domain: wc-manual-payments
  */

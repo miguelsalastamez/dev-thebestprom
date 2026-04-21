@@ -3,7 +3,7 @@
  * Plugin Name: The Best Prom - Egresos
  * Plugin URI: https://dev.thebestprom.com
  * Description: Sistema avanzado de gestión de egresos. Incluye automatización de Órdenes de Compra, control de saldos y seguridad financiera en pagos.
- * Version: 5.2.6
+ * Version: 5.4.1
  * Author: Antigravity Team
  * Text Domain: tbp-egresos
  */
@@ -47,6 +47,7 @@ require_once TBP_EGRESOS_PATH . 'includes/po-engine.php';
 require_once TBP_EGRESOS_PATH . 'includes/po-admin-ui.php';
 require_once TBP_EGRESOS_PATH . 'includes/payment-handler.php';
 require_once TBP_EGRESOS_PATH . 'includes/admin-reports.php';
+require_once TBP_EGRESOS_PATH . 'includes/admin-advanced-reports.php';
 require_once TBP_EGRESOS_PATH . 'includes/cron-subscriptions.php';
 
 /**
@@ -89,11 +90,29 @@ function tbp_egresos_register_menu() {
 
     add_submenu_page(
         'tbp-egresos',
-        __( 'Reportes Egresos', 'tbp-egresos' ),
-        __( 'Reportes Egresos', 'tbp-egresos' ),
+        __( 'Reporte Maestro (O.C)', 'tbp-egresos' ),
+        __( 'Reporte Maestro (O.C)', 'tbp-egresos' ),
         'manage_woocommerce',
         'tbp-egresos-reportes',
         'tbp_egresos_reportes_page_content'
+    );
+
+    add_submenu_page(
+        'tbp-egresos',
+        __( 'Pagos Efectuados', 'tbp-egresos' ),
+        __( 'Pagos Efectuados', 'tbp-egresos' ),
+        'manage_woocommerce',
+        'tbp-egresos-pagos-historial',
+        'tbp_egresos_pagos_history_page_content'
+    );
+
+    add_submenu_page(
+        'tbp-egresos',
+        __( 'Ingresos vs Egresos', 'tbp-egresos' ),
+        __( 'Ingresos vs Egresos', 'tbp-egresos' ),
+        'manage_woocommerce',
+        'tbp-egresos-balance-global',
+        'tbp_egresos_balance_global_page_content'
     );
 }
 add_action( 'admin_menu', 'tbp_egresos_register_menu' );

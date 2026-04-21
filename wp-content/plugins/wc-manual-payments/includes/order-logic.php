@@ -79,16 +79,24 @@ if ( ! function_exists( 'wcmp_add_order_payment' ) ) {
 if ( ! function_exists( 'wcmp_get_order_payments_total' ) ) {
     function wcmp_get_order_payments_total( $order_id ) {
         $payments = get_post_meta( $order_id, '_wcmp_payments_history', true );
-        if ( ! is_array( $payments ) ) {
-            return 0;
+        $total_manual = 0;
+        if ( is_array( $payments ) ) {
+            foreach ( $payments as $payment ) {
+                $total_manual += (float) $payment['amount'];
+            }
         }
 
-        $total = 0;
-        foreach ( $payments as $payment ) {
-            $total += (float) $payment['amount'];
+        // RETRO-COMPATIBILIDAD v1.8.21:
+        // Si el pedido ya está en estado "Procesando" (Pagado con Tarjeta) o "Completado" 
+        // pero no tiene historial manual, devolvemos el total del pedido para que el saldo sea $0.
+        if ( $total_manual <= 0 ) {
+            $order = wc_get_order( $order_id );
+            if ( $order && in_array( $order->get_status(), array( 'processing', 'completed' ) ) ) {
+                return (float)$order->get_total();
+            }
         }
 
-        return $total;
+        return $total_manual;
     }
 }
 
@@ -233,5 +241,35 @@ function wcmp_get_all_filtered_order_ids_ajax() {
         wp_send_json_success( $all_ids );
     } else {
         wp_send_json_error( 'Error al obtener IDs filtrados' );
+    }
+}
+
+/**
+ * Auto-record global payments from standard gateways
+ * v1.8.20: Ensures balance shows $0 when paid via Stripe/Standard Gateway
+ */
+add_action( 'woocommerce_order_status_processing', 'wcmp_auto_record_gateway_payment', 10, 1 );
+add_action( 'woocommerce_order_status_completed', 'wcmp_auto_record_gateway_payment', 10, 1 );
+
+function wcmp_auto_record_gateway_payment( $order_id ) {
+    $payments = get_post_meta( $order_id, '_wcmp_payments_history', true );
+    
+    // Solo actuamos si NO hay historial de pagos registrados por nuestro plugin
+    if ( empty( $payments ) ) {
+        $order = wc_get_order( $order_id );
+        if ( ! $order ) return;
+
+        $total = (float)$order->get_total();
+        if ( $total > 0 ) {
+            $gateway_title = $order->get_payment_method_title() ?: 'Pasarela Estándar';
+            $note = sprintf( __( 'Acreditación automática: Pago vía %s', 'wc-manual-payments' ), $gateway_title );
+            
+            $date_paid = $order->get_date_paid();
+            $date_str = $date_paid ? $date_paid->date('Y-m-d') : current_time('Y-m-d');
+            
+            // Evitar recursión infinita deteniendo los hooks si es necesario, 
+            // aunque wcmp_add_order_payment llama a wcmp_update_order_status_by_balance que no dispara statuses de nuevo usualmente
+            wcmp_add_order_payment( $order_id, $total, $note, $date_str, 'GATEWAY_' . $order_id, 'system' );
+        }
     }
 }
