@@ -119,15 +119,28 @@ function tbp_asientos_generate_tables( $config_id, array $zonas_config ) {
     global $wpdb;
     $table = $wpdb->prefix . 'tbp_seat_tables';
 
-    // Eliminar mesas existentes sin asignación
-    $wpdb->query( $wpdb->prepare(
-        "DELETE t FROM {$table} t
-         LEFT JOIN {$wpdb->prefix}tbp_seat_assignments a ON a.mesa_id = t.id
-         WHERE t.config_id = %d AND a.id IS NULL",
+    // 1. Obtener mesas existentes para esta configuración
+    $existing_rows = $wpdb->get_results( $wpdb->prepare(
+        "SELECT * FROM {$table} WHERE config_id = %d",
         $config_id
-    ) );
+    ), ARRAY_A );
 
+    // Indexar por zona y número
+    $existing_idx = array();
+    foreach ( $existing_rows as $row ) {
+        $z = $row['zona'];
+        $num = (string) $row['numero'];
+        if ( ! isset( $existing_idx[ $z ] ) ) {
+            $existing_idx[ $z ] = array();
+        }
+        $existing_idx[ $z ][ $num ] = $row;
+    }
+
+    $keep_ids = array();
     $inserted = 0;
+    $updated  = 0;
+
+    // 2. Procesar la configuración de zonas
     foreach ( $zonas_config as $zona ) {
         $nombre    = sanitize_text_field( $zona['nombre']    ?? '' );
         $total     = (int) ( $zona['mesas']     ?? 0 );
@@ -141,6 +154,7 @@ function tbp_asientos_generate_tables( $config_id, array $zonas_config ) {
         }
 
         for ( $n = 1; $n <= $total; $n++ ) {
+            $num_str  = (string) $n;
             $tipo     = 'normal';
             $etiqueta = '';
 
@@ -149,24 +163,67 @@ function tbp_asientos_generate_tables( $config_id, array $zonas_config ) {
                 $etiqueta = sanitize_text_field( $bloqueo_idx[ $n ]['etiqueta'] ?? '' );
             }
 
-            $wpdb->insert(
-                $table,
-                array(
-                    'config_id'        => $config_id,
-                    'zona'             => $nombre,
-                    'numero'           => (string) $n,
-                    'capacidad'        => $capacidad,
-                    'capacidad_usada'  => 0,
-                    'tipo'             => $tipo,
-                    'etiqueta_bloqueo' => $etiqueta,
-                ),
-                array( '%d', '%s', '%s', '%d', '%d', '%s', '%s' )
-            );
-            $inserted++;
+            if ( isset( $existing_idx[ $nombre ][ $num_str ] ) ) {
+                // Ya existe: actualizamos y lo mantenemos
+                $existing_row = $existing_idx[ $nombre ][ $num_str ];
+                $existing_id  = (int) $existing_row['id'];
+                $keep_ids[]   = $existing_id;
+
+                // Solo actualizamos capacidad y etiqueta de bloqueo para no perder los campos visuales/espaciales
+                $wpdb->update(
+                    $table,
+                    array(
+                        'capacidad'        => $capacidad,
+                        'etiqueta_bloqueo' => $etiqueta,
+                        'tipo'             => ( $tipo !== 'normal' ) ? $tipo : $existing_row['tipo'],
+                    ),
+                    array( 'id' => $existing_id ),
+                    array( '%d', '%s', '%s' ),
+                    array( '%d' )
+                );
+                $updated++;
+            } else {
+                // No existe: lo insertamos
+                $wpdb->insert(
+                    $table,
+                    array(
+                        'config_id'        => $config_id,
+                        'zona'             => $nombre,
+                        'numero'           => $num_str,
+                        'capacidad'        => $capacidad,
+                        'capacidad_usada'  => 0,
+                        'tipo'             => ( $tipo !== 'normal' ) ? $tipo : 'round', // default shape is round
+                        'etiqueta_bloqueo' => $etiqueta,
+                    ),
+                    array( '%d', '%s', '%s', '%d', '%d', '%s', '%s' )
+                );
+                if ( $wpdb->insert_id ) {
+                    $keep_ids[] = (int) $wpdb->insert_id;
+                    $inserted++;
+                }
+            }
         }
     }
 
-    return $inserted;
+    // 3. Eliminar mesas que no estén en la nueva configuración y que no tengan asignaciones
+    if ( ! empty( $keep_ids ) ) {
+        $placeholders = implode( ',', array_fill( 0, count( $keep_ids ), '%d' ) );
+        $wpdb->query( $wpdb->prepare(
+            "DELETE t FROM {$table} t
+             LEFT JOIN {$wpdb->prefix}tbp_seat_assignments a ON a.mesa_id = t.id
+             WHERE t.config_id = %d AND a.id IS NULL AND t.id NOT IN ($placeholders)",
+            array_merge( array( $config_id ), $keep_ids )
+        ) );
+    } else {
+        $wpdb->query( $wpdb->prepare(
+            "DELETE t FROM {$table} t
+             LEFT JOIN {$wpdb->prefix}tbp_seat_assignments a ON a.mesa_id = t.id
+             WHERE t.config_id = %d AND a.id IS NULL",
+            $config_id
+        ) );
+    }
+
+    return $inserted + $updated;
 }
 
 /**
