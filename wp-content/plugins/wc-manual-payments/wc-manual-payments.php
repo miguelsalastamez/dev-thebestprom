@@ -2,7 +2,7 @@
 /**
  * Plugin Name: WooCommerce Manual Payments Tracking
  * Description: Permite registrar abonos manuales en pedidos de WooCommerce, controlando el saldo y actualizando el estado automáticamente.
- * Version: 1.8.22
+ * Version: 1.8.50
  * Author: Antigravity
  * Text Domain: wc-manual-payments
  */
@@ -20,6 +20,14 @@ add_action('admin_menu', function() {
         'manage_woocommerce',
         'wcmp-settings',
         'wcmp_render_settings_page'
+    );
+    add_submenu_page(
+        'wcmp-reports',
+        __( 'Depurador de Campos', 'wc-manual-payments' ),
+        __( 'Depurador de Campos', 'wc-manual-payments' ),
+        'manage_woocommerce',
+        'wcmp-field-debugger',
+        'wcmp_render_field_debugger_page'
     );
 }, 100);
 
@@ -58,6 +66,7 @@ if ( ! function_exists( 'wcmp_render_settings_page' ) ) {
 
             if ( wp_check_password($password, $current_user->data->user_pass, $current_user->ID) ) {
                 delete_option('wcmp_orphan_payments');
+                delete_option('wcmp_cleared_orphans_history');
                 delete_option('wcmp_last_webhook_signal');
                 delete_option('wcmp_stripe_secret_key');
                 
@@ -148,6 +157,7 @@ require_once plugin_dir_path( __FILE__ ) . 'includes/admin-reports.php';
 require_once plugin_dir_path( __FILE__ ) . 'includes/virtual-raffle-handler.php';
 require_once plugin_dir_path( __FILE__ ) . 'includes/admin-raffle-metabox.php';
 require_once plugin_dir_path( __FILE__ ) . 'includes/admin-order-reports.php';
+require_once plugin_dir_path( __FILE__ ) . 'includes/admin-field-debugger.php';
 
 /**
  * Register Custom Order Status: Parcialmente Pagado
@@ -205,12 +215,56 @@ function wcmp_rename_processing_in_statuses( $order_statuses ) {
 }
 
 /**
- * Test Route to verify REST API registration
+ * AJAX Handler: Fetch products linked to selected events
  */
-add_action( 'rest_api_init', function () {
-    register_rest_route( 'wcmp/v1', '/test', array(
-        'methods' => 'GET',
-        'callback' => function() { return array('status' => 'OK', 'version' => '1.5.9'); },
-        'permission_callback' => '__return_true',
-    ) );
-} );
+add_action( 'wp_ajax_wcmp_get_products_by_events', 'wcmp_get_products_by_events_ajax' );
+function wcmp_get_products_by_events_ajax() {
+    $event_ids = isset($_POST['event_ids']) ? array_map('intval', (array)$_POST['event_ids']) : array();
+    
+    if ( empty($event_ids) ) {
+        // Return recent products if no events selected
+        $products = wc_get_products( array( 'limit' => 200, 'status' => 'publish' ) );
+    } else {
+        global $wpdb;
+        $placeholders = implode(',', array_fill(0, count($event_ids), '%d'));
+        
+        // Strategy: Sales History (The one that we confirmed works)
+        $product_ids = $wpdb->get_col( $wpdb->prepare("
+            SELECT DISTINCT woim.meta_value 
+            FROM {$wpdb->prefix}woocommerce_order_itemmeta woim
+            INNER JOIN {$wpdb->prefix}woocommerce_order_itemmeta woim2 ON woim.order_item_id = woim2.order_item_id
+            WHERE woim.meta_key = '_product_id'
+            AND woim2.meta_key IN ('_event_id', '_tribe_tickets_event')
+            AND woim2.meta_value IN ($placeholders)
+        ", ...$event_ids) );
+        
+        // Fallback: Universal Search if no sales yet
+        if ( empty($product_ids) ) {
+            $product_ids = $wpdb->get_col( $wpdb->prepare("
+                SELECT DISTINCT pm.post_id 
+                FROM {$wpdb->postmeta} pm
+                INNER JOIN {$wpdb->posts} p ON pm.post_id = p.ID
+                WHERE p.post_type = 'product' 
+                AND pm.meta_value IN ($placeholders)
+            ", ...$event_ids) );
+        }
+        
+        $product_ids = array_unique( array_map('intval', $product_ids) );
+        
+        if ( empty($product_ids) ) {
+             wp_send_json_success( array() );
+        }
+        
+        $products = wc_get_products( array( 'include' => $product_ids, 'status' => 'publish', 'limit' => -1 ) );
+    }
+
+    $response = array();
+    foreach ( $products as $p ) {
+        $response[] = array(
+            'id' => $p->get_id(),
+            'name' => $p->get_name() . ' (ID: ' . $p->get_id() . ')'
+        );
+    }
+
+    wp_send_json_success( $response );
+}

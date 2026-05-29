@@ -160,9 +160,59 @@ if ( ! function_exists( 'wcmp_register_webhook_route' ) ) {
             'callback' => 'wcmp_handle_incoming_webhook',
             'permission_callback' => '__return_true',
         ) );
+
+        // Dynamic Receipt Redirector v1.8.23
+        register_rest_route( 'wcmp/v1', '/receipt/(?P<id>[a-zA-Z0-9_]+)', array(
+            'methods'  => 'GET',
+            'callback' => 'wcmp_handle_receipt_redirect',
+            'permission_callback' => '__return_true',
+        ) );
     }
 }
 add_action( 'rest_api_init', 'wcmp_register_webhook_route' );
+
+/**
+ * Handle Dynamic Receipt Redirect
+ */
+function wcmp_handle_receipt_redirect( $data ) {
+    $tx_id = $data['id'] ?? '';
+    if ( empty($tx_id) ) wp_die('ID de transacción no proporcionado.');
+
+    $secret_key = get_option('wcmp_stripe_secret_key');
+    if ( empty($secret_key) ) wp_die('Configuración de Stripe incompleta.');
+
+    // Determinamos si es un Payment Intent (pi_) o un Charge (ch_)
+    $api_url = "https://api.stripe.com/v1/payment_intents/{$tx_id}?expand[]=latest_charge";
+    if ( strpos($tx_id, 'ch_') === 0 ) {
+        $api_url = "https://api.stripe.com/v1/charges/{$tx_id}";
+    }
+
+    $response = wp_remote_get( $api_url, array(
+        'headers' => array('Authorization' => 'Bearer ' . $secret_key),
+        'timeout' => 15
+    ) );
+
+    if ( is_wp_error($response) ) {
+        wp_die('Error al conectar con Stripe: ' . $response->get_error_message());
+    }
+
+    $body = wp_remote_retrieve_body($response);
+    $stripe_data = json_decode( $body, true );
+
+    $receipt_url = '';
+    if ( strpos($tx_id, 'pi_') === 0 ) {
+        $receipt_url = $stripe_data['latest_charge']['receipt_url'] ?? '';
+    } else {
+        $receipt_url = $stripe_data['receipt_url'] ?? '';
+    }
+
+    if ( $receipt_url ) {
+        wp_redirect( $receipt_url );
+        exit;
+    }
+
+    wp_die('No se pudo encontrar el recibo para esta transacción. Es posible que el pago sea demasiado antiguo o no haya generado un recibo público.');
+}
 
 /**
  * Helper to process a single payment from Sheets
@@ -334,16 +384,31 @@ if ( ! function_exists( 'wcmp_log_orphan_payment' ) ) {
         $orphans = get_option( 'wcmp_orphan_payments', array() );
         if ( ! is_array( $orphans ) ) { $orphans = array(); }
 
-        // Evitar duplicados en huérfanos usando el ID de referencia
-        if ( ! empty( $data['ref'] ) ) {
-            foreach ( $orphans as $o ) {
-                if ( isset( $o['ref'] ) && $o['ref'] === $data['ref'] ) {
-                    return; // Ya existe este registro huérfano
-                }
+        $source = $data['source'] ?? '';
+        $amount = $data['amount'] ?? 0;
+        $input  = $data['input'] ?? '';
+        $ref    = $data['ref'] ?? '';
+
+        // GENERAR HASH ÚNICO DE IDENTIFICACIÓN (v1.8.25)
+        // Esto sirve para reconocer el mismo pago huérfano incluso si se limpia la lista principal
+        $orphan_id = md5( $source . '|' . $amount . '|' . $input . '|' . $ref );
+        
+        // 1. Verificación contra lista de huérfanos YA LIMPIADOS (Persistent Blocklist)
+        $cleared_orphans = get_option( 'wcmp_cleared_orphans_history', array() );
+        if ( is_array($cleared_orphans) && isset($cleared_orphans[$orphan_id]) ) {
+            return; // Este pago fue explícitamente borrado por el admin, no re-insertar
+        }
+
+        // 2. Evitar duplicados en la lista activa actual
+        foreach ( $orphans as $o ) {
+            $o_id = md5( ($o['source'] ?? '') . '|' . ($o['amount'] ?? 0) . '|' . ($o['input'] ?? '') . '|' . ($o['ref'] ?? '') );
+            if ( $o_id === $orphan_id ) {
+                return; // Ya existe en la lista actual
             }
         }
 
         $data['date'] = current_time('mysql');
+        $data['orphan_id'] = $orphan_id; // Guardamos el ID para fácil referencia futura
         $orphans[] = $data;
         update_option( 'wcmp_orphan_payments', $orphans );
     }

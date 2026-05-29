@@ -1,4 +1,274 @@
-# Changelog - The Best Prom: Actividades
+## [11.9.47] - 2026-05-29
+### Corregido
+- **Corrección en la obtención de mesas del motor de packing**: Ahora soporta mesas con forma personalizada 'round' o 'rectangular' guardadas desde el plano visual en lugar de requerir estrictamente tipo 'normal'.
+
+## [11.9.46] - 2026-05-29
+### Corregido
+- **Vinculación del botón Ejecutar Asignación Inteligente**: Enlace dinámico del click handler para el botón `btn_run_packing_v2` en la Etapa 3.
+
+## [11.9.45] - 2026-05-29
+### Corregido
+- **Sincronización al borrar mesas en el plano visual**: Ahora las elimina correctamente de la base de datos y libera asignaciones asociadas.
+
+## [11.9.44] - 2026-05-29
+### Corregido
+- **Corrección en la generación visual de mesas**: Lugares por mesa PAX y rutina de auto-reparación para mesas con capacidad 0.
+
+## [11.9.43] - 2026-05-26
+### Agregado
+- **Segregación Estricta de Productos**: Implementada una separación estricta para excluir pedidos de rifa pura del listado de paquetes y viceversa, tanto en la vista del reporte administrativo AJAX como en la exportación CSV.
+- **Filtrado Dinámico de Cantidades y Badges**: Se modificó la renderización de filas para que las cantidades y las insignias de tipo (`PAQUETE` / `RIFA`) correspondan exactamente al filtro de tipo seleccionado en pantalla (`$f_type`), solucionando la mezcla de estadísticas visuales.
+- **Exclusión a Nivel SQL e Ítems**: Optimizado el filtrado en base de datos de los IDs base para separar productos de paquetes y rifas utilizando `array_diff` y relaciones de eventos de rifa.
+
+## [11.9.42] - 2026-05-26
+### Agregado
+- **Sincronización de Estado de Entrega basado en Pedido**: Modificado el reporte general administrativo y el exportador CSV para considerar cualquier pedido con metadato `_tbp_entrega_paquetes = 1` como entregado de forma general, removiéndolo de la lista de "Pendientes de entrega" aun cuando se filtre por una regla de entrega específica.
+- **Regla de Entrega de Respaldo por ID de Producto**: Implementada lógica de búsqueda por ID de producto (Boleto) si no hay reglas configuradas para la fecha de check-in actual. Esto garantiza que las entregas por escaneo QR se registren correctamente y actualicen el metadato del pedido a "entregado" en cualquier fecha.
+- **Script de Reparación v4 de Entregas**: Se actualizó el reparador en segundo plano para procesar logs tanto de tipo `qr_delivery` como `delivery_items` y restaurar los metadatos `_tbp_entrega_paquetes` y `_tbp_delivery_rule_id` correspondientes.
+
+## [11.9.40] - 2026-05-26
+### Corregido
+- **Paginación Robusta en Filtros de Reportes**: Se añadió una validación defensiva en la obtención del parámetro `start` (offset) de DataTables. Si el navegador retiene una posición de página guardada (como la página 121) que excede el tamaño del conjunto de datos filtrado actual (por ejemplo, 48 pedidos pendientes de un total histórico de 12,044), el servidor ahora restablece automáticamente el desplazamiento a la página 1 (`start = 0`). Esto evita la visualización de tablas vacías y corrige de inmediato la visualización desfasada.
+
+## [11.9.39] - 2026-05-26
+### Corregido
+- **Paginación y Búsqueda del Reporte con HPOS Activo**: Se rediseñó por completo el motor de paginación y búsqueda en `tbp_actividades_get_reports_data_ajax`. Dado que `wc_get_orders()` puede ignorar o anular argumentos de inclusión como `post__in` o `include` debido a interferencias de otros ganchos o configuraciones estrictas de HPOS, ahora el plugin realiza la paginación y la búsqueda de términos directamente sobre el conjunto prefiltrado y ordenado de IDs de pedidos en PHP (`array_slice()`) y carga de forma individual y ultrarrápida únicamente los objetos necesarios en memoria (`wc_get_order()`). Esto elimina la aparición de miles de pedidos antiguos ("Sin Evento") y sincroniza exactamente el total de registros con el paginador de DataTables.
+
+## [11.9.38] - 2026-05-26
+### Corregido
+- **Filtro de Pedidos Pendientes con HPOS**: Se reemplazó el argumento de consulta obsoleto `post__in` por el estándar `include` de WooCommerce en la función `tbp_actividades_get_reports_data_ajax`. Esto corrige la compatibilidad con el Almacenamiento de Pedidos de Alto Rendimiento (HPOS), garantizando que las consultas para limitar los pedidos devueltos a un conjunto específico de IDs de pedidos pendientes funcionen correctamente en lugar de ser ignoradas y listar pedidos ya entregados como `#34560`, `#34543` o `#30370`.
+
+## [11.9.37] - 2026-05-26
+### Optimizado
+- **Rendimiento de Migraciones en admin_init**: Se optimizaron las rutinas `tbp_actividades_repair_ghost_deliveries` y `tbp_actividades_migrate_legacy_phases_v1` ejecutadas en el hook `admin_init`. Ahora se ejecutan en lotes controlados (lotes de 20 y 50 pedidos) y utilizan consultas con `LEFT JOIN` altamente indexadas en lugar de subconsultas lentas. Además, se marcan con `'legacy_skipped'` los pedidos que no se pueden migrar (por falta de reglas/eventos), evitando bucles de migración infinitos y previniendo el error 504 / WSOD en tiendas con bases de datos grandes.
+- **Control de Consultas de Desarrollo**: Se restringió la visualización del aviso de desarrollo para autocompletar pedidos en WP-Admin para que solo se ejecute al pasar el parámetro explícito `?tbp_show_dev_force_complete=1` en la URL, reduciendo la carga de consultas al cargar cualquier otra pantalla administrativa.
+
+## [11.9.36] - 2026-05-26
+### Agregado
+- **Filtro Pendientes de Entrega**: Se añadió la opción "Pendientes de Entrega" al selector de ámbito del reporte general. Este filtro opera de manera interactiva en tiempo real sobre la tabla de reportes y también se encuentra integrado en el exportador CSV.
+
+## [11.9.35] - 2026-05-21
+### Corregido
+- **Segregación de Entregas y Rifas**: Se separaron por completo las consultas de base de datos para entregas de paquetes físicas/manuales (`delivery_items`, `qr_delivery`) y boletos de rifa (`physical`, `tombola`), tanto en la edición del pedido de WooCommerce (metabox) como en el historial del frontend del cliente.
+- **Limpieza de Metadatos al Eliminar Logs**: Al borrar un registro individual de entrega, ahora se realiza una recalculación selectiva y una limpieza específica de los metadatos correspondientes (`_tbp_entregas_fisicas`, `_tbp_boletos_tombola`, `_tbp_delivery_rule_id`, y `_tbp_entrega_paquetes`).
+- **Reversión en Reset de Paquetes**: Al resetear los paquetes de un pedido, ahora se borran tanto los logs de entregas manuales como los de QR, se eliminan los metadatos de reglas y se revierte automáticamente el estado de check-in en Event Tickets de todos los asistentes afectados.
+
+## [11.9.26] - 2026-05-18
+### Corregido (Crítico Absoluto)
+- **Engaño a la App QR a nivel API REST**: Se descubrió que la App de Escáner QR de *Event Tickets* solicita *explícitamente* descargar únicamente los asistentes con estado `wc-completed`. Al pedir esto explícitamente a través de la URL (`?order_status=wc-completed`), la API ignora las listas de estados públicos y excluye a los "Pagados con Tarjeta".
+  - Se implementó una intercepción temprana (`rest_api_init`) que intercepta la petición HTTP de la App *antes* de que sea procesada, e inyecta forzosamente `wc-processing` en la solicitud, engañando a la App para que cargue y acepte también a estos asistentes.
+
+## [11.9.25] - 2026-05-18
+### Corregido (Crítico)
+- **Generación Física de Boletos en Base de Datos**: Se descubrió que por defecto Event Tickets Plus NO crea el registro del boleto en la base de datos hasta que el pedido es "Completado". Si el boleto no existe físicamente, la app no tiene qué descargar.
+  - Se añadieron los filtros `event_tickets_woo_ticket_generating_order_stati` y `event_tickets_woo_complete_order_stati` para forzar a Event Tickets Plus a GENERAR el boleto de inmediato en cuanto el pedido entra a estado `[Pagado con Tarjeta]` (`wc-processing`).
+
+## [11.9.24] - 2026-05-18
+### Corregido (Crítico)
+- **Escaneo QR ahora funciona al 100% con Pagado con Tarjeta**: Se descubrió que Event Tickets Plus tiene **DOS puntos de validación** separados para el escaneo QR:
+  1. **Listado de asistentes** (API REST): Ya cubierto en 11.9.22 con los filtros de `tribe_tickets_repositories_order_public_statuses`.
+  2. **Validación al escanear** (`CheckIn_Stati.php`): Este archivo tiene **hardcodeado** `['completed']` como el ÚNICO estado válido para check-in vía QR. Sin este fix, el asistente aparecería en la app pero al escanear el QR **se rechazaría** silenciosamente.
+  - Se añadió el filtro `event_tickets_attendees_woo_checkin_stati` para incluir `processing` como estado válido al momento del escaneo, completando la cadena completa: **listado + escaneo**.
+
+## [11.9.23] - 2026-05-18
+### Corregido
+- **Solo Pagado con Tarjeta y Completado son escaneables**: Se corrigió la integración de estados para la app de escaneo QR. Solo los pedidos en estado `[Pagado con Tarjeta]` (`wc-processing`) y `Completado` (`wc-completed`) aparecen en la app. Los pedidos en estado `Pagado Parcialmente` (`wc-p-pagado`) quedan **excluidos intencionalmente** porque aún tienen saldo pendiente y no deben recibir sus paquetes/boletos.
+
+## [11.9.22] - 2026-05-18
+### Agregado
+- **Detección Automática de Pedidos en la App de Escaneo QR**: Se registró el estado `wc-processing` como estado público y válido en la API REST de Event Tickets usando filtros y PHP Reflection, eliminando la necesidad de cambiar manualmente los pedidos a Completado.
+
+## [11.9.21] - 2026-05-18
+### Agregado
+- **Flujo de Escaneo Dividido (QR y Escritorio) e Insignias de Progreso**: Se optimizó la experiencia del usuario separando la lógica según el origen de la acción:
+  1. **Escaneo QR (Móvil)**: Mantiene el check-in individual de a `1` unidad por escaneo con auto-reversión para permitir el ingreso de invitados de forma independiente en diferentes momentos.
+  2. **Escritorio manual (WP-Admin)**: Para el operador en escritorio, hacer un solo clic en "Registrar" entrega **todas las unidades restantes del boleto a la vez**, logrando el comportamiento nativo de Event Tickets sin necesidad de clics repetitivos.
+  3. **Insignias de Progreso en Escritorio**: Se inyecta una insignia visual premium al lado del botón que indica exactamente cuántas unidades tiene, restan o fueron entregadas (ej. `[Entrega: 3 u]` en verde, `[Restan: 2 de 3 u]` en naranja, `[Entregado: 3 u]` en gris), dándole al operador claridad total del inventario que debe entregar al asistente.
+
+## [11.9.20] - 2026-05-18
+### Agregado
+- **Soporte de Escaneos Múltiples para Boletos con Varias Unidades**: Se diseñó e implementó un sofisticado motor de check-ins parciales. Cuando un boleto cuenta con varias unidades (ej. "3 pases para cena de gala"), el mismo código QR o botón de check-in manual en escritorio puede ser escaneado y presionado hasta 3 veces de forma independiente. Cada escaneo registra la entrega de exactamente `1` unidad en la base de datos, insertando una nota de progreso en WooCommerce ("Escaneo 1 de 3", "Escaneo 2 de 3") y enviando notificaciones personalizadas con la progresión. A nivel de Event Tickets Plus, el estado de check-in se revierte automáticamente después de cada escaneo parcial para mantener el código QR activo y funcional, bloqueándose de forma definitiva y quedando como "Checked-in" únicamente cuando se ha alcanzado la última unidad disponible.
+
+## [11.9.19] - 2026-05-18
+### Agregado
+- **Deshabilitación Visual de Botones de Registro No Autorizados**: Se implementó una interceptación visual en la columna de registro del listado de asistentes de WP-Admin (filtro `tec_tickets_attendees_table_column_check_in`). Si un boleto no cuenta con entrega activa o está bloqueado, el botón de check-in manual se inhabilita físicamente (`disabled`), cambia su etiqueta a "No Autorizado", se eliminan las clases disparadoras de jQuery AJAX y se le aplica un diseño gris y bloqueado con CSS inline para impedir cualquier clic por parte de los operadores.
+
+## [11.9.18] - 2026-05-18
+### Agregado
+- **Bloqueo y Autorización en Tiempo Real de Check-Ins No Autorizados o Duplicados**: Se implementó un motor de seguridad integral a nivel de aplicación (hook `tec_tickets_attendee_checkin`) y a nivel de base de datos de WordPress (hooks `add_post_metadata` y `update_post_metadata`) para impedir de forma absoluta el registro de check-in de boletos que no estén autorizados para la entrega física de hoy o que constituyan duplicados. Esto arroja errores inmediatos de "Fallo" a los operadores de escaneo en la aplicación y registra una nota detallada del intento bloqueado en el Pedido de WooCommerce, evitando entregas erróneas.
+
+## [11.9.17] - 2026-05-18
+### Agregado
+- **Reversión y Sincronización Símica Bidireccional de Check-Ins y Entregas**: Se implementó una sincronización total entre la asistencia de Event Tickets y las entregas físicas en WooCommerce:
+  1. Si un administrador deshace o anula el check-in de un asistente (Undo Check-In desde WP-Admin o desde la App), el sistema automáticamente borra el registro de entrega física asociado a ese boleto individual en la base de datos y añade una nota informativa en el pedido de WooCommerce.
+  2. Si un administrador elimina manualmente un registro de entrega física QR haciendo clic en el icono de papelera 🗑️ en el pedido de WooCommerce, el sistema automáticamente anula y deshace el estado de check-in del asistente en Event Tickets, reactivando su código QR para futuros escaneos.
+
+## [11.9.16] - 2026-05-18
+### Agregado
+- **Detección Duplicados por Asistente (Per-Attendee Duplicate Checks)**: Se refactorizó la validación de duplicados y la inserción del log de entregas físicas para que operen a nivel de cada asistente individual (`attendee_id` único de CPT) utilizando la columna `staff_id` como identificador de ticket para logs del tipo `qr_delivery`. Esto permite que pedidos de WooCommerce que contengan múltiples boletos o paquetes del mismo tipo comprados juntos puedan registrar la entrega de cada uno de sus asistentes por separado y de manera independiente, manteniendo al mismo tiempo un control absoluto contra intentos de re-escaneo sobre un mismo boleto individual.
+- **Mensajería Personalizada con Nombre de Asistente**: Se implementó una extracción inteligente del nombre del asistente (título del post o meta field de Event Tickets Plus) como reemplazo de la etiqueta `[nombre]` en las notificaciones del pedido, en lugar de usar por defecto los datos de facturación del comprador general del pedido.
+
+## [11.9.15] - 2026-05-18
+### Corregido
+- **Soporte Completo para Check-In Manual de WooCommerce (wootickets_checkin)**: Se descubrió que la sub-clase de WooCommerce de Event Tickets Plus (`Tribe__Tickets_Plus__Commerce__WooCommerce__Main`) sobrescribe por completo el método de check-in nativo, omitiendo el hook central `event_tickets_checkin` al registrar asistentes manualmente desde la pantalla de administración de WP-Admin (donde solo se disparaba `wootickets_checkin`). Se registraron los ganchos correspondientes para escuchar y procesar tanto `wootickets_checkin` como `eddtickets_checkin`, logrando total consistencia e interceptación de entregas físicas físicas en todos los canales.
+
+## [11.9.14] - 2026-05-18
+### Agregado
+- **Barra de Canalización a Pedidos e Información Inline**: Se añadió una fila de insignias (badges) en la lista de asistentes que expone el ID de pedido, producto, asistente y el estado en vivo de las reglas de entrega. Incluye enlace directo al editor del pedido de WooCommerce para facilitar la depuración inmediata.
+
+## [11.9.13] - 2026-05-18
+### Agregado
+- **Panel de Control de Diagnóstico de Escaneos QR en Tiempo Real (Real-time Debug Dashboard)**: Se implementó un panel visual e interactivo dentro del metabox "ACTIVIDADES DEL EVENTO" en la edición de Pedidos de WooCommerce en WP-Admin. Este panel registra y detalla en tiempo real cada intento de check-in / escaneo QR interceptado (exitoso, ignorado por fecha, cancelado por falta de metadatos o bloqueado por duplicación), permitiendo al administrador inspeccionar en un solo clic las variables internas exactas de la transacción sin requerir acceso al servidor ni revisar archivos logs de PHP.
+
+## [11.9.12] - 2026-05-18
+### Corregido
+- **Matriz de Fechas Antidesfase Horaria (Timezone-Proof)**: Se implementó un algoritmo inteligente en la detección de reglas activas que evalúa y valida múltiples husos horarios (hora local configurada en WordPress, marca de tiempo UTC, hora del servidor local y huso horario de México UTC-6 como salvaguarda). Esto previene que el check-in falle silenciosamente cuando el servidor opera en una zona horaria UTC/diferente y el usuario registra entregas en su fecha local.
+- **Trazabilidad de Servidor Verbosa**: Se añadieron logs sumamente explícitos en cada paso crítico del hook de check-in para facilitar el diagnóstico instantáneo.
+
+## [11.9.11] - 2026-05-18
+### Corregido
+- **Resolución de ID del Evento en Check-In**: Se amplió y robusteció la detección de `$event_id` dentro del hook `event_tickets_checkin` para soporte integral de WooCommerce tickets, escaneando meta keys específicas como `_tribe_wooticket_event`, `_tribe_tickets_event`, `_tribe_tickets_post_id`, `_event_id`, y añadiendo un fallback de 7 capas a través del ID del pedido.
+- **Espacio dedicado para Entregas Físicas (QR)**: Se separaron los registros históricos en la sección del metabox "ACTIVIDADES DEL EVENTO" en dos bloques independientes y sumamente legibles: **RIFA (Boletos Físicos)** y **Entregas Físicas (QR)** con sus columnas dedicadas ("FECHA DE ENTREGA ACTIVA", "TIPO DE ENTREGA", "UNIDADES ENTREGADAS", "ACCIONES") y una acción robusta para eliminar/resetear registros individuales mediante AJAX.
+- **Trazabilidad y Debugging**: Se incorporaron logs de servidor detallados en el inicio del hook de entrega para garantizar total visibilidad y tracing en caliente del flujo de entrega por QR.
+
+## [11.9.10] - 2026-05-18
+### Agregado
+- **Modelo de Ejecución Híbrido**: Se implementó una lógica de procesamiento inteligente para el check-in de entregas. Si el registro se realiza de manera manual desde el panel WP-Admin o vía AJAX administrativo, se ejecuta de forma **sincrónica (instantánea)**. Si se realiza desde la app o scanner móvil vía API REST, se procesa en segundo plano de forma **asíncrona** para optimizar la concurrencia. Esto garantiza que al pulsar "Registro" en WP-Admin, las notas de pedido, emails y registros en la sección "RIFA" del panel se actualicen al instante sin demoras de cron.
+
+## [11.9.9] - 2026-05-18
+### Corregido
+- **Prioridad Máxima en Filtros de Estado de Check-In**: Se elevó la prioridad de los ganchos `event_tickets_attendees_checkin_stati` y específicos de proveedor a `999` para evitar que la lógica interna de Event Tickets Plus (`filter_attendee_ticket_checkin_stati` en prioridad `10`) limpie y restrinja los estados válidos a únicamente `'completed'`. Esto garantiza que los pedidos en estado `[Pagado con Tarjeta]` (internamente `processing`) y el estado de pago personalizado `p-pagado` / `wc-p-pagado` sean 100% elegibles para realizar check-in y mostrar los botones correspondientes de manera inmediata.
+
+## [11.9.8] - 2026-05-18
+### Corregido
+- **Adaptabilidad del Botón Acceso Digital en Móviles**: Se implementó una consulta de medios CSS (`@media (max-width: 767px)`) para reestructurar la cabecera en modo columna en dispositivos móviles. Esto desplaza el badge de `"Acceso Digital"` de forma totalmente natural debajo del texto de las entradas, eliminando por completo cualquier desbordamiento o recorte en pantallas de celulares.
+
+## [11.9.7] - 2026-05-18
+### Corregido
+- **Separación Física de QRs y Botones de la Tarjeta**: Se reestructuró la colocación del bloque del Código QR Activo para que se mueva mediante JavaScript fuera del contenedor de botones y se posicione de manera totalmente independiente justo por encima de su correspondiente tarjeta blanca de abordaje. Esto permite que el boleto blanco mantenga exactamente una estructura simétrica de dos columnas con los botones de PDF y Apple Wallet alineados uno al lado del otro, replicando al 100% el diseño estético de la segunda imagen.
+- **Diseño del Encabezado Adaptativo**: Se ajustó el título en tres líneas y los badges del encabezado de accesos oficiales en la parte superior para alinearse con la identidad visual premium de la primera imagen.
+
+## [11.9.6] - 2026-05-18
+### Corregido
+- **Diseño de Tarjeta de Embarque y Carga de Estilos (CSS)**: Se reestructuró por completo el cargado de la hoja de estilos de "Tarjeta de Embarque" enviándola a `wp_head`, y el encabezado oficial de tickets a `wp_footer` junto con un script DOM para moverlo dinámicamente arriba de los pases. Esto soluciona de raíz el problema por el cual el primer boleto se veía distorsionado o squished (con el diseño cargado dentro del primer contenedor de botones).
+- **Generador de QR Alternativo Bulletproof**: Se implementó una generación automatizada de QR check-in mediante Google Charts API en caso de que la configuración local del conector de Event Tickets Plus retorne un QR vacío o restringido, garantizando que el QR de check-in activo se muestre en el 100% de los boletos.
+
+## [11.9.5] - 2026-05-18
+### Corregido
+- **Unificación de Selectores de Cuadrícula (WooCommerce)**: Se actualizaron los selectores CSS y se registró el gancho en el entry point de listas de asistentes moderno de Event Tickets Plus (`attendees-list/passes:buttons`). Esto soluciona de raíz el problema donde el diseño de Tarjeta de Embarque Premium no se aplicaba en las páginas de pedidos de WooCommerce (`mi-cuenta/ver-pedido/`) debido a discrepancias en las clases CSS modernas.
+
+## [11.9.4] - 2026-05-18
+### Corregido
+- **Unificación de Carga de Estilos (CSS)**: Se reestructuró la lógica interna del gancho de renderizado para cargar la hoja de estilos y el encabezado de "Tarjeta de Embarque" incondicionalmente al inicio del hook. Esto garantiza que la nueva interfaz se aplique al 100% de los boletos en la cuenta del cliente, incluso si algunos o todos los tickets de la compra no disponen de códigos QR generados activamente o son de tipo legacy.
+
+
+## [11.9.3] - 2026-05-18
+### Agregado
+- **Rediseño Premium Tarjeta de Embarque (Boarding Pass)**: Transformó la lista de tickets por defecto de WooCommerce en un sistema de tarjetas tipo pase de abordar físico muy estético y ordenado. Incluye perforaciones visuales laterales (ticket notches), un divisor de línea discontinua y un encabezado oficial premium con badge digital de acceso.
+- **Optimización Móvil**: Ajuste responsivo completo mediante media queries que reordena automáticamente el diseño en pantallas pequeñas para una visualización táctil idónea y compacta.
+
+## [11.9.2] - 2026-05-18
+### Agregado
+- **Visibilidad del QR en Escritorio**: Ahora el código QR se renderiza de forma elegante directamente en la página de detalles del pedido del cliente (`mi-cuenta/ver-pedido/`) debajo de los botones de Apple Wallet y PDF. Esto permite al usuario mostrar su QR de acceso/entrega directamente sin salir del navegador.
+
+## [11.9.1] - 2026-05-18
+### Corregido
+- **Filtro de Escaneo y Compatibilidad**: Se eliminó la restricción `$qr` en el hook de check-in para permitir que tanto escaneos QR vía redirección móvil (cámara del teléfono) como check-ins manuales en wp-admin registren correctamente la entrega en el pedido.
+- **Detección de Pedido y Tickets**: Se agregaron fallbacks para las llaves meta de Event Tickets Plus en sus versiones más recientes (`_tec_tickets_commerce_ticket` y `_tec_tickets_commerce_order`) para garantizar una vinculación 100% precisa.
+
+## [11.9.0] - 2026-05-18
+### Agregado
+- **Entregas Automáticas via QR**: Integración nativa de entregas físicas por escaneo de QR de Event Tickets Plus.
+- **Meta Box "Entregas del Evento"**: Interfaz interactiva de tarjetas y modales en `tribe_events` para configurar entregas por fecha y asociar boletos con unidades.
+- **Motor de Decisión en Tiempo Real**: Valida automáticamente vigencia diaria, exclusiones de boletos y realiza auto-resets de check-in (`uncheckin()`) para futuras entregas.
+- **Procesamiento Asíncrono (Action Scheduler)**: Mueve la base de datos de logs, notas WC y emails al fondo para mantener picos de escaneos (2,000+) en < 200ms.
+- **Caché Transient de Reglas**: Caché dinámico de 1 hora para evitar cuellos de botella en base de datos.
+- **Ampliación de Estatus de Check-In**: Permite escanear tickets en estados `processing` ("Pagado con Tarjeta") y `completed`.
+
+## [11.8.15] - 2026-05-14
+### Agregado
+- **Reset Selectivo**: Ahora puedes resetear de forma independiente la entrega de **Paquetes** y la de **Boletos/Rifas**. Esto evita que al corregir un error en paquetes se borre accidentalmente el historial de boletos entregados.
+- **Doble Botón de Reset**: Si un pedido tiene ambos tipos de entrega registrados, aparecerán dos botones específicos (📦 Reset P. y 🎟️ Reset B.) para mayor control.
+
+## [11.8.14] - 2026-05-14
+### Corregido
+- **Interactividad del Reporte**: Se corrigió un fallo de JavaScript donde los botones de "Reset" y "Recordatorio" dejaban de funcionar al cambiar de página o filtrar el reporte. Ahora utilizan delegación de eventos para garantizar que siempre respondan al clic.
+- **Sincronización tras Reset**: El reporte ahora se recarga automáticamente tras un Reset para actualizar los contadores del dashboard.
+
+## [11.8.13] - 2026-05-14
+### Corregido
+- **Botón Reset de Entregas**: Se corrigió el botón de "Reset" en el reporte administrativo. Ahora limpia correctamente tanto las entregas de Rifas como las de Paquetes, borrando el historial de registros y los metadatos del pedido para permitir una nueva entrega.
+
+## [11.8.12] - 2026-05-14
+### Agregado
+- **Protección Anti-Duplicados**: Se ha implementado una restricción que impide registrar la entrega de un paquete más de una vez por pedido.
+- **Historial de Entrega**: Al buscar un pedido ya entregado, el sistema ahora muestra quién lo entregó y en qué fecha/hora exacta, deshabilitando automáticamente el botón de registro.
+
+## [11.8.11] - 2026-05-14
+### Corregido
+- **Sincronización de Dashboard**: Corrección definitiva del enlace JavaScript que impedía que las tarjetas de estadísticas se actualizaran con la respuesta del servidor. Ahora las métricas de Total, Entregados y Pendientes se reflejan correctamente al cargar la tabla.
+
+## [11.8.10] - 2026-05-14
+### Optimizado
+- **Motor de Estadísticas Ultra-Rápido**: Rediseño completo del cálculo de métricas usando SQL puro. Esto elimina el cuello de botella al procesar miles de pedidos simultáneamente.
+- **Retro-compatibilidad**: Se ha añadido soporte para detectar filtros tanto por ID como por nombre, evitando que los contadores se queden en cero si no se ha refrescado la sesión.
+
+## [11.8.9] - 2026-05-14
+### Corregido
+- **Fijación de Estadísticas**: Corrección de un error que causaba que los contadores mostraran 0. Ahora el sistema utiliza IDs internos de eventos en lugar de nombres, garantizando que el cálculo de Total, Entregados y Pendientes sea siempre exacto.
+
+## [11.8.8] - 2026-05-14
+### Agregado
+- **Dashboard de Estadísticas Dinámicas**: Nueva sección visual que muestra en tiempo real el Total de Pedidos, Entregados y Pendientes según los filtros seleccionados (Evento, Status, Tipo).
+- **Cálculo en Tiempo Real**: Los contadores se actualizan automáticamente al cambiar cualquier filtro de la tabla.
+
+## [11.8.7] - 2026-05-14
+### Optimizado
+- **Motor Híbrido SQL/WC**: Rediseño del motor de búsqueda para garantizar un filtrado 100% preciso en bases de datos con +13,000 registros.
+- **Intersección de IDs**: Los filtros de Tipo y Evento ahora se procesan mediante intersección de IDs a nivel de base de datos para máxima fiabilidad.
+- **Paginación Corregida**: Resolución definitiva de los "saltos" en la paginación cuando se aplican filtros estrictos.
+
+## [11.8.6] - 2026-05-14
+### Agregado
+- **Reporte de Entregas (DataTables Server-Side)**: Implementación de procesamiento del lado del servidor para soportar grandes volúmenes de datos (+13,000 registros).
+- **Optimización de Filtros**: Los filtros de Tipo (Rifa/Paquete), Evento y Estatus ahora se procesan directamente en la base de datos para máxima velocidad.
+- **Caché de Metadatos**: Optimización de consultas mediante caché persistente de metadatos de eventos.
+- **Correcciones**: Resolución de errores en el conteo de totales dentro del reporte unificado.
+
+## [11.8.5] - 2026-05-13
+### Agregado
+- **Reporte de Entregas Unificado**: El reporte ahora integra tanto entregas de "Rifas" (boletos) como de "Paquetes" (artículos físicos).
+- **Filtros Avanzados**: Se añadió un nuevo filtro por "Tipo" (Rifa/Paquete) además de mejorar el filtro por evento y estatus.
+- **Tagueo de Pedidos**: Los pedidos entregados ahora se marcan automáticamente con metadatos específicos para mejorar la velocidad y precisión del reporte.
+
+## [11.8.4] - 2026-05-13
+### Agregado
+- **Detalles de Entrega Personalizados**: Nueva caja de texto en el paso 3 para especificar qué artículos se entregan (ej: camisa, fotos, brazaletes).
+- **Notificación Dinámica**: El mensaje enviado al cliente ahora incluye los detalles específicos redactados por el staff, haciendo la confirmación mucho más clara y profesional.
+
+## [11.8.3] - 2026-05-13
+### Agregado
+- **Soporte TEC Moderno**: Implementado soporte para la tabla dedicada `tec_tickets_attendees_meta` de las versiones más recientes de Event Tickets Plus.
+- **Normalización de Datos**: Corrección en la estructura de metadatos para asegurar que siempre se muestren los campos personalizados (talla, grupo, etc.) independientemente de la versión de Tribe instalada.
+- **Robustez UI**: Añadida detección de campos vacíos y diagnóstico crudo para administradores.
+
+## [11.8.2] - 2026-05-13
+### Agregado
+- **Metadatos del Ticket**: Ahora se muestran los campos personalizados (talla de camisa, grupo, etc.) en la tarjeta de búsqueda para facilitar la entrega y toma de datos.
+
+## [11.8.1] - 2026-05-13
+### Reparado
+- **Selector de Eventos**: Corregido problema visual de visibilidad del texto seleccionado y estilo del dropdown.
+- **Motor de Descubrimiento**: Mejorada la detección de eventos para pedidos con configuraciones de tickets variadas o legadas (Capas mejoradas).
+- **Depuración**: Añadido cuadro de diagnóstico para administradores cuando falla la validación de un pedido.
+
+## [11.8.0] - 2026-05-13
+### Agregado
+- **Gestión de Entrega Física**: Nuevo shortcode `[tbp_gestion_entrega_fisica]` para la entrega de paquetes, fotos y camisas.
+- **Selección Dinámica**: Carga automática de productos basada en el evento seleccionado.
+- **Notificaciones Automáticas**: Envío de notas personalizadas al alumno tras la entrega satisfactoria.
+- **Validación Avanzada**: Integración con el motor de descubrimiento de 7 capas para asegurar que el pedido pertenezca al evento y productos seleccionados.
+
 
 ## [6.1.0] - 2026-03-27
 ### Agregado

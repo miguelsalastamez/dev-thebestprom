@@ -258,7 +258,7 @@ function wcmp_get_baseline_orders_data( $ids_only = false ) {
             $all_order_ids = array_column($results, 'id');
             $batch_attendees = [];
             if ( function_exists('tbp_actividades_get_batch_attendees_meta') ) {
-                $batch_attendees = tbp_actividades_get_batch_attendees_meta($all_order_ids);
+                $batch_attendees = tbp_actividades_get_batch_attendees_meta($all_order_ids, $manual_products);
             }
             
             $dynamic_headers = array();
@@ -461,7 +461,7 @@ function wcmp_render_baseline_order_reports_page() {
                 
                 <div style="display: flex; flex-direction: column; gap: 5px;">
                     <label style="font-weight: 600; font-size: 12px; color: #50575e;"><?php _e( 'Eventos (Tribe Events):', 'wc-manual-payments' ); ?></label>
-                    <select name="event_ids[]" class="wcmp-event-select2" multiple="multiple" style="min-width: 300px;" data-placeholder="Teclea para buscar evento...">
+                    <select id="wcmp-event-select" name="event_ids[]" class="wcmp-event-select2" multiple="multiple" style="min-width: 300px;" data-placeholder="Teclea para buscar evento...">
                         <?php
                         $events = get_posts( array( 'post_type' => 'tribe_events', 'numberposts' => 500, 'post_status' => 'publish', 'orderby' => 'date', 'order' => 'DESC' ) );
                         $selected_evts = isset($_GET['event_ids']) ? array_map('intval', $_GET['event_ids']) : array();
@@ -475,10 +475,49 @@ function wcmp_render_baseline_order_reports_page() {
 
                 <div style="display: flex; flex-direction: column; gap: 5px;">
                     <label style="font-weight: 600; font-size: 12px; color: #50575e;"><?php _e( 'Tickets o Productos específicos:', 'wc-manual-payments' ); ?></label>
-                    <select name="product_ids[]" class="wcmp-product-select2" multiple="multiple" style="min-width: 300px;" data-placeholder="Teclea para buscar ticket...">
+                    <select id="wcmp-product-select" name="product_ids[]" class="wcmp-product-select2" multiple="multiple" style="min-width: 300px;" data-placeholder="Teclea para buscar ticket...">
                         <?php
-                        // Fetch the most recent 500 published products to populate the dropdown
-                        $all_prods = wc_get_products( array( 'limit' => 500, 'status' => 'publish', 'orderby' => 'date', 'order' => 'DESC', 'return' => 'objects' ) );
+                        $selected_evts = isset($_GET['event_ids']) ? array_map('intval', $_GET['event_ids']) : array();
+                        $product_args = array( 'limit' => 500, 'status' => 'publish', 'orderby' => 'date', 'order' => 'DESC', 'return' => 'objects' );
+                        
+                        if ( ! empty( $selected_evts ) ) {
+                            global $wpdb;
+                            $placeholders = implode(',', array_fill(0, count($selected_evts), '%d'));
+                            
+                            // Strategy: Find products from Order Items (Sales History)
+                            $pids_sales = $wpdb->get_col( $wpdb->prepare("
+                                SELECT DISTINCT woim.meta_value 
+                                FROM {$wpdb->prefix}woocommerce_order_itemmeta woim
+                                INNER JOIN {$wpdb->prefix}woocommerce_order_itemmeta woim2 ON woim.order_item_id = woim2.order_item_id
+                                WHERE woim.meta_key = '_product_id'
+                                AND woim2.meta_key IN ('_event_id', '_tribe_tickets_event')
+                                AND woim2.meta_value IN ($placeholders)
+                            ", ...$selected_evts) );
+
+                            // Fallback: If no sales, use Universal Search
+                            if ( empty($pids_sales) ) {
+                                $pids_sales = $wpdb->get_col( $wpdb->prepare("
+                                    SELECT DISTINCT pm.post_id 
+                                    FROM {$wpdb->postmeta} pm
+                                    INNER JOIN {$wpdb->posts} p ON pm.post_id = p.ID
+                                    WHERE p.post_type = 'product' 
+                                    AND pm.meta_value IN ($placeholders)
+                                ", ...$selected_evts) );
+                            }
+                            
+                            $linked_pids = array_unique( array_map('intval', $pids_sales) );
+
+                            if ( ! empty( $linked_pids ) ) {
+                                $product_args['include'] = $linked_pids;
+                            } else {
+                                $product_args['include'] = array(0); 
+                            }
+                        } else {
+                            // NO EVENT SELECTED: Empty list
+                            $product_args['include'] = array(0);
+                        }
+
+                        $all_prods = wc_get_products( $product_args );
                         $selected_prods = isset($_GET['product_ids']) ? array_map('intval', $_GET['product_ids']) : array();
                         foreach ( $all_prods as $p ) {
                             $sel = in_array( $p->get_id(), $selected_prods ) ? 'selected' : '';
@@ -983,6 +1022,54 @@ function wcmp_render_baseline_order_reports_page() {
                     allowClear: true
                 });
             }
+        });
+        </script>
+        
+        <!-- WCMP: GLOBAL PRODUCT FILTER SCRIPT (Bulletproof Delegation) -->
+        <script type="text/javascript">
+        jQuery(document).ready(function($) {
+            // Function to handle the actual AJAX call
+            window.wcmpFilterProducts = function(event_ids) {
+                var product_select = $('#wcmp-product-select');
+                
+                // Visual feedback
+                product_select.prop('disabled', true);
+                product_select.next('.select2-container').css('opacity', '0.5');
+                
+                $.ajax({
+                    url: ajaxurl,
+                    type: 'POST',
+                    data: {
+                        action: 'wcmp_get_products_by_events',
+                        event_ids: event_ids
+                    },
+                    success: function(res) {
+                        if ( res.success ) {
+                            var current_values = product_select.val() || [];
+                            product_select.empty();
+                            if (res.data && res.data.length > 0) {
+                                $.each(res.data, function(i, item) {
+                                    var selected = current_values.indexOf(item.id.toString()) !== -1 ? 'selected' : '';
+                                    product_select.append('<option value="' + item.id + '" ' + selected + '>' + item.name + '</option>');
+                                });
+                            }
+                            if ( $.fn.select2 ) {
+                                product_select.trigger('change.select2');
+                            }
+                        }
+                    },
+                    complete: function() {
+                        product_select.prop('disabled', false);
+                        product_select.next('.select2-container').css('opacity', '1');
+                    }
+                });
+            };
+
+            // Catch Select2 events at the highest possible DOM level (body/document)
+            $(document).on('change select2:select select2:unselect', '#wcmp-event-select', function(e) {
+                var event_ids = $(this).val();
+                window.wcmpFilterProducts(event_ids);
+            });
         });
         </script>
     </div>

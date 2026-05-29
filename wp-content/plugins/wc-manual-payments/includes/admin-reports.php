@@ -34,7 +34,25 @@ if ( ! function_exists( 'wcmp_render_reports_page' ) ) {
         if ( isset( $_GET['action'] ) ) {
             if ( $_GET['action'] === 'clear_orphans' ) {
                 check_admin_referer( 'wcmp_clear_orphans' );
+                
+                $orphans = get_option( 'wcmp_orphan_payments', array() );
+                $cleared_history = get_option( 'wcmp_cleared_orphans_history', array() );
+                if ( ! is_array($cleared_history) ) $cleared_history = array();
+
+                // Mover todos los huérfanos actuales a la lista de bloqueados antes de borrar
+                foreach ( $orphans as $o ) {
+                    $o_id = $o['orphan_id'] ?? md5( ($o['source'] ?? '') . '|' . ($o['amount'] ?? 0) . '|' . ($o['input'] ?? '') . '|' . ($o['ref'] ?? '') );
+                    $cleared_history[$o_id] = current_time('mysql');
+                }
+
+                // Mantener la lista de historial manejable (últimos 1000)
+                if ( count($cleared_history) > 1000 ) {
+                    $cleared_history = array_slice($cleared_history, -1000, 1000, true);
+                }
+
+                update_option( 'wcmp_cleared_orphans_history', $cleared_history );
                 update_option( 'wcmp_orphan_payments', array() );
+                
                 wp_redirect( admin_url( 'admin.php?page=wcmp-reports&cleared=1' ) );
                 exit;
             }
@@ -44,6 +62,17 @@ if ( ! function_exists( 'wcmp_render_reports_page' ) ) {
                 $index = (int) $_GET['index'];
                 $order_id = (int) $_POST['target_order_id'];
                 
+                // Antes de borrar, obtener los datos para marcarlos como "gestionados"
+                $orphans = get_option( 'wcmp_orphan_payments', array() );
+                if ( isset($orphans[$index]) ) {
+                    $o = $orphans[$index];
+                    $o_id = $o['orphan_id'] ?? md5( ($o['source'] ?? '') . '|' . ($o['amount'] ?? 0) . '|' . ($o['input'] ?? '') . '|' . ($o['ref'] ?? '') );
+                    $cleared_history = get_option( 'wcmp_cleared_orphans_history', array() );
+                    if ( ! is_array($cleared_history) ) $cleared_history = array();
+                    $cleared_history[$o_id] = current_time('mysql');
+                    update_option( 'wcmp_cleared_orphans_history', $cleared_history );
+                }
+
                 if ( wcmp_link_orphan_payment( $index, $order_id ) ) {
                     wp_redirect( admin_url( 'admin.php?page=wcmp-reports&linked=1' ) );
                     exit;

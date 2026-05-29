@@ -99,7 +99,7 @@ function tbp_egresos_render_repeater_html( $object_id ) {
             .tbp-egresos-wrapper { padding: 10px; }
             .tbp-egreso-row, .tbp-egreso-header { 
                 display: grid; 
-                grid-template-columns: 2fr 2fr 1fr 1.5fr 1.5fr 1fr 30px; 
+                grid-template-columns: 2fr 2fr 1fr 1.5fr 1.5fr 1fr 70px 30px; 
                 gap: 10px; 
                 align-items: center; 
                 margin-bottom: 8px;
@@ -163,6 +163,7 @@ function tbp_egresos_render_repeater_html( $object_id ) {
             <div>Precio Unit.</div>
             <div>Impuestos</div>
             <div style="text-align: right;">Total</div>
+            <div style="text-align:center; font-size:10px; line-height:1.3;">🪑<br>Asientos</div>
             <div></div>
         </div>
 
@@ -196,6 +197,18 @@ function tbp_egresos_render_repeater_html( $object_id ) {
                     <div class="field-group">
                         <input type="text" readonly class="egreso-total-row" value="<?php echo number_format($egreso['cantidad'] * $egreso['precio_unitario'], 2); ?>" />
                     </div>
+                    <div class="field-group" style="text-align:center;">
+                        <?php $asientos_checked = ! empty( $egreso['asignar_asientos'] ) ? 'checked' : ''; ?>
+                        <label title="Marcar este egreso para asignación de asientos" style="cursor:pointer;">
+                            <input type="checkbox"
+                                name="tbp_egresos_meta[<?php echo $object_id; ?>][<?php echo $index; ?>][asignar_asientos]"
+                                value="1"
+                                class="egreso-asientos-check"
+                                <?php echo $asientos_checked; ?>
+                                style="width:auto!important;height:16px!important;margin:0 4px 0 0!important;" />
+                            <span style="font-size:15px;">🪑</span>
+                        </label>
+                    </div>
                     <a class="remove-egreso" title="Eliminar">×</a>
                 </div>
             <?php endforeach; ?>
@@ -211,7 +224,8 @@ function tbp_egresos_render_repeater_html( $object_id ) {
             <strong>DIAGNÓSTICO TBP:</strong><br>
             - Post ID: <span class="diag-id"><?php echo $object_id; ?></span><br>
             - Post Type: <span class="diag-type"><?php echo get_post_type($object_id); ?></span><br>
-            - Last Sync: <span class="diag-status">v5.1 Blindada por ID</span>
+            - Last Sync: <span class="diag-status">v5.3 Sincronización Blindada</span><br>
+            <button type="button" id="tbp-manual-sync-btn" class="button button-small" style="margin-top:8px; font-size:10px; background:#fff; border:1px solid #ccc;">🔄 Sincronizar O.C. con nueva configuración</button>
         </div>
 
         <div class="tbp-utility-summary">
@@ -283,6 +297,16 @@ function tbp_egresos_render_repeater_html( $object_id ) {
                             <div class="field-group">
                                 <input type="text" readonly class="egreso-total-row" />
                             </div>
+                            <div class="field-group" style="text-align:center;">
+                                <label title="Marcar este egreso para asignación de asientos" style="cursor:pointer;">
+                                    <input type="checkbox"
+                                        name="tbp_egresos_meta[${postID}][${index}][asignar_asientos]"
+                                        value="1"
+                                        class="egreso-asientos-check"
+                                        style="width:auto!important;height:16px!important;margin:0 4px 0 0!important;" />
+                                    <span style="font-size:15px;">🪑</span>
+                                </label>
+                            </div>
                             <a class="remove-egreso">×</a>
                         </div>`;
                     $wrapper.find('.egresos-list').append(row);
@@ -308,11 +332,12 @@ function tbp_egresos_render_repeater_html( $object_id ) {
                     const egresosData = [];
                     $wrapper.find('.tbp-egreso-row').each(function() {
                         egresosData.push({
-                            proveedor_id: $(this).find('select[name*="proveedor_id"]').val(),
-                            titulo: $(this).find('input[name*="titulo"]').val(),
-                            cantidad: $(this).find('.egreso-qty').val(),
-                            precio_unitario: $(this).find('.egreso-price').val(),
-                            impuesto: $(this).find('.egreso-tax').val()
+                            proveedor_id:     $(this).find('select[name*="proveedor_id"]').val(),
+                            titulo:           $(this).find('input[name*="titulo"]').val(),
+                            cantidad:         $(this).find('.egreso-qty').val(),
+                            precio_unitario:  $(this).find('.egreso-price').val(),
+                            impuesto:         $(this).find('.egreso-tax').val(),
+                            asignar_asientos: $(this).find('.egreso-asientos-check').is(':checked') ? '1' : '0'
                         });
                     });
 
@@ -332,6 +357,36 @@ function tbp_egresos_render_repeater_html( $object_id ) {
                                 alert('Egresos guardados correctamente.');
                             } else {
                                 alert('Error: ' + response.data);
+                            }
+                        }
+                    });
+                });
+
+                // Manual Sync Button Handler
+                $wrapper.find('#tbp-manual-sync-btn').on('click', function(e) {
+                    e.preventDefault();
+                    var $btn = $(this);
+                    var originalText = $btn.text();
+                    
+                    $btn.prop('disabled', true).text('🔄 Sincronizando O.C...');
+                    $wrapper.find('.diag-status').text('Recalculando todas las proyecciones del evento...');
+
+                    $.ajax({
+                        url: ajaxurl,
+                        type: 'POST',
+                        data: {
+                            action: 'tbp_egresos_manual_sync_pos',
+                            nonce: $('#tbp_ticket_egresos_nonce').val(),
+                            post_id: postID
+                        },
+                        success: function(response) {
+                            $btn.prop('disabled', false).text(originalText);
+                            if (response.success) {
+                                $wrapper.find('.diag-status').html('<span style="color:green;">✓ Sincronización Completa</span>');
+                                alert('Éxito: Todas las Órdenes de Compra vinculadas a este evento han sido actualizadas.');
+                            } else {
+                                alert('Error: ' + response.data);
+                                $wrapper.find('.diag-status').text('Error en sincronización');
                             }
                         }
                     });
@@ -390,13 +445,46 @@ function tbp_egresos_process_save( $post_id ) {
     foreach ( $incoming as $egreso ) {
         if ( ! empty( $egreso['proveedor_id'] ) ) {
             $egresos[] = array(
-                'proveedor_id'    => intval( $egreso['proveedor_id'] ),
-                'titulo'          => sanitize_text_field( $egreso['titulo'] ),
-                'cantidad'        => floatval( $egreso['cantidad'] ),
-                'precio_unitario' => floatval( $egreso['precio_unitario'] ),
-                'impuesto'        => sanitize_text_field( $egreso['impuesto'] )
+                'proveedor_id'     => intval( $egreso['proveedor_id'] ),
+                'titulo'           => sanitize_text_field( $egreso['titulo'] ),
+                'cantidad'         => floatval( $egreso['cantidad'] ),
+                'precio_unitario'  => floatval( $egreso['precio_unitario'] ),
+                'impuesto'         => sanitize_text_field( $egreso['impuesto'] ),
+                'asignar_asientos' => ! empty( $egreso['asignar_asientos'] ) ? '1' : '0'
             );
         }
     }
     update_post_meta( $post_id, '_tbp_egresos_config', $egresos );
+
+    // v5.4.3: Automatización de Recálculo Proactivo
+    // Si el producto está vinculado a un evento, forzamos el recálculo de todas las O.C. de ese evento.
+    $event_id = get_post_meta( $post_id, '_tribe_tickets_event', true );
+    if ( ! $event_id ) $event_id = get_post_meta( $post_id, '_tribe_wooticket_for_event', true );
+    if ( ! $event_id ) $event_id = get_post_meta( $post_id, '_event_id', true );
+    if ( ! $event_id ) $event_id = get_post_meta( $post_id, 'event_id', true );
+
+    if ( $event_id && function_exists( 'tbp_egresos_recompute_all_event_pos' ) ) {
+        tbp_egresos_recompute_all_event_pos( intval( $event_id ) );
+    }
+}
+
+/**
+ * AJAX Handler for Manual Sync Button
+ */
+add_action( 'wp_ajax_tbp_egresos_manual_sync_pos', 'tbp_egresos_ajax_manual_sync_handler' );
+function tbp_egresos_ajax_manual_sync_handler() {
+    check_ajax_referer( 'tbp_ticket_egresos_save', 'nonce' );
+    $post_id = intval( $_POST['post_id'] );
+    
+    $event_id = get_post_meta( $post_id, '_tribe_tickets_event', true );
+    if ( ! $event_id ) $event_id = get_post_meta( $post_id, '_tribe_wooticket_for_event', true );
+    if ( ! $event_id ) $event_id = get_post_meta( $post_id, '_event_id', true );
+    if ( ! $event_id ) $event_id = get_post_meta( $post_id, 'event_id', true );
+
+    if ( $event_id && function_exists( 'tbp_egresos_recompute_all_event_pos' ) ) {
+        tbp_egresos_recompute_all_event_pos( intval( $event_id ) );
+        wp_send_json_success( 'Órdenes de Compra sincronizadas con éxito.' );
+    }
+    
+    wp_send_json_error( 'No se encontró un evento vinculado para sincronizar.' );
 }

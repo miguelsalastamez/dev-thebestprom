@@ -68,7 +68,11 @@ function tbp_actividades_get_premiacion_for_order( $order_id ) {
  * Add "Actividades" button to My Account -> Orders actions
  */
 add_filter( 'woocommerce_my_account_my_orders_actions', 'tbp_actividades_add_client_order_actions', 10, 2 );
-function tbp_actividades_add_client_order_actions( $actions, $order ) {
+function tbp_actividades_add_client_order_actions( $actions, $order = null ) {
+    if ( ! is_a( $order, 'WC_Order' ) ) {
+        return $actions;
+    }
+
     $actions['tbp_actividades'] = array(
         'url'  => '#',
         'name' => __( 'ACTIVIDADES', 'tbp-actividades' ),
@@ -207,7 +211,7 @@ function tbp_actividades_get_client_history_ajax() {
 
     global $wpdb;
     $table_logs = $wpdb->prefix . 'tbp_actividades_logs';
-    $logs = $wpdb->get_results( $wpdb->prepare( "SELECT * FROM $table_logs WHERE order_id = %d ORDER BY created_at DESC", $order_id ) );
+    $logs = $wpdb->get_results( $wpdb->prepare( "SELECT * FROM $table_logs WHERE order_id = %d AND (type IN ('physical', 'tombola') OR type IS NULL OR type = '') ORDER BY created_at DESC", $order_id ) );
 
     // Robust search for Tribe Event ID
     $tribe_event_id = 0;
@@ -307,7 +311,10 @@ function tbp_actividades_get_client_history_ajax() {
  * Display Attendee Metadata in Order Details Page (Frontend)
  */
 add_action( 'woocommerce_order_details_after_order_table', 'tbp_actividades_display_attendee_meta_frontend', 15 );
-function tbp_actividades_display_attendee_meta_frontend( $order ) {
+function tbp_actividades_display_attendee_meta_frontend( $order = null ) {
+    if ( ! is_a( $order, 'WC_Order' ) ) {
+        return;
+    }
     $order_id = $order->get_id();
     $attendees = tbp_actividades_get_order_attendees_meta( $order_id, $order );
 
@@ -857,3 +864,464 @@ function tbp_actividades_voting_shortcode( $atts ) {
 
     return ob_get_clean();
 }
+
+/**
+ * Print boarding pass styles in the page head
+ */
+add_action( 'wp_head', 'tbp_actividades_print_boarding_pass_styles', 999 );
+function tbp_actividades_print_boarding_pass_styles() {
+    if ( ! is_account_page() && ! is_checkout() && ! is_order_received_page() ) {
+        return;
+    }
+    ?>
+    <style>
+        /* Hide WooCommerce default plain header to avoid duplicate title */
+        .tec-tickets__attendees-list-wrapper > h4.tribe-common-h4 {
+            display: none !important;
+        }
+
+        /* Stylize parent header wrapper */
+        .tec-tickets__my-tickets-list-title-container,
+        .tec-tickets__attendees-list-wrapper {
+            margin-bottom: 25px !important;
+            margin-top: 0 !important;
+        }
+        .tec-tickets__my-tickets-list-title {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif !important;
+            font-size: 24px !important;
+            font-weight: 800 !important;
+            color: #0f172a !important;
+            text-transform: uppercase !important;
+            letter-spacing: 0.04em !important;
+        }
+
+        /* Restructure Tickets List to Premium Card Grid */
+        .tribe-tickets-list,
+        .tec-tickets__attendees-list {
+            display: flex !important;
+            flex-direction: column !important;
+            gap: 24px !important;
+            padding: 0 !important;
+            margin: 20px 0 !important;
+            list-style: none !important;
+        }
+
+        /* Boarding Pass Card */
+        .tribe-tickets-list .tribe-item,
+        .tec-tickets__attendees-list .tec-tickets__attendees-list-item {
+            display: grid !important;
+            grid-template-columns: 1fr 480px !important;
+            align-items: center !important;
+            background: #ffffff !important;
+            border: 1px solid #e2e8f0 !important;
+            border-radius: 18px !important;
+            box-shadow: 0 10px 25px rgba(15, 23, 42, 0.03) !important;
+            padding: 24px !important;
+            gap: 24px !important;
+            list-style: none !important;
+            position: relative !important;
+            overflow: hidden !important;
+            transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1) !important;
+            box-sizing: border-box !important;
+            width: 100% !important;
+        }
+
+        .tribe-tickets-list .tribe-item:hover,
+        .tec-tickets__attendees-list .tec-tickets__attendees-list-item:hover {
+            border-color: #cbd5e1 !important;
+            box-shadow: 0 15px 35px rgba(15, 23, 42, 0.06) !important;
+            transform: translateY(-2px) !important;
+        }
+
+        /* Ticket Notch Punch-Holes for Boarding Pass */
+        .tribe-tickets-list .tribe-item::before,
+        .tribe-tickets-list .tribe-item::after,
+        .tec-tickets__attendees-list .tec-tickets__attendees-list-item::before,
+        .tec-tickets__attendees-list .tec-tickets__attendees-list-item::after {
+            content: '' !important;
+            position: absolute !important;
+            width: 24px !important;
+            height: 24px !important;
+            background: #fafafa !important; /* Blends with typical body backgrounds */
+            border: 1px solid #e2e8f0 !important;
+            border-radius: 50% !important;
+            z-index: 2 !important;
+        }
+
+        .tribe-tickets-list .tribe-item::before,
+        .tec-tickets__attendees-list .tec-tickets__attendees-list-item::before {
+            top: -12px !important;
+            right: 468px !important; /* width of passes container (480px) - radius (12px) */
+        }
+        .tribe-tickets-list .tribe-item::after,
+        .tec-tickets__attendees-list .tec-tickets__attendees-list-item::after {
+            bottom: -12px !important;
+            right: 468px !important;
+        }
+
+        /* Attendee Details Wrapper */
+        .tec-tickets__attendees-list-item-attendee-details {
+            display: flex !important;
+            flex-direction: column !important;
+            gap: 6px !important;
+            align-self: center !important;
+        }
+
+        /* Attendee / Passenger Name Label and Heading */
+        .tribe-tickets-list .tribe-item .list-attendee {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif !important;
+            font-size: 13px !important;
+            font-weight: 800 !important;
+            color: #f39c12 !important;
+            text-transform: uppercase !important;
+            letter-spacing: 0.08em !important;
+            margin-bottom: 6px !important;
+            display: inline-block !important;
+        }
+
+        .tec-tickets__attendees-list-item-attendee-details-name::before {
+            content: 'Graduando / Asistente' !important;
+            display: block !important;
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif !important;
+            font-size: 11px !important;
+            font-weight: 800 !important;
+            color: #f39c12 !important;
+            text-transform: uppercase !important;
+            letter-spacing: 0.08em !important;
+            margin-bottom: 4px !important;
+        }
+
+        .tribe-tickets-list .tribe-item .tribe-ticket-information .ticket-name,
+        .tec-tickets__attendees-list-item-attendee-details-name {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif !important;
+            font-size: 18px !important;
+            font-weight: 800 !important;
+            color: #0f172a !important;
+            line-height: 1.4 !important;
+            margin: 0 !important;
+        }
+
+        /* Ticket Information */
+        .tribe-tickets-list .tribe-item .tribe-ticket-information {
+            display: flex !important;
+            flex-direction: column !important;
+            gap: 6px !important;
+        }
+
+        .tribe-tickets-list .tribe-item .tribe-ticket-information .ticket-price,
+        .tec-tickets__attendees-list-item-attendee-details-ticket {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif !important;
+            font-size: 14px !important;
+            font-weight: 600 !important;
+            color: #475569 !important;
+            line-height: 1.4 !important;
+            margin: 0 !important;
+        }
+
+        /* Passes Container (Dashed Divider, Buttons and Apple Wallet) */
+        .tribe-tickets-list .tribe-item .tec-tickets__wallet-plus-passes-container,
+        .tec-tickets__attendees-list .tec-tickets__attendees-list-item .tec-tickets__wallet-plus-passes-container {
+            display: grid !important;
+            grid-template-columns: 200px 240px !important;
+            align-items: center !important;
+            gap: 20px !important;
+            border-left: 1px dashed #cbd5e1 !important;
+            padding-left: 24px !important;
+            margin: 0 !important;
+            width: 480px !important;
+            box-sizing: border-box !important;
+            align-self: center !important;
+        }
+
+        /* Style PDF Button */
+        .tribe-tickets-list .tribe-item .tec-tickets__wallet-plus-component-pdf-button-container,
+        .tec-tickets__attendees-list .tec-tickets__attendees-list-item .tec-tickets__wallet-plus-component-pdf-button-container {
+            width: 100% !important;
+            margin: 0 !important;
+        }
+
+        .tribe-tickets-list .tribe-item .tec-tickets__wallet-plus-component-pdf-button-link,
+        .tec-tickets__attendees-list .tec-tickets__attendees-list-item .tec-tickets__wallet-plus-component-pdf-button-link {
+            display: inline-flex !important;
+            align-items: center !important;
+            justify-content: center !important;
+            width: 100% !important;
+            background: #f8fafc !important;
+            color: #334155 !important;
+            border: 1px solid #e2e8f0 !important;
+            padding: 12px 16px !important;
+            border-radius: 10px !important;
+            font-size: 12px !important;
+            font-weight: 700 !important;
+            text-transform: uppercase !important;
+            letter-spacing: 0.05em !important;
+            transition: all 0.2s ease !important;
+            text-decoration: none !important;
+            box-sizing: border-box !important;
+        }
+
+        .tribe-tickets-list .tribe-item .tec-tickets__wallet-plus-component-pdf-button-link:hover,
+        .tec-tickets__attendees-list .tec-tickets__attendees-list-item .tec-tickets__wallet-plus-component-pdf-button-link:hover {
+            background: #f1f5f9 !important;
+            color: #0f172a !important;
+            border-color: #cbd5e1 !important;
+            box-shadow: 0 4px 10px rgba(15, 23, 42, 0.04) !important;
+        }
+
+        /* Style Apple Wallet link wrapper */
+        .tribe-tickets-list .tribe-item .tec-tickets__wallet-plus-component-apple-wallet-container,
+        .tec-tickets__attendees-list .tec-tickets__attendees-list-item .tec-tickets__wallet-plus-component-apple-wallet-button-container {
+            width: 100% !important;
+            margin: 0 !important;
+            display: flex !important;
+            justify-content: center !important;
+            align-items: center !important;
+        }
+
+        .tribe-tickets-list .tribe-item .tec-tickets__wallet-plus-component-apple-wallet-link img,
+        .tec-tickets__attendees-list .tec-tickets__attendees-list-item .tec-tickets__wallet-plus-component-apple-wallet-button-link img {
+            margin: 0 auto !important;
+            display: block !important;
+        }
+
+        /* Beautiful overall list header matching the dark blue card exactly */
+        .tbp-my-tickets-header {
+            display: none; /* hidden by default, script will show it */
+            background: #0f172a !important;
+            padding: 32px !important;
+            border-radius: 24px !important;
+            color: #ffffff !important;
+            margin-bottom: 30px !important;
+            align-items: center !important;
+            justify-content: space-between !important;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.1) !important;
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif !important;
+            gap: 20px !important;
+            box-sizing: border-box !important;
+            width: 100% !important;
+        }
+
+        .tbp-header-badge {
+            background: rgba(243, 156, 18, 0.15) !important;
+            border: 2px solid rgba(243, 156, 18, 0.3) !important;
+            padding: 12px 24px !important;
+            border-radius: 99px !important;
+            color: #f39c12 !important;
+            font-size: 12px !important;
+            font-weight: 800 !important;
+            text-transform: uppercase !important;
+            letter-spacing: 0.08em !important;
+            flex-shrink: 0 !important;
+            display: inline-block !important;
+        }
+
+        /* Mobile styling for the overall header */
+        @media (max-width: 767px) {
+            .tbp-my-tickets-header {
+                flex-direction: column !important;
+                align-items: flex-start !important;
+                padding: 24px !important;
+                gap: 16px !important;
+            }
+            .tbp-header-badge {
+                align-self: flex-start !important;
+                margin-top: 4px !important;
+            }
+        }
+
+        /* Responsive Mobile Layout */
+        @media (max-width: 900px) {
+            .tribe-tickets-list .tribe-item,
+            .tec-tickets__attendees-list .tec-tickets__attendees-list-item {
+                grid-template-columns: 1fr !important;
+                padding: 24px 20px !important;
+                gap: 20px !important;
+            }
+
+            .tribe-tickets-list .tribe-item::before,
+            .tribe-tickets-list .tribe-item::after,
+            .tec-tickets__attendees-list .tec-tickets__attendees-list-item::before,
+            .tec-tickets__attendees-list .tec-tickets__attendees-list-item::after {
+                display: none !important; /* Hide boarding pass notch on mobile stacking */
+            }
+
+            .tribe-tickets-list .tribe-item .tec-tickets__wallet-plus-passes-container,
+            .tec-tickets__attendees-list .tec-tickets__attendees-list-item .tec-tickets__wallet-plus-passes-container {
+                grid-template-columns: 1fr !important;
+                width: 100% !important;
+                border-left: none !important;
+                border-top: 1px dashed #cbd5e1 !important;
+                padding-left: 0 !important;
+                padding-top: 20px !important;
+                gap: 20px !important;
+            }
+        }
+    </style>
+    <?php
+}
+
+/**
+ * Print boarding pass header HTML and Javascript helper in wp_footer
+ */
+add_action( 'wp_footer', 'tbp_actividades_print_boarding_pass_header', 999 );
+function tbp_actividades_print_boarding_pass_header() {
+    if ( ! is_account_page() && ! is_checkout() && ! is_order_received_page() ) {
+        return;
+    }
+    ?>
+    <!-- Beautiful overall list header matching the dark blue card exactly -->
+    <div class="tbp-my-tickets-header">
+        <div style="display: flex; flex-direction: column; gap: 16px;">
+            <h2 style="margin: 0; color: #ffffff; font-size: 28px; font-weight: 900; letter-spacing: -0.01em; line-height: 1.15; text-transform: uppercase;">Accesos<br>Oficiales de<br>Graduación</h2>
+            <div style="display: flex; align-items: flex-start; gap: 8px;">
+                <span style="font-size: 14px; margin-top: 2px;">🎟️</span>
+                <p style="margin: 0; color: #9ca3af; font-size: 14px; font-weight: 700; line-height: 1.4; letter-spacing: 0.05em; text-transform: uppercase;">Presenta tus códigos QR directamente desde tu celular en la entrada.</p>
+            </div>
+        </div>
+        <div class="tbp-header-badge">
+            Acceso Digital
+        </div>
+    </div>
+
+    <script>
+    (function() {
+        function moveLayoutElements() {
+            // 1. Move Title Header to the very top
+            var container = document.querySelector(".tec-tickets__attendees-list") || document.querySelector(".tribe-tickets-list") || document.querySelector(".tec-tickets__attendees-list-wrapper");
+            var header = document.querySelector(".tbp-my-tickets-header");
+            if (container && header && header.parentNode !== container.parentNode) {
+                container.parentNode.insertBefore(header, container);
+                header.style.display = "flex";
+            }
+
+            // 2. Move QR Code Cards directly above their respective ticket boarding passes
+            var qrCards = document.querySelectorAll(".tbp-my-tickets-qr-card-wrapper");
+            qrCards.forEach(function(qrCard) {
+                var ticketItem = qrCard.closest(".tec-tickets__attendees-list-item") || qrCard.closest(".tribe-item");
+                if (ticketItem && qrCard.parentNode !== ticketItem.parentNode) {
+                    ticketItem.parentNode.insertBefore(qrCard, ticketItem);
+                    qrCard.style.display = "flex";
+                }
+            });
+        }
+
+        document.addEventListener("DOMContentLoaded", moveLayoutElements);
+        window.addEventListener("load", moveLayoutElements);
+        // Periodically run for 5 seconds to catch any slow loads or AJAX rendering
+        var count = 0;
+        var interval = setInterval(function() {
+            moveLayoutElements();
+            count++;
+            if (count > 25) clearInterval(interval);
+        }, 200);
+    })();
+    </script>
+    <?php
+}
+
+/**
+ * Append QR Code image to My Tickets page underneath Apple Wallet/PDF buttons
+ */
+add_action( 'tribe_template_entry_point:tickets-plus/tickets-wallet-plus/my-tickets/passes:wallet_plus_my_tickets_passes', 'tbp_actividades_append_qr_image_to_my_tickets', 30, 3 );
+add_action( 'tribe_template_entry_point:tickets-plus/tickets-wallet-plus/attendees-list/passes:buttons', 'tbp_actividades_append_qr_image_to_my_tickets', 30, 3 );
+function tbp_actividades_append_qr_image_to_my_tickets( $hook, $entry_point, $template ) {
+    try {
+        if ( ! is_object( $template ) || ! method_exists( $template, 'get' ) ) {
+            return;
+        }
+
+        $attendee = $template->get( 'attendee' );
+        if ( empty( $attendee ) ) {
+            return;
+        }
+
+        $attendee_id = null;
+        if ( ! empty( $attendee['attendee_id'] ) ) {
+            $attendee_id = intval( $attendee['attendee_id'] );
+        } elseif ( ! empty( $attendee['ID'] ) ) {
+            $attendee_id = intval( $attendee['ID'] );
+        }
+
+        if ( ! $attendee_id ) {
+            return;
+        }
+
+        // Resolve Event ID
+        $event_id = intval( get_post_meta( $attendee_id, '_tribe_tickets_post_id', true ) );
+        if ( ! $event_id ) {
+            $event_id = intval( get_post_meta( $attendee_id, '_tribe_tickets_event', true ) );
+        }
+
+        // Resolve Security Code
+        $security_code = get_post_meta( $attendee_id, '_tribe_tickets_security_code', true );
+        if ( ! $security_code ) {
+            $security_code = get_post_meta( $attendee_id, '_tec_tickets_commerce_security_code', true );
+        }
+        if ( ! $security_code ) {
+            $security_code = get_post_meta( $attendee_id, '_tribe_rsvp_security_code', true );
+        }
+        if ( ! $security_code ) {
+            $security_code = get_post_meta( $attendee_id, '_tribe_tpp_security_code', true );
+        }
+
+        if ( ! $event_id || empty( $security_code ) || ! is_string( $security_code ) ) {
+            return;
+        }
+
+        $link = '';
+        if ( class_exists( 'TEC\Tickets\QR\Connector' ) && function_exists( 'tribe' ) ) {
+            $connector = tribe( \TEC\Tickets\QR\Connector::class );
+            if ( $connector && method_exists( $connector, 'get_checkin_url' ) ) {
+                $link = $connector->get_checkin_url( $attendee_id, $event_id, $security_code );
+            }
+        }
+        
+        // Manual fallback checkin URL builder (fully bulletproof)
+        if ( empty( $link ) ) {
+            $prefix = function_exists( 'tribe_tickets_rest_url_prefix' ) ? tribe_tickets_rest_url_prefix() : 'tribe-tickets/v1';
+            $query_args = [
+                'event_qr_code' => 1,
+                'ticket_id'     => $attendee_id,
+                'event_id'      => $event_id,
+                'security_code' => $security_code,
+                'path'          => urlencode( $prefix . '/qr' ),
+            ];
+            $link = add_query_arg( $query_args, home_url( '/' ) );
+        }
+
+        $qr_url = '';
+        if ( class_exists( 'TEC\Tickets\QR\Connector' ) && function_exists( 'tribe' ) ) {
+            $connector = tribe( \TEC\Tickets\QR\Connector::class );
+            if ( $connector && method_exists( $connector, 'get_image_url_for_link' ) ) {
+                $qr_url = $connector->get_image_url_for_link( $link );
+            }
+        }
+        
+        // Fallback: Google Charts QR API
+        if ( empty( $qr_url ) ) {
+            $qr_url = 'https://chart.googleapis.com/chart?chs=300x300&cht=qr&chl=' . urlencode( $link ) . '&choe=UTF-8';
+        }
+
+        ?>
+        <!-- Beautiful QR Card that JS will position right above the ticket card -->
+        <div class="tbp-my-tickets-qr-card-wrapper" style="width: 100%; display: none; justify-content: center; margin-bottom: 12px; box-sizing: border-box;">
+            <div class="tbp-my-tickets-qr-card" style="padding: 16px; border: 1px solid #e2e8f0; border-radius: 16px; background: #ffffff; box-shadow: 0 4px 20px rgba(15,23,42,0.02); width: 100%; max-width: 300px; text-align: center; box-sizing: border-box; display: flex; flex-direction: column; align-items: center; gap: 10px; border-bottom: 4px solid #f39c12;">
+                <div style="font-size: 10px; font-weight: 800; color: #f39c12; text-transform: uppercase; letter-spacing: 0.08em; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; display: flex; align-items: center; justify-content: center; gap: 4px;">
+                    ⚡ PASE DIGITAL ACTIVO
+                </div>
+                <div style="display: inline-block; padding: 8px; border: 1px solid #f1f5f9; border-radius: 12px; background: #f8fafc;">
+                    <img src="<?php echo esc_url( $qr_url ); ?>" alt="QR Code" style="display: block; width: 130px; height: 130px; margin: 0 auto; image-rendering: -webkit-optimize-contrast;" />
+                </div>
+                <div style="font-size: 9px; color: #64748b; line-height: 1.4; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; font-weight: 700; text-transform: uppercase; letter-spacing: 0.05em;">
+                    <?php echo esc_html( $attendee['name'] ?? $attendee['attendee_name'] ?? 'Graduando' ); ?>
+                </div>
+            </div>
+        </div>
+        <?php
+    } catch ( \Throwable $e ) {
+        if ( defined( 'WP_DEBUG' ) && WP_DEBUG ) {
+            error_log( 'TBP Actividades QR Desktop Error: ' . $e->getMessage() );
+        }
+    }
+}
+

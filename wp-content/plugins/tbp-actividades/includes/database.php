@@ -94,4 +94,103 @@ function tbp_actividades_create_db_tables() {
     dbDelta( $sql_mkt_contacts );
     dbDelta( $sql_mkt_campaigns );
     dbDelta( $sql_mkt_stats );
+
+    // =========================================================
+    // MÓDULO: ASIGNACIÓN DE ASIENTOS
+    // =========================================================
+    $table_seat_configs     = $wpdb->prefix . 'tbp_seat_configurations';
+    $table_seat_tables      = $wpdb->prefix . 'tbp_seat_tables';
+    $table_seat_assignments = $wpdb->prefix . 'tbp_seat_assignments';
+    $table_seat_group_zones = $wpdb->prefix . 'tbp_seat_group_zones';
+
+    // Tabla 1: Configuraciones de asignación (una por evento)
+    $sql_seat_configs = "CREATE TABLE $table_seat_configs (
+        id            bigint(20)   NOT NULL AUTO_INCREMENT,
+        event_id      bigint(20)   NOT NULL,
+        proveedor_id  bigint(20)   NOT NULL DEFAULT 0,
+        nombre        varchar(100) NOT NULL,
+        tipo          varchar(20)  NOT NULL DEFAULT 'grupal',
+        group_field   varchar(100) NOT NULL DEFAULT 'Grupo',
+        status        varchar(20)  NOT NULL DEFAULT 'draft',
+        zonas_config  longtext     NOT NULL DEFAULT '',
+        created_at    datetime     NOT NULL DEFAULT CURRENT_TIMESTAMP,
+        updated_at    datetime     NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+        PRIMARY KEY  (id),
+        KEY event_id (event_id),
+        KEY status   (status)
+    ) $charset_collate;";
+
+    // Tabla 2: Mesas generadas por zona dentro de una configuración
+    $sql_seat_tables = "CREATE TABLE $table_seat_tables (
+        id               bigint(20)   NOT NULL AUTO_INCREMENT,
+        config_id        bigint(20)   NOT NULL,
+        zona             varchar(100) NOT NULL,
+        numero           varchar(10)  NOT NULL,
+        capacidad        tinyint(3)   NOT NULL DEFAULT 10,
+        capacidad_usada  tinyint(3)   NOT NULL DEFAULT 0,
+        tipo             varchar(20)  NOT NULL DEFAULT 'round', -- round, rectangular, square, cocktail, stool
+        etiqueta_bloqueo varchar(100) NOT NULL DEFAULT '',
+        pos_x            int(11)      NOT NULL DEFAULT 0,
+        pos_y            int(11)      NOT NULL DEFAULT 0,
+        width            int(11)      NOT NULL DEFAULT 60,
+        height           int(11)      NOT NULL DEFAULT 60,
+        color            varchar(20)  NOT NULL DEFAULT '#2271b1',
+        PRIMARY KEY  (id),
+        KEY  config_id        (config_id),
+        KEY  zona             (zona),
+        UNIQUE KEY config_zona_num (config_id, zona(80), numero)
+    ) $charset_collate;";
+
+    // Tabla 3: Asignaciones (quién va en qué mesa)
+    $sql_seat_assignments = "CREATE TABLE $table_seat_assignments (
+        id          bigint(20)   NOT NULL AUTO_INCREMENT,
+        config_id   bigint(20)   NOT NULL,
+        mesa_id     bigint(20)   NOT NULL,
+        order_id    bigint(20)   NOT NULL,
+        grupo       varchar(100) NOT NULL DEFAULT '',
+        cantidad    tinyint(3)   NOT NULL DEFAULT 1,
+        nombre      varchar(200) NOT NULL DEFAULT '',
+        apellidos   varchar(200) NOT NULL DEFAULT '',
+        status      varchar(20)  NOT NULL DEFAULT 'assigned',
+        created_at  datetime     NOT NULL DEFAULT CURRENT_TIMESTAMP,
+        PRIMARY KEY  (id),
+        KEY  config_id  (config_id),
+        KEY  mesa_id    (mesa_id),
+        KEY  order_id   (order_id),
+        KEY  grupo      (grupo),
+        UNIQUE KEY order_config (order_id, config_id)
+    ) $charset_collate;";
+
+    // Tabla 4: Override de zona por grupo (asignación manual de grupo → zona)
+    $sql_seat_group_zones = "CREATE TABLE $table_seat_group_zones (
+        id        bigint(20)   NOT NULL AUTO_INCREMENT,
+        config_id bigint(20)   NOT NULL,
+        grupo     varchar(100) NOT NULL,
+        zona      varchar(100) NOT NULL,
+        PRIMARY KEY  (id),
+        KEY config_grupo (config_id, grupo(80)),
+        UNIQUE KEY config_grupo_unique (config_id, grupo(80))
+    ) $charset_collate;";
+
+    // Tabla 5: Elementos del plano (Escenarios, Pistas, Baños, etc.)
+    $table_seat_elements = $wpdb->prefix . 'tbp_seat_elements';
+    $sql_seat_elements = "CREATE TABLE $table_seat_elements (
+        id          bigint(20)   NOT NULL AUTO_INCREMENT,
+        config_id   bigint(20)   NOT NULL,
+        tipo        varchar(50)  NOT NULL, -- stage, dance_floor, exit, wc, bar
+        label       varchar(255) NOT NULL DEFAULT '',
+        pos_x       int(11)      NOT NULL DEFAULT 0,
+        pos_y       int(11)      NOT NULL DEFAULT 0,
+        width       int(11)      NOT NULL DEFAULT 100,
+        height      int(11)      NOT NULL DEFAULT 100,
+        color       varchar(20)  NOT NULL DEFAULT '#334155',
+        PRIMARY KEY  (id),
+        KEY config_id (config_id)
+    ) $charset_collate;";
+
+    dbDelta( $sql_seat_configs );
+    dbDelta( $sql_seat_tables );
+    dbDelta( $sql_seat_assignments );
+    dbDelta( $sql_seat_group_zones );
+    dbDelta( $sql_seat_elements );
 }

@@ -248,7 +248,7 @@ function tbp_egresos_balance_global_page_content() {
             'eg_auth' => $eg_autorizado,
             'eg_paid' => $eg_pagado,
             'eg_saldo' => $eg_autorizado - $eg_pagado,
-            'margin' => $inc_pagado - $eg_pagado
+            'margin' => $inc_pagado - $eg_autorizado
         );
     }
 

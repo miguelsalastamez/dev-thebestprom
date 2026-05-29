@@ -396,7 +396,6 @@ function tbp_actividades_receive_tombola_ajax() {
         $quantity
     );
     $order->add_order_note( $msg, 1 );
-
     echo '<p class="tbp-status-success" style="color: #673ab7; font-weight: bold;">' . sprintf( __( 'Se han registrado %d boletos en tómbola correctamente.', 'tbp-actividades' ), $quantity ) . '</p>';
     echo '<button onclick="location.reload()" class="button">' . __( 'Volver', 'tbp-actividades' ) . '</button>';
     wp_die();
@@ -432,17 +431,101 @@ function tbp_actividades_delete_single_log_ajax() {
     );
 
     if ( $deleted ) {
-        // Recalculate total physical deliveries for this order
         $order_id = $log->order_id;
-        $total_remaining = $wpdb->get_var( $wpdb->prepare( "SELECT SUM(amount) FROM $table_logs WHERE order_id = %d AND type = 'physical'", $order_id ) );
         
-        $total_remaining = intval( $total_remaining );
-        update_post_meta( $order_id, '_tbp_entregas_fisicas', $total_remaining );
+        // 1. Conditionally recalculate metadata based on the log type
+        if ( $log->type === 'physical' || empty( $log->type ) ) {
+            // Recalculate remaining physical raffle deliveries (including legacy logs with empty/NULL type)
+            $total_remaining_physical = $wpdb->get_var( $wpdb->prepare(
+                "SELECT SUM(amount) FROM $table_logs WHERE order_id = %d AND (type = 'physical' OR type IS NULL OR type = '')",
+                $order_id
+            ) );
+            $total_remaining_physical = intval( $total_remaining_physical );
+            update_post_meta( $order_id, '_tbp_entregas_fisicas', $total_remaining_physical );
+        } elseif ( $log->type === 'tombola' ) {
+            // Recalculate remaining tombola raffle entries
+            $total_remaining_tombola = $wpdb->get_var( $wpdb->prepare(
+                "SELECT SUM(amount) FROM $table_logs WHERE order_id = %d AND type = 'tombola'",
+                $order_id
+            ) );
+            $total_remaining_tombola = intval( $total_remaining_tombola );
+            if ( $total_remaining_tombola > 0 ) {
+                update_post_meta( $order_id, '_tbp_boletos_tombola', $total_remaining_tombola );
+            } else {
+                delete_post_meta( $order_id, '_tbp_boletos_tombola' );
+            }
+        } elseif ( $log->type === 'qr_delivery' || $log->type === 'delivery_items' ) {
+            // Resolve and delete the specific rule ID from the postmeta
+            $rule = tbp_actividades_get_rule_by_hash( $order_id, $log->rifa_id );
+            if ( $rule && ! empty( $rule['id'] ) ) {
+                delete_post_meta( $order_id, '_tbp_delivery_rule_id', $rule['id'] );
+            }
+            
+            // Recalculate remaining package logs
+            $remaining_packages = $wpdb->get_var( $wpdb->prepare(
+                "SELECT COUNT(*) FROM $table_logs WHERE order_id = %d AND type IN ('qr_delivery', 'delivery_items')",
+                $order_id
+            ) );
+            if ( intval( $remaining_packages ) === 0 ) {
+                delete_post_meta( $order_id, '_tbp_entrega_paquetes' );
+            }
+        }
 
         $order = wc_get_order( $order_id );
         if ( $order ) {
             $user = wp_get_current_user();
-            $order->add_order_note( sprintf( __( 'Se borró manualmente un registro histórico de entrega de %d boletos físicos (Operador: %s).', 'tbp-actividades' ), intval($log->amount), $user->display_name ) );
+            $operator_name = ! empty( $user->display_name ) ? $user->display_name : __( 'Personal Staff', 'tbp-actividades' );
+
+            if ( $log->type === 'qr_delivery' ) {
+                $attendee_id = intval( $log->staff_id );
+                
+                // Revert check-in status on Event Tickets
+                if ( $attendee_id > 0 ) {
+                    // Prevent infinite loop by temporarily removing uncheckin listeners
+                    remove_action( 'event_tickets_uncheckin', 'tbp_handle_attendee_uncheckin_delivery_revert', 10 );
+                    remove_action( 'wootickets_uncheckin', 'tbp_handle_attendee_uncheckin_delivery_revert', 10 );
+                    remove_action( 'eddtickets_uncheckin', 'tbp_handle_attendee_uncheckin_delivery_revert', 10 );
+                    remove_action( 'rsvp_uncheckin', 'tbp_handle_attendee_uncheckin_delivery_revert', 10 );
+
+                    // 1. Clear database meta keys directly (fallback/instant update)
+                    update_post_meta( $attendee_id, '_tribe_wooticket_checkedin', 0 );
+                    update_post_meta( $attendee_id, '_tribe_eddticket_checkedin', 0 );
+                    update_post_meta( $attendee_id, '_tribe_rsvp_checkedin', 0 );
+                    update_post_meta( $attendee_id, '_tribe_tpp_checkedin', 0 );
+                    delete_post_meta( $attendee_id, '_tribe_qr_status' );
+                    delete_post_meta( $attendee_id, '_tribe_wooticket_checkedin_details' );
+                    delete_post_meta( $attendee_id, '_tribe_rsvp_checkedin_details' );
+
+                    // 2. Officially trigger uncheckin via the appropriate provider if available
+                    if ( function_exists( 'tribe_tickets_get_ticket_provider' ) ) {
+                        $provider = tribe_tickets_get_ticket_provider( $attendee_id );
+                        if ( $provider ) {
+                            $provider->uncheckin( $attendee_id );
+                        }
+                    }
+
+                    // 3. Fallback to default checkin/uncheckin instance
+                    if ( class_exists( 'Tribe__Tickets__Tickets' ) ) {
+                        $tickets_inst = Tribe__Tickets__Tickets::get_instance();
+                        if ( $tickets_inst ) {
+                            $tickets_inst->uncheckin( $attendee_id );
+                        }
+                    }
+                }
+
+                $attendee_name = get_the_title( $attendee_id );
+                if ( empty( $attendee_name ) || is_numeric( $attendee_name ) ) {
+                    $attendee_name = '#' . $attendee_id;
+                }
+
+                $order->add_order_note( sprintf( __( 'Se borró manualmente la entrega física QR para el Asistente %s (#%d) (Operador: %s). El check-in del boleto fue anulado/restaurado automáticamente.', 'tbp-actividades' ), $attendee_name, $attendee_id, $operator_name ) );
+            } elseif ( $log->type === 'delivery_items' ) {
+                $order->add_order_note( sprintf( __( 'Se borró manualmente un registro histórico de entrega de paquete (%d unidades) (Operador: %s).', 'tbp-actividades' ), intval($log->amount), $operator_name ) );
+            } elseif ( $log->type === 'tombola' ) {
+                $order->add_order_note( sprintf( __( 'Se borró manualmente la entrega de %d boletos a tómbola (Operador: %s).', 'tbp-actividades' ), intval($log->amount), $operator_name ) );
+            } else {
+                $order->add_order_note( sprintf( __( 'Se borró manualmente un registro histórico de entrega de %d boletos físicos (Operador: %s).', 'tbp-actividades' ), intval($log->amount), $operator_name ) );
+            }
         }
 
         wp_send_json_success( 'Registro eliminado con éxito.' );
@@ -465,29 +548,85 @@ function tbp_actividades_reset_order_deliveries_ajax() {
     }
 
     $order_id = intval( $_POST['order_id'] );
+    $reset_type = sanitize_text_field( $_POST['reset_type'] ?? 'paquete' );
     global $wpdb;
     $table_logs = $wpdb->prefix . 'tbp_actividades_logs';
 
-    // Delete ALL physical logs for this order
-    $deleted = $wpdb->delete(
-        $table_logs,
-        array( 'order_id' => $order_id, 'type' => 'physical' ),
-        array( '%d', '%s' )
-    );
+    $user = wp_get_current_user();
+    $log_msg = "";
 
-    if ( $deleted !== false ) {
-        // Reset the meta
+    if ( $reset_type === 'rifa' ) {
+        // Reset ONLY Raffles (Boletos)
+        $wpdb->query( $wpdb->prepare( 
+            "DELETE FROM $table_logs WHERE order_id = %d AND type IN ('physical', 'tombola')", 
+            $order_id 
+        ) );
         update_post_meta( $order_id, '_tbp_entregas_fisicas', 0 );
+        delete_post_meta( $order_id, '_tbp_boletos_tombola' );
+        $log_msg = sprintf( __( 'Se resetearon los registros de BOLETOS/RIFA para este pedido (Operador: %s).', 'tbp-actividades' ), $user->display_name );
+    } else {
+        // Reset ONLY Packages (Paquetes)
+        // 1. Fetch qr_delivery logs to revert Event Tickets check-in status
+        $qr_logs = $wpdb->get_results( $wpdb->prepare(
+            "SELECT * FROM $table_logs WHERE order_id = %d AND type = 'qr_delivery'",
+            $order_id
+        ) );
 
-        $order = wc_get_order( $order_id );
-        if ( $order ) {
-            $user = wp_get_current_user();
-            $order->add_order_note( sprintf( __( 'Se resetearon/vaciaron TODAS las entregas físicas de la base de datos para este pedido desde el reporte (Operador: %s).', 'tbp-actividades' ), $user->display_name ) );
+        if ( ! empty( $qr_logs ) ) {
+            // Prevent infinite loop by temporarily removing uncheckin listeners
+            remove_action( 'event_tickets_uncheckin', 'tbp_handle_attendee_uncheckin_delivery_revert', 10 );
+            remove_action( 'wootickets_uncheckin', 'tbp_handle_attendee_uncheckin_delivery_revert', 10 );
+            remove_action( 'eddtickets_uncheckin', 'tbp_handle_attendee_uncheckin_delivery_revert', 10 );
+            remove_action( 'rsvp_uncheckin', 'tbp_handle_attendee_uncheckin_delivery_revert', 10 );
+
+            foreach ( $qr_logs as $qr_log ) {
+                $attendee_id = intval( $qr_log->staff_id );
+                if ( $attendee_id > 0 ) {
+                    // Revert check-in status keys
+                    update_post_meta( $attendee_id, '_tribe_wooticket_checkedin', 0 );
+                    update_post_meta( $attendee_id, '_tribe_eddticket_checkedin', 0 );
+                    update_post_meta( $attendee_id, '_tribe_rsvp_checkedin', 0 );
+                    update_post_meta( $attendee_id, '_tribe_tpp_checkedin', 0 );
+                    delete_post_meta( $attendee_id, '_tribe_qr_status' );
+                    delete_post_meta( $attendee_id, '_tribe_wooticket_checkedin_details' );
+                    delete_post_meta( $attendee_id, '_tribe_rsvp_checkedin_details' );
+
+                    // Trigger uncheckin via Event Tickets providers
+                    if ( function_exists( 'tribe_tickets_get_ticket_provider' ) ) {
+                        $provider = tribe_tickets_get_ticket_provider( $attendee_id );
+                        if ( $provider ) {
+                            $provider->uncheckin( $attendee_id );
+                        }
+                    }
+
+                    if ( class_exists( 'Tribe__Tickets__Tickets' ) ) {
+                        $tickets_inst = Tribe__Tickets__Tickets::get_instance();
+                        if ( $tickets_inst ) {
+                            $tickets_inst->uncheckin( $attendee_id );
+                        }
+                    }
+                }
+            }
         }
 
-        wp_send_json_success( 'Entregas reseteadas con éxito.' );
-    } else {
-        wp_send_json_error( 'Error de base de datos al limpiar registros.' );
+        // 2. Delete both 'delivery_items' and 'qr_delivery' logs for packages
+        $wpdb->query( $wpdb->prepare( 
+            "DELETE FROM $table_logs WHERE order_id = %d AND type IN ('delivery_items', 'qr_delivery')", 
+            $order_id 
+        ) );
+
+        // 3. Clear package-specific meta flags
+        delete_post_meta( $order_id, '_tbp_entrega_paquetes' );
+        delete_post_meta( $order_id, '_tbp_delivery_rule_id' );
+
+        $log_msg = sprintf( __( 'Se resetearon los registros de PAQUETES (Manual y QR) para este pedido (Operador: %s).', 'tbp-actividades' ), $user->display_name );
     }
+
+    $order = wc_get_order( $order_id );
+    if ( $order ) {
+        $order->add_order_note( $log_msg );
+    }
+
+    wp_send_json_success( 'Reset completado con éxito.' );
 }
 add_action( 'wp_ajax_tbp_actividades_reset_order_deliveries', 'tbp_actividades_reset_order_deliveries_ajax' );

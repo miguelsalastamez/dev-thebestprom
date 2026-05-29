@@ -25,7 +25,7 @@ if ( ! function_exists( 'wcmp_display_order_balance_frontend' ) ) {
 
         // Zen Design Styling
         echo '<style>
-            .wcmp-zen-card { background: #fff; border: 1px solid #e1e4e8; border-radius: 12px; padding: 25px; box-shadow: 0 4px 15px rgba(0,0,0,0.05); margin-top: 3em; font-family: -apple-system, BlinkMacSystemFont, \"Segoe UI\", Roboto, sans-serif; }
+            .wcmp-zen-card { background: #fff; border: 1px solid #e1e4e8; border-radius: 12px; padding: 25px; box-shadow: 0 4px 15px rgba(0,0,0,0.05); margin-top: 3em; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; }
             .wcmp-zen-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 25px; border-bottom: 2px solid #f1f3f5; padding-bottom: 15px; }
             .wcmp-zen-header h2 { margin: 0; font-size: 1.25em; color: #2c3e50; font-weight: 600; }
             .wcmp-zen-summary { display: flex; flex-wrap: wrap; gap: 30px; margin-bottom: 30px; background: #f8fafc; padding: 20px; border-radius: 10px; }
@@ -41,6 +41,78 @@ if ( ! function_exists( 'wcmp_display_order_balance_frontend' ) ) {
             .wcmp-badge { background: #e2e8f0; color: #475569; padding: 3px 8px; border-radius: 4px; font-size: 11px; font-weight: 600; }
             .wcmp-button-receipt { background: #6772e5; color: #fff !important; padding: 6px 12px; border-radius: 6px; font-size: 11px; font-weight: 600; text-decoration: none !important; transition: all 0.2s; display: inline-block; }
             .wcmp-button-receipt:hover { background: #5469d4; transform: translateY(-1px); box-shadow: 0 4px 8px rgba(103, 114, 229, 0.2); }
+
+            /* Mobile Card Design for Payments History */
+            @media (max-width: 767px) {
+                .wcmp-zen-summary {
+                    display: grid !important;
+                    grid-template-columns: 1fr !important;
+                    gap: 16px !important;
+                    padding: 16px !important;
+                }
+                .wcmp-summary-value {
+                    font-size: 20px !important;
+                }
+                .wcmp-zen-table, 
+                .wcmp-zen-table thead, 
+                .wcmp-zen-table tbody, 
+                .wcmp-zen-table th, 
+                .wcmp-zen-table td, 
+                .wcmp-zen-table tr {
+                    display: block !important;
+                    width: 100% !important;
+                    box-sizing: border-box !important;
+                }
+                .wcmp-zen-table thead {
+                    display: none !important;
+                }
+                .wcmp-zen-table tr {
+                    background: #ffffff !important;
+                    border: 1px solid #e2e8f0 !important;
+                    border-radius: 12px !important;
+                    padding: 16px !important;
+                    margin-bottom: 16px !important;
+                    box-shadow: 0 4px 10px rgba(15, 23, 42, 0.02) !important;
+                }
+                .wcmp-zen-table td {
+                    padding: 10px 0 !important;
+                    border-bottom: none !important;
+                    display: flex !important;
+                    justify-content: space-between !important;
+                    align-items: flex-start !important;
+                    font-size: 13px !important;
+                    gap: 12px !important;
+                }
+                .wcmp-zen-table td > * {
+                    text-align: right !important;
+                    max-width: 60% !important;
+                    word-wrap: break-word !important;
+                }
+                .wcmp-zen-table td::before {
+                    font-weight: 700 !important;
+                    color: #64748b !important;
+                    text-transform: uppercase !important;
+                    font-size: 11px !important;
+                    letter-spacing: 0.05em !important;
+                }
+                .wcmp-zen-table td:nth-child(1)::before {
+                    content: "Fecha" !important;
+                }
+                .wcmp-zen-table td:nth-child(2)::before {
+                    content: "Referencia" !important;
+                }
+                .wcmp-zen-table td:nth-child(3)::before {
+                    content: "Recibo" !important;
+                }
+                .wcmp-zen-table td:nth-child(4)::before {
+                    content: "Monto" !important;
+                }
+                .wcmp-zen-table td:nth-child(4) {
+                    border-top: 1px dashed #f1f5f9 !important;
+                    margin-top: 8px !important;
+                    padding-top: 12px !important;
+                }
+            }
         </style>';
 
         echo '<section class="wcmp-zen-card">';
@@ -50,8 +122,8 @@ if ( ! function_exists( 'wcmp_display_order_balance_frontend' ) ) {
         echo '<div class="wcmp-summary-item"><span class="wcmp-summary-label">' . __('Total Compra', 'wc-manual-payments') . '</span><span class="wcmp-summary-value">' . wc_price($total_order) . '</span></div>';
         echo '<div class="wcmp-summary-item"><span class="wcmp-summary-label">' . __('Total Pagado', 'wc-manual-payments') . '</span><span class="wcmp-summary-value">' . wc_price($total_paid) . '</span></div>';
         $balance_class = $balance > 0 ? 'wcmp-balance-pending' : 'wcmp-balance-paid';
-        $balance_label = $balance > 0 ? __('Saldo Pendiente', 'wc-manual-payments') : __('PAGADO TOTAL', 'wc-manual-payments');
-        echo '<div class="wcmp-summary-item"><span class="wcmp-summary-label">' . $balance_label . '</span><span class="wcmp-summary-value ' . $balance_class . '">' . wc_price($balance) . '</span></div>';
+        $balance_label = $balance > 0 ? __('Saldo Pendiente', 'wc-manual-payments') : __('Saldo', 'wc-manual-payments');
+        echo '<div class="wcmp-summary-item"><span class="wcmp-summary-label">' . $balance_label . '</span><span class="wcmp-summary-value ' . $balance_class . '">' . ($balance <= 0 ? __('$0.00 (Liquidado)', 'wc-manual-payments') : wc_price($balance)) . '</span></div>';
         echo '</div>';
 
         if ( ! empty( $payments ) ) {
@@ -60,7 +132,10 @@ if ( ! function_exists( 'wcmp_display_order_balance_frontend' ) ) {
             echo '<tbody>';
             foreach ( $payments as $payment ) {
                 $receipt_html = '';
-                if ( ! empty($payment['receipt_url']) ) {
+                if ( ! empty($payment['transaction_id']) && (strpos($payment['transaction_id'], 'pi_') === 0 || strpos($payment['transaction_id'], 'ch_') === 0) ) {
+                    $redirect_url = get_rest_url( null, 'wcmp/v1/receipt/' . $payment['transaction_id'] );
+                    $receipt_html = '<a href="' . esc_url($redirect_url) . '" target="_blank" class="wcmp-button-receipt">' . __('Ver Recibo', 'wc-manual-payments') . '</a>';
+                } elseif ( ! empty($payment['receipt_url']) ) {
                     $receipt_html = '<a href="' . esc_url($payment['receipt_url']) . '" target="_blank" class="wcmp-button-receipt">' . __('Ver Recibo', 'wc-manual-payments') . '</a>';
                 }
 

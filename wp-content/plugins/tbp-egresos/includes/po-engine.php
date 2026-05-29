@@ -164,6 +164,31 @@ function tbp_egresos_trigger_recompute_from_order_status( $order_id, $old_status
 }
 
 /**
+ * Force Recompute for all POs of a specific Event
+ */
+function tbp_egresos_recompute_all_event_pos( $event_id ) {
+    if ( ! $event_id ) return;
+    
+    $args = array(
+        'post_type'      => 'tbp_orden_compra',
+        'posts_per_page' => -1,
+        'post_status'    => array('publish', 'draft', 'private', 'pending'),
+        'fields'         => 'ids',
+        'meta_query'     => array(
+            array(
+                'key'   => '_tbp_event_id',
+                'value' => $event_id,
+            ),
+        ),
+    );
+
+    $pos = get_posts( $args );
+    foreach ( $pos as $po_id ) {
+        tbp_egresos_recompute_po_totals( $po_id );
+    }
+}
+
+/**
  * Recompute PO Totals (Projected & Authorized)
  */
 function tbp_egresos_recompute_po_totals( $po_id ) {
