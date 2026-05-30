@@ -2,11 +2,12 @@
 /**
  * Plugin Name: The Best Prom - Actividades
  * Plugin URI: https://dev.thebestprom.com
- * Version: 11.9.51
+ * Version: 11.9.52
  * Author: Antigravity Team
  * Text Domain: tbp-actividades
  *
  * Changelog:
+ * 11.9.52 - Fix: Corrección de un TypeError crítico en el inicializador de la Etapa 1. Si el arreglo de zonas JSON devuelto por la base de datos se parseaba como null, renderZonas() arrojaba una excepción que bloqueaba el ready handler de jQuery, impidiendo que el botón de Escanear Asistentes registrara su evento de click. Ahora la variable de zonas y la manipulación de campos están 100% protegidas y tipadas contra valores nulos o vacíos.
  * 11.9.51 - Feature: Asignación Manual por Grupo. Desde la Etapa 3, selecciona pedidos con checkboxes y haz clic en "🎯 Asignar a Mesas" para abrir un modal a pantalla completa con vista dividida: panel izquierdo con cola de pedidos y estadísticas en tiempo real, panel derecho con el plano visual interactivo. Al hacer clic en cada mesa, el sistema llena automáticamente con pedidos de la cola (ordenados de mayor a menor para óptimo empaquetado). Incluye Deshacer, Confirmar con guardado en BD, zoom con rueda del ratón, y barra de progreso animada.
  * 11.9.50 - Feature: Rediseño completo de la Etapa 3 (Generación y Asignación). Ahora incluye una tabla interactiva de pedidos escaneados con filtros por Grupo, # Pedido y Nombre, paginación, ordenamiento por columnas, checkboxes de selección individual y masiva, contadores dinámicos de piezas/plazas, y barra de acciones para seleccionados. Nuevo AJAX endpoint tbp_asientos_get_scan_data.
  * 11.9.49 - Fix: Modificada tbp_asientos_generate_tables() para realizar sincronización inteligente de mesas en la base de datos en lugar de eliminarlas y recrearlas. Esto evita que al hacer clic en "Guardar Cambios" en la Etapa 1 (Configuración de Metadatos) se pierdan las coordenadas, formas, colores y tamaños de las mesas diseñadas en la Etapa 2 (Procesamiento del Plano).
@@ -97,7 +98,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 }
 
 // Define constants
-define( 'TBP_ACTIVIDADES_VERSION', '11.9.46' );
+define( 'TBP_ACTIVIDADES_VERSION', '11.9.52' );
 define( 'TBP_ACTIVIDADES_PATH', plugin_dir_path( __FILE__ ) );
 define( 'TBP_ACTIVIDADES_URL', plugin_dir_url( __FILE__ ) );
 

@@ -484,14 +484,24 @@ function tbp_asientos_render_edit_view( $config_id = 0 ) {
         let zonas = [];
         try {
             const rawZonas = $('#zonas_json').val();
-            if (rawZonas) zonas = JSON.parse(rawZonas);
+            if (rawZonas) {
+                const parsed = JSON.parse(rawZonas);
+                if (Array.isArray(parsed)) {
+                    zonas = parsed;
+                }
+            }
         } catch(e) { console.error('Error parsing zonas', e); }
 
         function renderZonas() {
             const $container = $('#zonas-container');
             $container.empty();
 
+            if (!Array.isArray(zonas)) {
+                zonas = [];
+            }
+
             zonas.forEach((zona, index) => {
+                if (!zona) return;
                 const prioridad = index + 1;
                 zona.prioridad = prioridad;
 
@@ -535,8 +545,14 @@ function tbp_asientos_render_edit_view( $config_id = 0 ) {
         }
 
         function updateJsonField() {
+            if (!Array.isArray(zonas)) {
+                zonas = [];
+            }
             $('#zonas-container .tbp-zona-box').each(function() {
                 const idx = $(this).data('index');
+                if (!zonas[idx]) {
+                    zonas[idx] = {};
+                }
                 zonas[idx].nombre = $(this).find('.z-nombre').val();
                 zonas[idx].mesas = parseInt($(this).find('.z-mesas').val()) || 0;
                 zonas[idx].capacidad = parseInt($(this).find('.z-capacidad').val()) || 0;
