@@ -341,7 +341,7 @@ function tbp_asientos_render_edit_view( $config_id = 0 ) {
                 <span style="font-weight:600; color:#92400e; font-size:13px;"><span id="selection_count">0</span> pedido(s) seleccionado(s) — <span id="selection_piezas">0</span> piezas</span>
             </div>
             <div style="display:flex; gap:8px;">
-                <button type="button" id="btn_action_selected" class="button button-primary button-small" disabled>🎯 Acción (próximamente)</button>
+                <button type="button" id="btn_action_selected" class="button button-primary button-small">🎯 Asignar a Mesas</button>
                 <button type="button" id="btn_deselect_all" class="button button-small">✕ Deseleccionar</button>
             </div>
         </div>
@@ -381,6 +381,84 @@ function tbp_asientos_render_edit_view( $config_id = 0 ) {
         <?php else : ?>
             <div class="postbox"><div class="inside"><p><em>Debes guardar la configuración primero para acceder a esta etapa.</em></p></div></div>
         <?php endif; ?>
+    </div>
+
+    <!-- ============================================================= -->
+    <!-- MODAL: ASIGNACIÓN MANUAL POR GRUPO                            -->
+    <!-- ============================================================= -->
+    <div id="tbp-assign-modal" style="display:none; position:fixed; top:0; left:0; width:100vw; height:100vh; z-index:999999; background:rgba(15,23,42,0.85); backdrop-filter:blur(4px);">
+        <div style="display:flex; flex-direction:column; height:100vh;">
+            <!-- MODAL HEADER -->
+            <div style="background:linear-gradient(135deg, #1e3a5f 0%, #2271b1 100%); padding:12px 24px; display:flex; align-items:center; justify-content:space-between; flex-shrink:0;">
+                <div style="display:flex; align-items:center; gap:12px;">
+                    <span style="font-size:22px;">🎯</span>
+                    <div>
+                        <h2 style="margin:0; color:#fff; font-size:16px; font-weight:700;">Asignación Manual</h2>
+                        <p style="margin:0; color:rgba(255,255,255,0.7); font-size:11px;" id="assign_modal_subtitle">Grupo: — | Pedidos: — | Piezas: —</p>
+                    </div>
+                </div>
+                <div style="display:flex; gap:8px; align-items:center;">
+                    <button type="button" id="btn_assign_undo" class="button" style="background:rgba(255,255,255,0.15); color:#fff; border:1px solid rgba(255,255,255,0.3); font-size:12px;" disabled>🔄 Deshacer última mesa</button>
+                    <button type="button" id="btn_assign_confirm" class="button" style="background:#16a34a; color:#fff; border:none; font-weight:700; font-size:13px; padding:6px 20px;" disabled>💾 Confirmar Asignación</button>
+                    <button type="button" id="btn_assign_cancel" class="button" style="background:#dc2626; color:#fff; border:none; font-size:12px; padding:6px 16px;">✕ Cancelar</button>
+                </div>
+            </div>
+
+            <!-- PROGRESS BAR -->
+            <div style="background:#0f172a; padding:0; flex-shrink:0;">
+                <div id="assign_progress_bar" style="height:4px; background:linear-gradient(90deg, #22c55e, #16a34a); width:0%; transition:width 0.4s ease;"></div>
+            </div>
+
+            <!-- BODY: SPLIT SCREEN -->
+            <div style="display:flex; flex:1; overflow:hidden;">
+                <!-- LEFT PANEL: ORDER QUEUE -->
+                <div style="width:380px; background:#fff; border-right:1px solid #e2e8f0; display:flex; flex-direction:column; flex-shrink:0;">
+                    <!-- Stats -->
+                    <div style="padding:16px; border-bottom:1px solid #e2e8f0; background:#f8fafc;">
+                        <div style="display:grid; grid-template-columns:1fr 1fr 1fr; gap:8px; text-align:center;">
+                            <div>
+                                <div style="font-size:20px; font-weight:800; color:#ea580c;" id="assign_stat_pending">0</div>
+                                <div style="font-size:9px; color:#64748b; text-transform:uppercase;">⏳ Pendientes</div>
+                            </div>
+                            <div>
+                                <div style="font-size:20px; font-weight:800; color:#16a34a;" id="assign_stat_done">0</div>
+                                <div style="font-size:9px; color:#64748b; text-transform:uppercase;">✅ Asignados</div>
+                            </div>
+                            <div>
+                                <div style="font-size:20px; font-weight:800; color:#2271b1;" id="assign_stat_piezas">0/0</div>
+                                <div style="font-size:9px; color:#64748b; text-transform:uppercase;">📦 Piezas</div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Order List -->
+                    <div style="flex:1; overflow-y:auto; padding:8px;" id="assign_order_list">
+                        <!-- Dynamic content -->
+                    </div>
+                </div>
+
+                <!-- RIGHT PANEL: FLOOR PLAN -->
+                <div style="flex:1; background:#e8ecf0; position:relative; overflow:hidden;">
+                    <div id="assign_canvas_container" style="position:absolute; top:0; left:0; width:100%; height:100%; overflow:hidden;">
+                        <div id="assign_canvas_grid" style="position:absolute; top:0; left:0; width:4000px; height:4000px; background-image:radial-gradient(#d1d5db 1px, transparent 1px); background-size:20px 20px;"></div>
+                        <div id="assign_canvas_items" style="position:absolute; top:0; left:0; width:100%; height:100%; transform-origin:0 0;"></div>
+                    </div>
+                    <!-- Zoom control -->
+                    <div style="position:absolute; bottom:16px; right:16px; background:rgba(255,255,255,0.95); border-radius:8px; padding:8px 12px; box-shadow:0 2px 10px rgba(0,0,0,0.15); display:flex; align-items:center; gap:8px; font-size:11px; z-index:10;">
+                        <span>🔍</span>
+                        <input type="range" id="assign_zoom" min="0.2" max="1.5" step="0.05" value="0.6" style="width:120px;">
+                        <span id="assign_zoom_label">60%</span>
+                    </div>
+                    <!-- Legend -->
+                    <div style="position:absolute; top:16px; right:16px; background:rgba(255,255,255,0.95); border-radius:8px; padding:10px 14px; box-shadow:0 2px 10px rgba(0,0,0,0.15); font-size:10px; z-index:10;">
+                        <div style="margin-bottom:4px;"><span style="display:inline-block; width:12px; height:12px; border-radius:50%; background:#94a3b8; vertical-align:middle;"></span> Disponible</div>
+                        <div style="margin-bottom:4px;"><span style="display:inline-block; width:12px; height:12px; border-radius:50%; background:#3b82f6; vertical-align:middle;"></span> Parcial</div>
+                        <div style="margin-bottom:4px;"><span style="display:inline-block; width:12px; height:12px; border-radius:50%; background:#22c55e; vertical-align:middle;"></span> Llena</div>
+                        <div><span style="display:inline-block; width:12px; height:12px; border-radius:50%; background:#ef4444; vertical-align:middle;"></span> Sin espacio</div>
+                    </div>
+                </div>
+            </div>
+        </div>
     </div>
 
     <style>
@@ -1064,6 +1142,406 @@ function tbp_asientos_render_edit_view( $config_id = 0 ) {
         function escHtml(str) {
             return $('<span>').text(str).html();
         }
+
+        // =====================================================================
+        // MODAL: ASIGNACIÓN MANUAL POR GRUPO
+        // =====================================================================
+        var assignQueue = [];           // Orders pending assignment
+        var assignDone = [];            // Orders already assigned { order, mesa_id }
+        var assignFloorTables = [];     // Floor plan tables from DB
+        var assignFloorElements = [];   // Floor plan decorative elements
+        var assignHistory = [];         // Undo stack: [ { mesa_id, orders: [...] } ]
+        var assignZoom = 0.6;
+        var assignTotalPiezas = 0;
+        var assignDonePiezas = 0;
+        var assignGroupName = '';
+
+        // Wire up the action button
+        $('#btn_action_selected').on('click', function() {
+            openAssignModal();
+        });
+
+        function openAssignModal() {
+            // Gather selected orders from scanAllData
+            var selectedOrders = [];
+            var grupos = {};
+            scanAllData.forEach(function(p) {
+                if (scanSelectedIds[p.order_id]) {
+                    selectedOrders.push({
+                        order_id: parseInt(p.order_id),
+                        nombre: p.nombre || '',
+                        apellidos: p.apellidos || '',
+                        grupo: p.grupo || 'Sin grupo',
+                        cantidad: parseInt(p.cantidad) || 0,
+                        status: 'pending' // pending | assigned
+                    });
+                    grupos[p.grupo || 'Sin grupo'] = true;
+                }
+            });
+
+            if (selectedOrders.length === 0) {
+                alert('No hay pedidos seleccionados. Usa los checkboxes para seleccionar pedidos.');
+                return;
+            }
+
+            // Sort by cantidad DESC (bigger orders first for optimal packing)
+            selectedOrders.sort(function(a, b) { return b.cantidad - a.cantidad; });
+
+            assignGroupName = Object.keys(grupos).join(', ');
+            assignQueue = selectedOrders;
+            assignDone = [];
+            assignHistory = [];
+            assignTotalPiezas = 0;
+            assignDonePiezas = 0;
+            assignQueue.forEach(function(o) { assignTotalPiezas += o.cantidad; });
+
+            // Update subtitle
+            $('#assign_modal_subtitle').text('Grupo: ' + assignGroupName + ' | Pedidos: ' + assignQueue.length + ' | Piezas: ' + assignTotalPiezas);
+
+            // Enable action button text
+            $('#btn_action_selected').prop('disabled', false).text('🎯 Asignar a Mesas');
+
+            // Show modal
+            $('#tbp-assign-modal').fadeIn(200);
+            $('body').css('overflow', 'hidden');
+
+            // Load floor plan data
+            loadFloorPlanForAssign();
+        }
+
+        function loadFloorPlanForAssign() {
+            var configId = <?php echo $config_id; ?>;
+            $('#assign_canvas_items').html('<div style="text-align:center; padding:100px; color:#64748b;">⏳ Cargando plano...</div>');
+
+            $.post(ajaxurl, {
+                action: 'tbp_asientos_get_floor_data',
+                config_id: configId,
+                nonce: '<?php echo wp_create_nonce("tbp_asientos_nonce"); ?>'
+            }, function(res) {
+                if (!res.success) {
+                    $('#assign_canvas_items').html('<div style="text-align:center; padding:100px; color:#ef4444;">❌ Error cargando plano</div>');
+                    return;
+                }
+
+                assignFloorTables = res.data.tables || [];
+                assignFloorElements = res.data.elements || [];
+
+                renderAssignFloor();
+                renderAssignQueue();
+                updateAssignStats();
+            });
+        }
+
+        function renderAssignFloor() {
+            var $canvas = $('#assign_canvas_items');
+            $canvas.empty();
+
+            // Render decorative elements first (lower z-index)
+            assignFloorElements.forEach(function(el) {
+                var shapeClass = 'item-' + el.tipo;
+                var $elem = $('<div>').css({
+                    position: 'absolute',
+                    left: el.pos_x + 'px',
+                    top: el.pos_y + 'px',
+                    width: el.width + 'px',
+                    height: el.height + 'px',
+                    background: el.color || '#334155',
+                    borderRadius: el.tipo === 'area' ? '0' : '4px',
+                    opacity: el.tipo === 'area' ? 0.25 : 0.7,
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    color: '#fff',
+                    fontSize: '9px',
+                    fontWeight: '700',
+                    zIndex: 1,
+                    pointerEvents: 'none'
+                }).addClass(shapeClass).text(el.label);
+                $canvas.append($elem);
+            });
+
+            // Render tables
+            assignFloorTables.forEach(function(tbl) {
+                var color = getTableColor(tbl);
+                var borderRadius = (tbl.tipo === 'round' || tbl.tipo === 'bar') ? '50%' : '4px';
+                var cursor = tbl.libre > 0 ? 'pointer' : 'not-allowed';
+                var fontSize = tbl.width < 40 ? '7px' : '9px';
+
+                var $el = $('<div>').css({
+                    position: 'absolute',
+                    left: tbl.pos_x + 'px',
+                    top: tbl.pos_y + 'px',
+                    width: tbl.width + 'px',
+                    height: tbl.height + 'px',
+                    background: color,
+                    borderRadius: borderRadius,
+                    border: '2px solid ' + color,
+                    display: 'flex',
+                    flexDirection: 'column',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    cursor: cursor,
+                    userSelect: 'none',
+                    zIndex: 5,
+                    boxShadow: '0 2px 6px rgba(0,0,0,0.2)',
+                    transition: 'transform 0.15s, box-shadow 0.15s'
+                }).attr('data-table-id', tbl.id).addClass('assign-table-item');
+
+                $el.append($('<div>').css({ color: '#fff', fontWeight: '800', fontSize: fontSize, textAlign: 'center', lineHeight: '1.1' }).text(tbl.numero));
+                $el.append($('<div>').css({ color: 'rgba(255,255,255,0.8)', fontSize: '7px', fontWeight: '600' }).text(tbl.libre + '/' + tbl.capacidad));
+
+                $canvas.append($el);
+            });
+
+            // Apply zoom
+            $canvas.css('transform', 'scale(' + assignZoom + ')');
+        }
+
+        function getTableColor(tbl) {
+            if (tbl.libre <= 0) return '#ef4444';       // Full / no space - red
+            if (tbl.used > 0) return '#3b82f6';          // Partially filled - blue
+            return '#94a3b8';                             // Empty / available - gray
+        }
+
+        function renderAssignQueue() {
+            var $list = $('#assign_order_list');
+            $list.empty();
+
+            // First show assigned orders
+            assignDone.forEach(function(item) {
+                var o = item.order;
+                var mesa = findTable(item.mesa_id);
+                var mesaLabel = mesa ? mesa.numero : '?';
+                $list.append(
+                    '<div style="padding:8px 10px; margin-bottom:4px; background:#f0fdf4; border:1px solid #bbf7d0; border-radius:6px; font-size:12px; display:flex; justify-content:space-between; align-items:center;">' +
+                        '<div><strong style="color:#16a34a;">✅</strong> #' + o.order_id + ' <span style="color:#64748b;">' + escHtml(o.nombre) + ' ' + escHtml(o.apellidos) + '</span></div>' +
+                        '<div style="display:flex; align-items:center; gap:6px;"><span style="background:#dcfce7; color:#166534; padding:2px 8px; border-radius:10px; font-size:10px; font-weight:700;">Mesa ' + escHtml(mesaLabel) + '</span><span style="font-weight:700;">' + o.cantidad + ' pzas</span></div>' +
+                    '</div>'
+                );
+            });
+
+            // Then show pending orders
+            var pendingOrders = assignQueue.filter(function(o) { return o.status === 'pending'; });
+            pendingOrders.forEach(function(o) {
+                $list.append(
+                    '<div style="padding:8px 10px; margin-bottom:4px; background:#fff; border:1px solid #e2e8f0; border-radius:6px; font-size:12px; display:flex; justify-content:space-between; align-items:center;">' +
+                        '<div><strong style="color:#ea580c;">⏳</strong> #' + o.order_id + ' <span style="color:#64748b;">' + escHtml(o.nombre) + ' ' + escHtml(o.apellidos) + '</span></div>' +
+                        '<div style="font-weight:700; color:#334155;">' + o.cantidad + ' pzas</div>' +
+                    '</div>'
+                );
+            });
+
+            if (pendingOrders.length === 0 && assignDone.length > 0) {
+                $list.append(
+                    '<div style="text-align:center; padding:30px; color:#16a34a; font-size:14px; font-weight:700;">' +
+                        '🎉 ¡Todos los pedidos han sido asignados!' +
+                    '</div>'
+                );
+            }
+        }
+
+        function findTable(id) {
+            for (var i = 0; i < assignFloorTables.length; i++) {
+                if (assignFloorTables[i].id === id) return assignFloorTables[i];
+            }
+            return null;
+        }
+
+        function updateAssignStats() {
+            var pending = assignQueue.filter(function(o) { return o.status === 'pending'; });
+            var done = assignDone.length;
+            assignDonePiezas = 0;
+            assignDone.forEach(function(item) { assignDonePiezas += item.order.cantidad; });
+
+            $('#assign_stat_pending').text(pending.length);
+            $('#assign_stat_done').text(done);
+            $('#assign_stat_piezas').text(assignDonePiezas + '/' + assignTotalPiezas);
+
+            // Progress bar
+            var pct = assignTotalPiezas > 0 ? Math.round((assignDonePiezas / assignTotalPiezas) * 100) : 0;
+            $('#assign_progress_bar').css('width', pct + '%');
+
+            // Enable/disable buttons
+            $('#btn_assign_undo').prop('disabled', assignHistory.length === 0);
+            $('#btn_assign_confirm').prop('disabled', assignDone.length === 0);
+        }
+
+        // ---- TABLE CLICK: ASSIGN ORDERS ----
+        $(document).on('click', '.assign-table-item', function() {
+            var tableId = parseInt($(this).data('table-id'));
+            var tbl = findTable(tableId);
+            if (!tbl || tbl.libre <= 0) return;
+
+            var pendingOrders = assignQueue.filter(function(o) { return o.status === 'pending'; });
+            if (pendingOrders.length === 0) return;
+
+            // Fill this table with orders from the queue
+            var remaining = tbl.libre;
+            var assignedInThisClick = [];
+
+            for (var i = 0; i < pendingOrders.length && remaining > 0; i++) {
+                var order = pendingOrders[i];
+                if (order.cantidad <= remaining) {
+                    // Whole order fits
+                    order.status = 'assigned';
+                    remaining -= order.cantidad;
+                    assignedInThisClick.push({ order: order, mesa_id: tableId });
+                    assignDone.push({ order: order, mesa_id: tableId });
+                }
+            }
+
+            if (assignedInThisClick.length === 0) {
+                // Try the first pending order even if it's bigger (partial won't work with our model, so skip)
+                // Show a message
+                alert('⚠️ No hay pedidos pendientes que quepan en esta mesa (' + remaining + ' lugares libres). El pedido más pequeño pendiente necesita más espacio.');
+                return;
+            }
+
+            // Update table availability
+            var piecesAssigned = 0;
+            assignedInThisClick.forEach(function(a) { piecesAssigned += a.order.cantidad; });
+            tbl.used += piecesAssigned;
+            tbl.libre = Math.max(0, tbl.capacidad - tbl.used);
+
+            // Push to history for undo
+            assignHistory.push({
+                mesa_id: tableId,
+                orders: assignedInThisClick,
+                piecesAssigned: piecesAssigned
+            });
+
+            // Re-render
+            renderAssignFloor();
+            renderAssignQueue();
+            updateAssignStats();
+
+            // Scroll order list to bottom
+            var $list = $('#assign_order_list');
+            $list.scrollTop(0);
+        });
+
+        // Hover effect on tables
+        $(document).on('mouseenter', '.assign-table-item', function() {
+            var tableId = parseInt($(this).data('table-id'));
+            var tbl = findTable(tableId);
+            if (tbl && tbl.libre > 0) {
+                $(this).css({ transform: 'scale(1.15)', boxShadow: '0 4px 20px rgba(0,0,0,0.35)', zIndex: 100 });
+            }
+        });
+        $(document).on('mouseleave', '.assign-table-item', function() {
+            $(this).css({ transform: 'scale(1)', boxShadow: '0 2px 6px rgba(0,0,0,0.2)', zIndex: 5 });
+        });
+
+        // ---- UNDO ----
+        $('#btn_assign_undo').on('click', function() {
+            if (assignHistory.length === 0) return;
+            var last = assignHistory.pop();
+
+            // Restore orders to pending
+            last.orders.forEach(function(item) {
+                item.order.status = 'pending';
+                // Remove from assignDone
+                assignDone = assignDone.filter(function(d) {
+                    return !(d.order.order_id === item.order.order_id && d.mesa_id === item.mesa_id);
+                });
+            });
+
+            // Restore table capacity
+            var tbl = findTable(last.mesa_id);
+            if (tbl) {
+                tbl.used -= last.piecesAssigned;
+                tbl.libre = Math.max(0, tbl.capacidad - tbl.used);
+            }
+
+            renderAssignFloor();
+            renderAssignQueue();
+            updateAssignStats();
+        });
+
+        // ---- CONFIRM: SAVE TO DB ----
+        $('#btn_assign_confirm').on('click', function() {
+            if (assignDone.length === 0) return;
+            if (!confirm('¿Confirmar la asignación de ' + assignDone.length + ' pedidos a mesas?\n\nEsto guardará las asignaciones en la base de datos.')) return;
+
+            var configId = <?php echo $config_id; ?>;
+            var payload = assignDone.map(function(item) {
+                return {
+                    order_id: item.order.order_id,
+                    mesa_id: item.mesa_id,
+                    grupo: item.order.grupo,
+                    cantidad: item.order.cantidad,
+                    nombre: item.order.nombre,
+                    apellidos: item.order.apellidos
+                };
+            });
+
+            var $btn = $('#btn_assign_confirm');
+            $btn.prop('disabled', true).text('⏳ Guardando...');
+
+            $.post(ajaxurl, {
+                action: 'tbp_asientos_manual_assign_batch',
+                config_id: configId,
+                assignments: payload,
+                nonce: '<?php echo wp_create_nonce("tbp_asientos_nonce"); ?>'
+            }, function(res) {
+                if (res.success) {
+                    var d = res.data;
+                    alert('✅ Asignación completada.\n\n' +
+                        '• Pedidos guardados: ' + d.saved + ' de ' + d.total + '\n' +
+                        '• Piezas asignadas: ' + assignDonePiezas +
+                        (d.errors.length > 0 ? '\n• Errores: ' + d.errors.join(', ') : ''));
+                    closeAssignModal();
+                    // Reload page to reflect changes
+                    window.location.href = '?page=tbp-actividades-asientos&action=edit&id=' + configId;
+                } else {
+                    alert('❌ Error: ' + (res.data.message || res.data));
+                    $btn.prop('disabled', false).text('💾 Confirmar Asignación');
+                }
+            }).fail(function() {
+                alert('❌ Error de conexión.');
+                $btn.prop('disabled', false).text('💾 Confirmar Asignación');
+            });
+        });
+
+        // ---- CANCEL ----
+        $('#btn_assign_cancel').on('click', function() {
+            if (assignDone.length > 0) {
+                if (!confirm('¿Descartar todas las asignaciones pendientes de guardar?')) return;
+            }
+            closeAssignModal();
+        });
+
+        function closeAssignModal() {
+            $('#tbp-assign-modal').fadeOut(200);
+            $('body').css('overflow', '');
+            assignQueue = [];
+            assignDone = [];
+            assignHistory = [];
+        }
+
+        // ---- ZOOM ----
+        $('#assign_zoom').on('input', function() {
+            assignZoom = parseFloat($(this).val());
+            $('#assign_zoom_label').text(Math.round(assignZoom * 100) + '%');
+            $('#assign_canvas_items').css('transform', 'scale(' + assignZoom + ')');
+        });
+
+        // Mouse wheel zoom on canvas
+        $(document).on('wheel', '#assign_canvas_container', function(e) {
+            e.preventDefault();
+            var delta = e.originalEvent.deltaY > 0 ? -0.05 : 0.05;
+            assignZoom = Math.min(1.5, Math.max(0.2, assignZoom + delta));
+            $('#assign_zoom').val(assignZoom);
+            $('#assign_zoom_label').text(Math.round(assignZoom * 100) + '%');
+            $('#assign_canvas_items').css('transform', 'scale(' + assignZoom + ')');
+        });
+
+        // ESC key to close modal
+        $(document).on('keydown', function(e) {
+            if (e.key === 'Escape' && $('#tbp-assign-modal').is(':visible')) {
+                $('#btn_assign_cancel').click();
+            }
+        });
 
     });
     </script>

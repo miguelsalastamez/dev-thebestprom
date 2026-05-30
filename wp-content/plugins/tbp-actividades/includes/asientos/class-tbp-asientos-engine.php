@@ -623,6 +623,139 @@ function tbp_asientos_ajax_get_scan_data() {
 }
 
 /**
+ * AJAX: Obtener datos del plano (mesas + elementos + disponibilidad).
+ */
+add_action( 'wp_ajax_tbp_asientos_get_floor_data', 'tbp_asientos_ajax_get_floor_data' );
+function tbp_asientos_ajax_get_floor_data() {
+    check_ajax_referer( 'tbp_asientos_nonce', 'nonce' );
+    if ( ! current_user_can( 'manage_options' ) ) wp_send_json_error( 'Sin permisos.' );
+
+    $config_id = (int) ( $_POST['config_id'] ?? 0 );
+    if ( ! $config_id ) wp_send_json_error( 'ID inválido.' );
+
+    global $wpdb;
+    $tables = $wpdb->get_results( $wpdb->prepare(
+        "SELECT * FROM {$wpdb->prefix}tbp_seat_tables WHERE config_id = %d ORDER BY zona, CAST(numero AS UNSIGNED)",
+        $config_id
+    ) );
+
+    $elements = $wpdb->get_results( $wpdb->prepare(
+        "SELECT * FROM {$wpdb->prefix}tbp_seat_elements WHERE config_id = %d",
+        $config_id
+    ) );
+
+    // Get current assignments grouped by mesa_id
+    $assignments_raw = $wpdb->get_results( $wpdb->prepare(
+        "SELECT mesa_id, SUM(cantidad) as used FROM {$wpdb->prefix}tbp_seat_assignments WHERE config_id = %d GROUP BY mesa_id",
+        $config_id
+    ) );
+    $used_map = array();
+    foreach ( $assignments_raw as $a ) {
+        $used_map[ (int) $a->mesa_id ] = (int) $a->used;
+    }
+
+    // Format tables with availability
+    $tables_out = array();
+    foreach ( $tables as $t ) {
+        $tid = (int) $t->id;
+        $cap = (int) $t->capacidad;
+        $used = isset( $used_map[ $tid ] ) ? $used_map[ $tid ] : 0;
+        $tables_out[] = array(
+            'id'        => $tid,
+            'zona'      => $t->zona,
+            'numero'    => $t->numero,
+            'capacidad' => $cap,
+            'used'      => $used,
+            'libre'     => max( 0, $cap - $used ),
+            'tipo'      => $t->tipo,
+            'pos_x'     => (int) $t->pos_x,
+            'pos_y'     => (int) $t->pos_y,
+            'width'     => (int) $t->width,
+            'height'    => (int) $t->height,
+            'color'     => $t->color,
+        );
+    }
+
+    // Format elements
+    $elements_out = array();
+    foreach ( $elements as $e ) {
+        $elements_out[] = array(
+            'id'    => (int) $e->id,
+            'tipo'  => $e->tipo,
+            'label' => $e->label,
+            'pos_x' => (int) $e->pos_x,
+            'pos_y' => (int) $e->pos_y,
+            'width' => (int) $e->width,
+            'height'=> (int) $e->height,
+            'color' => $e->color,
+        );
+    }
+
+    wp_send_json_success( array(
+        'tables'   => $tables_out,
+        'elements' => $elements_out,
+    ) );
+}
+
+/**
+ * AJAX: Asignación manual por lote.
+ */
+add_action( 'wp_ajax_tbp_asientos_manual_assign_batch', 'tbp_asientos_ajax_manual_assign_batch' );
+function tbp_asientos_ajax_manual_assign_batch() {
+    check_ajax_referer( 'tbp_asientos_nonce', 'nonce' );
+    if ( ! current_user_can( 'manage_options' ) ) wp_send_json_error( 'Sin permisos.' );
+
+    $config_id   = (int) ( $_POST['config_id'] ?? 0 );
+    $assignments = isset( $_POST['assignments'] ) && is_array( $_POST['assignments'] ) ? wp_unslash( $_POST['assignments'] ) : array();
+
+    if ( ! $config_id || empty( $assignments ) ) {
+        wp_send_json_error( 'Datos insuficientes.' );
+    }
+
+    $saved = 0;
+    $errors = array();
+
+    foreach ( $assignments as $a ) {
+        $result = tbp_asientos_assign_order(
+            $config_id,
+            (int) $a['mesa_id'],
+            (int) $a['order_id'],
+            sanitize_text_field( $a['grupo'] ?? '' ),
+            (int) $a['cantidad'],
+            sanitize_text_field( $a['nombre'] ?? '' ),
+            sanitize_text_field( $a['apellidos'] ?? '' )
+        );
+
+        if ( $result ) {
+            $saved++;
+        } else {
+            $errors[] = '#' . (int) $a['order_id'];
+        }
+    }
+
+    // Update config status to active if we have assignments
+    if ( $saved > 0 ) {
+        global $wpdb;
+        $wpdb->update(
+            $wpdb->prefix . 'tbp_seat_configurations',
+            array( 'status' => 'active' ),
+            array( 'id' => $config_id ),
+            array( '%s' ),
+            array( '%d' )
+        );
+
+        // Regenerate public snapshot
+        tbp_asientos_generate_public_snapshot( $config_id );
+    }
+
+    wp_send_json_success( array(
+        'saved'  => $saved,
+        'errors' => $errors,
+        'total'  => count( $assignments ),
+    ) );
+}
+
+/**
  * AJAX: Init Scan (Paso 1: Obtener todos los IDs de pedidos a procesar)
  */
 add_action( 'wp_ajax_tbp_asientos_scan_init', 'tbp_asientos_ajax_scan_init' );

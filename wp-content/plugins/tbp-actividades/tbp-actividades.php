@@ -2,11 +2,12 @@
 /**
  * Plugin Name: The Best Prom - Actividades
  * Plugin URI: https://dev.thebestprom.com
- * Version: 11.9.50
+ * Version: 11.9.51
  * Author: Antigravity Team
  * Text Domain: tbp-actividades
  *
  * Changelog:
+ * 11.9.51 - Feature: Asignación Manual por Grupo. Desde la Etapa 3, selecciona pedidos con checkboxes y haz clic en "🎯 Asignar a Mesas" para abrir un modal a pantalla completa con vista dividida: panel izquierdo con cola de pedidos y estadísticas en tiempo real, panel derecho con el plano visual interactivo. Al hacer clic en cada mesa, el sistema llena automáticamente con pedidos de la cola (ordenados de mayor a menor para óptimo empaquetado). Incluye Deshacer, Confirmar con guardado en BD, zoom con rueda del ratón, y barra de progreso animada.
  * 11.9.50 - Feature: Rediseño completo de la Etapa 3 (Generación y Asignación). Ahora incluye una tabla interactiva de pedidos escaneados con filtros por Grupo, # Pedido y Nombre, paginación, ordenamiento por columnas, checkboxes de selección individual y masiva, contadores dinámicos de piezas/plazas, y barra de acciones para seleccionados. Nuevo AJAX endpoint tbp_asientos_get_scan_data.
  * 11.9.49 - Fix: Modificada tbp_asientos_generate_tables() para realizar sincronización inteligente de mesas en la base de datos en lugar de eliminarlas y recrearlas. Esto evita que al hacer clic en "Guardar Cambios" en la Etapa 1 (Configuración de Metadatos) se pierdan las coordenadas, formas, colores y tamaños de las mesas diseñadas en la Etapa 2 (Procesamiento del Plano).
  * 11.9.48 - Critical Fix: Corregida la incompatibilidad con HPOS en tbp_asientos_get_orders_for_event() — la función consultaba wp_posts directamente (devolvía 0 pedidos con HPOS activo). Ahora delega a tbp_report_get_event_order_ids() (4 métodos de resolución HPOS-safe) y filtra estados con wc_get_order(). También se resetea capacidad_usada antes de re-asignar y se usa capacidad TOTAL en el algoritmo. Se añadió diagnóstico detallado cuando la asignación devuelve 0 resultados.
