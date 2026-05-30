@@ -1,4 +1,4 @@
-# Documentación Técnica Completa: TBP - Actividades (v11.9.47)
+# Documentación Técnica Completa: TBP - Actividades (v11.9.51)
 
 Este documento sirve como memoria técnica, mapa arquitectónico y manual de operaciones del plugin **The Best Prom - Actividades**. Su propósito es resumir todas las funcionalidades, flujos de datos críticos, integraciones con *Event Tickets Plus* y ganchos de WooCommerce para guiar futuras iteraciones sin pérdida de contexto.
 
@@ -134,3 +134,24 @@ El plugin incluye rutinas automáticas (`admin_init`) para migrar y reparar meta
 > [!TIP]
 > * **HPOS**: Nunca consultes metadatos de pedidos utilizando consultas SQL directas a `wp_postmeta` sin contemplar la tabla de pedidos HPOS de WooCommerce (`wp_wc_orders_meta`). Prioriza el uso de las APIs oficiales de WooCommerce (`$order->get_meta()`, `$order->update_meta_data()`) para garantizar que la base de datos se mantenga íntegra.
 > * **Timezones**: Al depurar reglas por fecha, recuerda que WordPress maneja la hora local mediante la configuración del sitio, mientras que la base de datos y ciertos servidores usan UTC. Utiliza la lógica de matriz de zona horaria implementada en `event-delivery-rules.php` para evitar falsos negativos por desfases horarios.
+
+---
+
+## 8. Módulo de Asignación de Asientos (Mesas y Planos)
+
+Este módulo gestiona la asignación y distribución de asientos físicos para eventos mediante un plano visual interactivo y algoritmos de empaquetado.
+
+### 8.1 Tablas de Base de Datos
+*   **`tbp_seat_configurations`**: Almacena las configuraciones de asignación por evento, incluyendo el campo que agrupa asistentes (`group_field`) y la configuración serializada de zonas.
+*   **`tbp_seat_tables`**: Representa las mesas del evento. Almacena su zona, número, capacidad total y usada, tipo geométrico (`round`, `rectangular`, etc.), coordenadas visuales (`pos_x`, `pos_y`), dimensiones y color.
+*   **`tbp_seat_assignments`**: Registra qué pedidos de WooCommerce están asignados a qué mesas, con la cantidad de plazas reservadas y el nombre del comprador.
+*   **`tbp_seat_group_zones`**: Permite anular zonas y forzar la asignación de grupos específicos a zonas particulares.
+*   **`tbp_seat_elements`**: Almacena elementos decorativos del plano visual (Escenario, Pista de baile, Baños, Salidas de emergencia, etc.) con sus coordenadas y dimensiones.
+
+### 8.2 Interfaz de Administración y Flujo en 3 Etapas
+1.  **Etapa 1: Configuración de Metadatos**: El administrador define qué campo del boleto agrupa a los asistentes (ej. "Carrera" o "Grupo") y puede configurar zonas con prioridades y reglas de tamaño de grupo.
+2.  **Etapa 2: Procesamiento del Plano (Visual)**: Editor interactivo basado en Canvas HTML5 que permite arrastrar, soltar, redimensionar y configurar formas/bloqueos de mesas y elementos decorativos en tiempo real.
+3.  **Etapa 3: Generación y Asignación**:
+    *   **Escaneo de Asistentes**: Extrae en lotes los pedidos activos y calcula la cantidad de asientos/platillos requeridos de forma eficiente mediante transients de caché, previniendo cuellos de botella y errores 504.
+    *   **Asignación Inteligente (Automática)**: Algoritmo de empaquetado unidimensional (First Fit Decreasing) que acomoda automáticamente a los grupos en las mesas correspondientes a su zona respetando bloqueos y capacidades.
+    *   **Asignación Manual**: Modal interactivo a pantalla completa con vista dividida: un panel izquierdo con la cola de pedidos pendientes de acomodo (con barra de progreso animada) y un panel derecho con el plano visual interactivo. Al hacer clic en una mesa, el sistema la llena automáticamente con los pedidos seleccionados de la cola. Soporta deselección masiva, pila de deshacer de asignaciones previas, zoom interactivo y persistencia segura en base de datos.
