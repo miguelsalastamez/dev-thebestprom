@@ -2,12 +2,16 @@
 /**
  * Plugin Name: The Best Prom - Actividades
  * Plugin URI: https://dev.thebestprom.com
- * Version: 11.9.50
+ * Version: 11.9.51
  * Author: Antigravity Team
  * Text Domain: tbp-actividades
  *
  * Changelog:
+
  * 11.9.50 - Feature: Rediseñada la Etapa 3 (Generación y Asignación) dividiéndola en dos caminos: Asignación Automática y Asignación Manual. Se implementó un Workspace de Asignación Manual interactivo con filtros avanzados por grupo, buscador global, estadísticas de progreso en tiempo real y asignación point-and-click sobre el plano interactivo visual.
+
+ * 11.9.51 - Feature: Incorporada tabla de datos (DataTables) interactiva en la Etapa 1 de Asignación de Asientos tras escanear asistentes. Permite buscar, filtrar, visualizar pedidos (Nombre, Piezas, Grupo) e incluye casillas de selección, además de sumar dinámicamente el total de piezas de la muestra filtrada.
+
  * 11.9.49 - Fix: Modificada tbp_asientos_generate_tables() para realizar sincronización inteligente de mesas en la base de datos en lugar de eliminarlas y recrearlas. Esto evita que al hacer clic en "Guardar Cambios" en la Etapa 1 (Configuración de Metadatos) se pierdan las coordenadas, formas, colores y tamaños de las mesas diseñadas en la Etapa 2 (Procesamiento del Plano).
  * 11.9.48 - Critical Fix: Corregida la incompatibilidad con HPOS en tbp_asientos_get_orders_for_event() — la función consultaba wp_posts directamente (devolvía 0 pedidos con HPOS activo). Ahora delega a tbp_report_get_event_order_ids() (4 métodos de resolución HPOS-safe) y filtra estados con wc_get_order(). También se resetea capacidad_usada antes de re-asignar y se usa capacidad TOTAL en el algoritmo. Se añadió diagnóstico detallado cuando la asignación devuelve 0 resultados.
  * 11.9.47 - Fix: Corrección en la obtención de mesas del motor de packing (ahora soporta mesas con forma personalizada 'round' o 'rectangular' guardadas desde el plano visual en lugar de requerir estrictamente tipo 'normal').
@@ -491,9 +495,9 @@ function tbp_actividades_check_upgrade() {
 }
 
 /**
- * ============================================================================
+ * ======
  * SCRIPT TEMPORAL PARA DEV: ACTUALIZAR PEDIDOS A COMPLETADOS
- * ============================================================================
+ * ======
  */
 add_action( 'admin_notices', function() {
     if ( ! isset($_GET['tbp_show_dev_force_complete']) ) return;

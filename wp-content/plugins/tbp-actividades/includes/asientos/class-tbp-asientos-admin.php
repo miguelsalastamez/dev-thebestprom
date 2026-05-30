@@ -167,6 +167,10 @@ function tbp_asientos_render_edit_view( $config_id = 0 ) {
     ?>
     <hr class="wp-header-end">
 
+    <!-- DataTables CDN para la Tabla de Escaneo -->
+    <link rel="stylesheet" type="text/css" href="https://cdn.datatables.net/1.13.6/css/jquery.dataTables.min.css">
+    <script type="text/javascript" src="https://cdn.datatables.net/1.13.6/js/jquery.dataTables.min.js"></script>
+
     <!-- NAVEGACIÓN DE ETAPAS -->
     <div class="tbp-stage-nav" style="display:flex; gap:10px; margin: 20px 0; background:#fff; padding:10px; border-radius:8px; border:1px solid #ccd0d4; box-shadow:0 1px 1px rgba(0,0,0,0.04);">
         <div class="stage-item active" data-stage="1" style="flex:1; text-align:center; padding:15px; border-radius:6px; cursor:pointer; font-weight:800; background:#f0f6fb; color:#2271b1; border:1px solid #2271b1;">1. Configuración de Metadatos</div>
@@ -262,7 +266,32 @@ function tbp_asientos_render_edit_view( $config_id = 0 ) {
                 </div>
             </div>
 
+            <!-- COLUMNA DERECHA: DataTable -->
+            <div style="flex: 2; overflow: hidden; max-width:100%;">
+                <div class="postbox" id="scan_datatable_wrapper" style="display:none; margin-top:0;">
+                    <div class="postbox-header" style="background:#f8f9fa;">
+                        <h2 class="hndle" style="display:flex; justify-content:space-between; width:100%; border-bottom:none;">
+                            <span>📋 Resultados del Escaneo</span>
+                            <span style="font-weight:normal; font-size:13px; color:#2c3338;">Total Piezas Filtradas: <strong id="dt_total_piezas" style="color:#2271b1; font-size:16px;">0</strong></span>
+                        </h2>
+                    </div>
+                    <div class="inside" style="padding:15px; overflow-x:auto;">
+                        <table id="scan_datatable" class="display compact widefat" style="width:100%">
+                            <thead>
+                                <tr>
+                                    <th style="width: 20px; text-align: center;"><input type="checkbox" id="dt_select_all"></th>
+                                    <th># Pedido</th>
+                                    <th>Nombre</th>
+                                    <th style="text-align:center;">Piezas</th>
+                                    <th>Grupo</th>
+                                </tr>
+                            </thead>
+                            <tbody></tbody>
+                        </table>
+                    </div>
+                </div>
             </div>
+
         </div>
     </form>
     </div>
@@ -657,6 +686,58 @@ function tbp_asientos_render_edit_view( $config_id = 0 ) {
                             
                             if (finRes.data.pedidos > 0) {
                                 $('#btn_run_packing').prop('disabled', false);
+                                
+                                // Render DataTables
+                                $('#scan_datatable_wrapper').fadeIn();
+                                
+                                if ( $.fn.DataTable.isDataTable('#scan_datatable') ) {
+                                    $('#scan_datatable').DataTable().clear().rows.add(allResults).draw();
+                                } else {
+                                    $('#scan_datatable').DataTable({
+                                        data: allResults,
+                                        language: { url: "//cdn.datatables.net/plug-ins/1.13.6/i18n/es-ES.json" },
+                                        pageLength: 25,
+                                        columns: [
+                                            { 
+                                                data: null,
+                                                orderable: false,
+                                                render: function(data, type, row) {
+                                                    return '<input type="checkbox" class="dt-row-checkbox" value="'+row.order_id+'">';
+                                                }
+                                            },
+                                            { 
+                                                data: 'order_id',
+                                                render: function(data) { return '<strong>#' + data + '</strong>'; }
+                                            },
+                                            { 
+                                                data: null,
+                                                render: function(data, type, row) { 
+                                                    return (row.nombre || '') + ' ' + (row.apellidos || ''); 
+                                                }
+                                            },
+                                            { 
+                                                data: 'cantidad',
+                                                className: 'text-center'
+                                            },
+                                            { data: 'grupo' }
+                                        ],
+                                        order: [[1, 'desc']],
+                                        drawCallback: function(settings) {
+                                            var api = this.api();
+                                            // Sumar 'cantidad' de las filas actualmente filtradas
+                                            var totalPiezas = api.column(3, {filter: 'applied'}).data().reduce(function(a, b) {
+                                                return parseInt(a || 0) + parseInt(b || 0);
+                                            }, 0);
+                                            $('#dt_total_piezas').text(totalPiezas);
+                                        }
+                                    });
+                                    
+                                    // Handle Select All
+                                    $('#dt_select_all').on('click', function() {
+                                        var isChecked = $(this).prop('checked');
+                                        $('.dt-row-checkbox').prop('checked', isChecked);
+                                    });
+                                }
                             } else {
                                 alert('No se encontraron pedidos con lugares por asignar.');
                             }
