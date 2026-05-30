@@ -1,0 +1,15 @@
+<!DOCTYPE html>
+<html>
+<head>
+<script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+<script>
+$(document).ready(function() {
+    $('#btn').on('click', function() { console.log('clicked'); });
+    throw new Error('stop');
+});
+</script>
+</head>
+<body>
+<button id="btn">Click me</button>
+</body>
+</html>

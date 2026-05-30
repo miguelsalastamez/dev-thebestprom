@@ -167,10 +167,6 @@ function tbp_asientos_render_edit_view( $config_id = 0 ) {
     ?>
     <hr class="wp-header-end">
 
-    <!-- DataTables CDN para la Tabla de Escaneo -->
-    <link rel="stylesheet" type="text/css" href="https://cdn.datatables.net/1.13.6/css/jquery.dataTables.min.css">
-    <script type="text/javascript" src="https://cdn.datatables.net/1.13.6/js/jquery.dataTables.min.js"></script>
-
     <!-- NAVEGACIÓN DE ETAPAS -->
     <div class="tbp-stage-nav" style="display:flex; gap:10px; margin: 20px 0; background:#fff; padding:10px; border-radius:8px; border:1px solid #ccd0d4; box-shadow:0 1px 1px rgba(0,0,0,0.04);">
         <div class="stage-item active" data-stage="1" style="flex:1; text-align:center; padding:15px; border-radius:6px; cursor:pointer; font-weight:800; background:#f0f6fb; color:#2271b1; border:1px solid #2271b1;">1. Configuración de Metadatos</div>
@@ -266,32 +262,7 @@ function tbp_asientos_render_edit_view( $config_id = 0 ) {
                 </div>
             </div>
 
-            <!-- COLUMNA DERECHA: DataTable -->
-            <div style="flex: 2; overflow: hidden; max-width:100%;">
-                <div class="postbox" id="scan_datatable_wrapper" style="display:none; margin-top:0;">
-                    <div class="postbox-header" style="background:#f8f9fa;">
-                        <h2 class="hndle" style="display:flex; justify-content:space-between; width:100%; border-bottom:none;">
-                            <span>📋 Resultados del Escaneo</span>
-                            <span style="font-weight:normal; font-size:13px; color:#2c3338;">Total Piezas Filtradas: <strong id="dt_total_piezas" style="color:#2271b1; font-size:16px;">0</strong></span>
-                        </h2>
-                    </div>
-                    <div class="inside" style="padding:15px; overflow-x:auto;">
-                        <table id="scan_datatable" class="display compact widefat" style="width:100%">
-                            <thead>
-                                <tr>
-                                    <th style="width: 20px; text-align: center;"><input type="checkbox" id="dt_select_all"></th>
-                                    <th># Pedido</th>
-                                    <th>Nombre</th>
-                                    <th style="text-align:center;">Piezas</th>
-                                    <th>Grupo</th>
-                                </tr>
-                            </thead>
-                            <tbody></tbody>
-                        </table>
-                    </div>
-                </div>
             </div>
-
         </div>
     </form>
     </div>
@@ -301,191 +272,114 @@ function tbp_asientos_render_edit_view( $config_id = 0 ) {
     </div>
 
     <div id="tbp-stage-3" class="tbp-stage-content" style="display:none;">
-        <?php if ( $config_id > 0 && $config ) : 
-            // Cargar datos necesarios para asignación manual
-            $existing_elements = $wpdb->get_results( $wpdb->prepare( "SELECT * FROM {$wpdb->prefix}tbp_seat_elements WHERE config_id = %d", $config_id ) );
-            $existing_tables = $wpdb->get_results( $wpdb->prepare( "SELECT * FROM {$wpdb->prefix}tbp_seat_tables WHERE config_id = %d", $config_id ) );
-            
-            // Usamos la obtención HPOS-safe
-            $order_ids = tbp_asientos_get_orders_for_event( $config->event_id );
-            
-            $orders_data = [];
-            $total_places_registered = 0;
-            $total_places_assigned = 0;
-            
-            foreach ( $order_ids as $order_id ) {
-                $order = wc_get_order( $order_id );
-                if ( ! $order ) continue;
-                $qty = tbp_get_order_seat_qty( $order_id, (int) $config->proveedor_id );
-                if ( $qty <= 0 ) continue;
+        <?php if ( $config_id > 0 ) : ?>
 
-                $total_places_registered += $qty;
-
-                $nombre = $order->get_billing_first_name();
-                $apellidos = $order->get_billing_last_name();
-                $grupo = tbp_asientos_get_order_group_value( $order_id, $config->group_field );
-                if ( empty( $grupo ) ) {
-                    $grupo = 'Sin grupo';
-                }
-                
-                $assignment = $wpdb->get_row( $wpdb->prepare(
-                    "SELECT a.id, a.mesa_id, t.numero, t.zona FROM {$wpdb->prefix}tbp_seat_assignments a
-                     LEFT JOIN {$wpdb->prefix}tbp_seat_tables t ON t.id = a.mesa_id
-                     WHERE a.config_id = %d AND a.order_id = %d",
-                     $config_id, $order_id
-                ) );
-
-                if ( $assignment ) {
-                    $total_places_assigned += $qty;
-                }
-
-                $orders_data[] = [
-                    'id'         => $order_id,
-                    'nombre'     => trim( $nombre . ' ' . $apellidos ),
-                    'grupo'      => $grupo,
-                    'qty'        => $qty,
-                    'assigned'   => $assignment ? true : false,
-                    'mesa_id'    => $assignment ? (int) $assignment->mesa_id : 0,
-                    'mesa_label' => $assignment ? $assignment->zona . ' - Mesa ' . $assignment->numero : '',
-                ];
-            }
-
-            // Agrupar por grupo para obtener conteo total de asientos de cada grupo
-            $group_totals = [];
-            foreach ( $orders_data as $od ) {
-                $g = $od['grupo'];
-                if ( ! isset( $group_totals[$g] ) ) {
-                    $group_totals[$g] = 0;
-                }
-                $group_totals[$g] += $od['qty'];
-            }
-            arsort( $group_totals );
-        ?>
-            <!-- Sub-navegación dentro de Etapa 3 -->
-            <div class="tbp-stage-3-nav" style="display:flex; border-bottom:2px solid #ddd; margin-bottom:20px; gap:5px;">
-                <button type="button" class="tbp-stage3-tab-btn active" data-target="tbp-stage3-auto" style="padding:10px 20px; background:none; border:none; border-bottom:3px solid #2271b1; font-weight:bold; cursor:pointer; color:#2271b1;">🤖 Asignación Automática</button>
-                <button type="button" class="tbp-stage3-tab-btn" data-target="tbp-stage3-manual" style="padding:10px 20px; background:none; border:none; font-weight:bold; cursor:pointer; color:#64748b;">✍️ Asignación Manual</button>
-            </div>
-
-            <!-- TAB 1: AUTO -->
-            <div id="tbp-stage3-auto" class="tbp-stage3-tab-content">
-                <div class="postbox">
-                    <div class="postbox-header"><h2 class="hndle">1. Asignación Automática Inteligente</h2></div>
-                    <div class="inside">
-                        <p>El sistema tomará los grupos del listado y los acomodará en las mesas disponibles del plano utilizando el algoritmo de empaquetamiento (packing).</p>
-                        <div style="display:grid; grid-template-columns: 1fr 1fr; gap:20px; margin-top:15px;">
-                            <div style="background:#f8fafc; padding:20px; border-radius:8px; border:1px solid #e2e8f0;">
-                                <h3 style="margin-top:0;">🤖 Ejecutar Motor</h3>
-                                <p>Presiona el botón para procesar automáticamente todos los pedidos elegibles para el proveedor seleccionado.</p>
-                                <button type="button" id="btn_run_packing_v2" class="button button-primary button-large">Ejecutar Asignación Inteligente</button>
-                            </div>
-                            <div style="background:#f8fafc; padding:20px; border-radius:8px; border:1px solid #e2e8f0;">
-                                <h3 style="margin-top:0;">👀 Panel de Control</h3>
-                                <p>Ver el resultado de la asignación y realizar ajustes finos mediante la lista tradicional.</p>
-                                <a href="?page=tbp-actividades-asientos&action=view&id=<?php echo $config_id; ?>" class="button button-large">Abrir Panel de Control del Evento</a>
-                            </div>
-                        </div>
-                    </div>
+        <!-- TOOLBAR HEADER -->
+        <div style="display:flex; align-items:center; justify-content:space-between; background:linear-gradient(135deg, #1e3a5f 0%, #2271b1 100%); padding:16px 24px; border-radius:10px; margin-bottom:20px; box-shadow:0 4px 15px rgba(34,113,177,0.3);">
+            <div style="display:flex; align-items:center; gap:15px;">
+                <span style="font-size:24px;">📋</span>
+                <div>
+                    <h2 style="margin:0; color:#fff; font-size:18px; font-weight:700;">Listado de Pedidos Escaneados</h2>
+                    <p style="margin:2px 0 0; color:rgba(255,255,255,0.7); font-size:12px;">Filtra, selecciona y gestiona los pedidos antes de asignar mesas.</p>
                 </div>
             </div>
+            <div style="display:flex; gap:10px; align-items:center;">
+                <button type="button" id="btn_run_packing_v2" class="button button-large" style="background:#fff; color:#1e3a5f; border:none; font-weight:700; padding:8px 20px; border-radius:6px; cursor:pointer;">▶ Ejecutar Asignación Inteligente</button>
+                <a href="?page=tbp-actividades-asientos&action=view&id=<?php echo $config_id; ?>" class="button button-large" style="background:rgba(255,255,255,0.15); color:#fff; border:1px solid rgba(255,255,255,0.3); font-weight:600; padding:8px 20px; border-radius:6px;">👀 Panel de Control</a>
+            </div>
+        </div>
 
-            <!-- TAB 2: MANUAL -->
-            <div id="tbp-stage3-manual" class="tbp-stage3-tab-content" style="display:none;">
-                <div class="tbp-manual-workspace" style="display:flex; gap:20px; background:#fff; border:1px solid #ccd0d4; border-radius:8px; box-shadow:0 1px 1px rgba(0,0,0,0.04); overflow:hidden; min-height:650px;">
-                    
-                    <!-- SIDEBAR IZQUIERDO -->
-                    <div class="tbp-manual-sidebar" style="width:400px; border-right:1px solid #ddd; background:#f8fafc; display:flex; flex-direction:column;">
-                        <!-- Métricas del Evento -->
-                        <div style="padding:15px; border-bottom:1px solid #eee; background:#fff;">
-                            <h4 style="margin:0 0 10px 0; font-size:14px; display:flex; justify-content:space-between; align-items:center;">
-                                <span>📊 Progreso Asignación</span>
-                                <span id="manual-progress-pct" style="background:#e0f2fe; color:#0369a1; padding:2px 6px; border-radius:12px; font-size:11px;">0%</span>
-                            </h4>
-                            <div style="height:6px; background:#e2e8f0; border-radius:3px; overflow:hidden; margin-bottom:10px;">
-                                <div id="manual-progress-bar" style="width:0%; height:100%; background:#2271b1; transition:width 0.3s;"></div>
-                            </div>
-                            <div style="display:grid; grid-template-columns:1fr 1fr; gap:10px; font-size:11px; text-align:center;">
-                                <div style="background:#f1f5f9; padding:6px; border-radius:4px;">
-                                    <span style="color:#64748b; display:block;">Asignados</span>
-                                    <strong id="manual-total-assigned" style="font-size:14px; color:#2271b1;"><?php echo $total_places_assigned; ?></strong> <span style="color:#64748b;">/ <span class="manual-total-registered-val"><?php echo $total_places_registered; ?></span></span>
-                                </div>
-                                <div style="background:#f1f5f9; padding:6px; border-radius:4px;">
-                                    <span style="color:#64748b; display:block;">Pendientes</span>
-                                    <strong id="manual-total-pending" style="font-size:14px; color:#ef4444;"><?php echo ($total_places_registered - $total_places_assigned); ?></strong>
-                                </div>
-                            </div>
-                        </div>
+        <!-- RESUMEN + FILTROS -->
+        <div style="display:grid; grid-template-columns: 1fr 1fr 1fr 1fr; gap:12px; margin-bottom:20px;">
+            <div id="stat_pedidos_card" style="background:#fff; border:1px solid #e2e8f0; border-radius:10px; padding:16px; text-align:center; box-shadow:0 1px 3px rgba(0,0,0,0.06);">
+                <div style="font-size:28px; font-weight:800; color:#2271b1;" id="stat_pedidos_filtrados">—</div>
+                <div style="font-size:11px; color:#64748b; text-transform:uppercase; letter-spacing:0.5px; margin-top:4px;">Pedidos</div>
+            </div>
+            <div style="background:#fff; border:1px solid #e2e8f0; border-radius:10px; padding:16px; text-align:center; box-shadow:0 1px 3px rgba(0,0,0,0.06);">
+                <div style="font-size:28px; font-weight:800; color:#16a34a;" id="stat_piezas_filtradas">—</div>
+                <div style="font-size:11px; color:#64748b; text-transform:uppercase; letter-spacing:0.5px; margin-top:4px;">Piezas / Plazas</div>
+            </div>
+            <div style="background:#fff; border:1px solid #e2e8f0; border-radius:10px; padding:16px; text-align:center; box-shadow:0 1px 3px rgba(0,0,0,0.06);">
+                <div style="font-size:28px; font-weight:800; color:#9333ea;" id="stat_grupos_filtrados">—</div>
+                <div style="font-size:11px; color:#64748b; text-transform:uppercase; letter-spacing:0.5px; margin-top:4px;">Grupos</div>
+            </div>
+            <div style="background:#fff; border:1px solid #e2e8f0; border-radius:10px; padding:16px; text-align:center; box-shadow:0 1px 3px rgba(0,0,0,0.06);">
+                <div style="font-size:28px; font-weight:800; color:#ea580c;" id="stat_seleccionados">0</div>
+                <div style="font-size:11px; color:#64748b; text-transform:uppercase; letter-spacing:0.5px; margin-top:4px;">Seleccionados</div>
+            </div>
+        </div>
 
-                        <!-- Filtros -->
-                        <div style="padding:15px; border-bottom:1px solid #eee; background:#f8fafc; display:flex; flex-direction:column; gap:10px;">
-                            <div>
-                                <label style="font-size:11px; font-weight:bold; display:block; margin-bottom:4px;">Filtrar por Grupo</label>
-                                <select id="manual-filter-group" style="width:100%;">
-                                    <option value="">-- Todos los Grupos --</option>
-                                    <?php foreach ( $group_totals as $grp_name => $grp_total ) : ?>
-                                        <option value="<?php echo esc_attr( $grp_name ); ?>"><?php echo esc_html( $grp_name ); ?> (<?php echo $grp_total; ?> lugares)</option>
-                                    <?php endforeach; ?>
-                                </select>
-                            </div>
-                            <div style="display:flex; gap:8px;">
-                                <div style="flex:1;">
-                                    <input type="text" id="manual-search-order" placeholder="Buscar cliente o #pedido..." style="width:100%; height:30px;">
-                                </div>
-                                <select id="manual-filter-status" style="width:120px; height:30px; font-size:11px;">
-                                    <option value="all">Todos</option>
-                                    <option value="pending" selected>Pendientes</option>
-                                    <option value="assigned">Asignados</option>
-                                </select>
-                            </div>
-                        </div>
-
-                        <!-- Listado de Pedidos -->
-                        <div id="manual-orders-list-container" style="flex:1; overflow-y:auto; max-height:480px; padding:10px;">
-                            <!-- Dynamic Content -->
-                        </div>
-                    </div>
-
-                    <!-- AREA DERECHA: PLANO INTERACTIVO -->
-                    <div class="tbp-manual-workspace-main" style="flex:1; display:flex; flex-direction:column; background:#f1f5f9; position:relative; overflow:hidden;">
-                        <!-- Banner Superior de Instrucción / Colocación -->
-                        <div id="manual-placement-banner" style="background:#0284c7; color:white; padding:10px 15px; font-weight:bold; display:none; justify-content:space-between; align-items:center; z-index:10;">
-                            <div>
-                                <span style="font-size:12px; background:rgba(255,255,255,0.2); padding:2px 6px; border-radius:3px; margin-right:8px;">Modo Colocación</span>
-                                <span id="manual-placement-banner-text">Asignando pedido #123 (Juan Perez - 5 lugares)</span>
-                            </div>
-                            <button type="button" id="manual-cancel-placement-btn" style="background:rgba(255,255,255,0.2); border:none; color:white; padding:3px 8px; border-radius:4px; font-size:11px; cursor:pointer; font-weight:bold;">Cancelar</button>
-                        </div>
-
-                        <!-- Controles de Canvas -->
-                        <div style="display:flex; justify-content:space-between; align-items:center; padding:10px 15px; background:#fff; border-bottom:1px solid #e2e8f0; z-index:5;">
-                            <div style="display:flex; align-items:center; gap:10px;">
-                                <label style="font-size:11px; font-weight:bold;">Zoom:</label>
-                                <input type="range" id="manual_canvas_zoom" style="width:100px;" min="0.2" max="2" step="0.1" value="0.7">
-                                <button type="button" id="btn_manual_reset_view" class="button button-small">Restablecer Vista</button>
-                            </div>
-                            <div style="display:flex; gap:8px;">
-                                <button type="button" id="btn_manual_regenerate_snapshot" class="button button-small">🔄 Snapshot Público</button>
-                                <a href="?page=tbp-actividades-asientos&action=view&id=<?php echo $config_id; ?>" target="_blank" class="button button-small">👀 Ver Listado de Asignaciones</a>
-                            </div>
-                        </div>
-
-                        <!-- LIENZO DE ASIGNACIÓN -->
-                        <div id="tbp-manual-canvas-container" style="position:relative; width:100%; height:550px; overflow:hidden; cursor:grab;">
-                            <div id="tbp-manual-canvas-grid" style="position:absolute; top:0; left:0; width:3000px; height:3000px; background-image: radial-gradient(#cbd5e1 1.2px, transparent 1.2px); background-size: 24px 24px;"></div>
-                            <div id="tbp-manual-canvas-items" style="position:absolute; top:0; left:0; width:100%; height:100%; transform-origin: 0 0;">
-                                <!-- Elementos dibujados dinámicamente -->
-                            </div>
-                        </div>
-
-                        <!-- Tooltip Flotante para Mesas -->
-                        <div id="tbp-manual-table-tooltip" style="position:absolute; display:none; background:#fff; border:1px solid #cbd5e1; box-shadow:0 10px 15px -3px rgba(0,0,0,0.1),0 4px 6px -2px rgba(0,0,0,0.05); padding:12px; border-radius:8px; width:280px; z-index:9999; font-size:11px; pointer-events:auto;">
-                            <!-- Tooltip dynamic HTML -->
-                        </div>
-                    </div>
+        <!-- BARRA DE FILTROS -->
+        <div style="background:#fff; border:1px solid #e2e8f0; border-radius:10px; padding:16px; margin-bottom:20px; box-shadow:0 1px 3px rgba(0,0,0,0.06);">
+            <div style="display:flex; align-items:center; gap:8px; margin-bottom:12px;">
+                <span style="font-size:16px;">🔍</span>
+                <strong style="font-size:13px; color:#334155;">Filtros</strong>
+                <button type="button" id="btn_clear_filters" class="button button-small" style="margin-left:auto; font-size:11px;">✕ Limpiar Filtros</button>
+            </div>
+            <div style="display:grid; grid-template-columns: 1fr 1fr 1fr; gap:12px;">
+                <div>
+                    <label style="font-size:11px; font-weight:600; color:#64748b; text-transform:uppercase; letter-spacing:0.5px; display:block; margin-bottom:4px;">Grupo</label>
+                    <select id="filter_grupo" style="width:100%; padding:8px 10px; border:1px solid #cbd5e1; border-radius:6px; font-size:13px; background:#f8fafc;">
+                        <option value="">-- Todos los Grupos --</option>
+                    </select>
+                </div>
+                <div>
+                    <label style="font-size:11px; font-weight:600; color:#64748b; text-transform:uppercase; letter-spacing:0.5px; display:block; margin-bottom:4px;"># Pedido</label>
+                    <input type="text" id="filter_pedido" placeholder="Buscar por # de pedido..." style="width:100%; padding:8px 10px; border:1px solid #cbd5e1; border-radius:6px; font-size:13px; background:#f8fafc; box-sizing:border-box;">
+                </div>
+                <div>
+                    <label style="font-size:11px; font-weight:600; color:#64748b; text-transform:uppercase; letter-spacing:0.5px; display:block; margin-bottom:4px;">Nombre</label>
+                    <input type="text" id="filter_nombre" placeholder="Buscar por nombre o apellido..." style="width:100%; padding:8px 10px; border:1px solid #cbd5e1; border-radius:6px; font-size:13px; background:#f8fafc; box-sizing:border-box;">
                 </div>
             </div>
+        </div>
+
+        <!-- ACCIONES DE SELECCIÓN -->
+        <div id="selection_toolbar" style="display:none; background:#fef3c7; border:1px solid #f59e0b; border-radius:10px; padding:12px 20px; margin-bottom:15px; display:none; align-items:center; justify-content:space-between;">
+            <div style="display:flex; align-items:center; gap:10px;">
+                <span style="font-size:18px;">⚡</span>
+                <span style="font-weight:600; color:#92400e; font-size:13px;"><span id="selection_count">0</span> pedido(s) seleccionado(s) — <span id="selection_piezas">0</span> piezas</span>
+            </div>
+            <div style="display:flex; gap:8px;">
+                <button type="button" id="btn_action_selected" class="button button-primary button-small" disabled>🎯 Acción (próximamente)</button>
+                <button type="button" id="btn_deselect_all" class="button button-small">✕ Deseleccionar</button>
+            </div>
+        </div>
+
+        <!-- TABLA PRINCIPAL -->
+        <div style="background:#fff; border:1px solid #e2e8f0; border-radius:10px; overflow:hidden; box-shadow:0 1px 3px rgba(0,0,0,0.06);">
+            <div id="scan_table_loader" style="text-align:center; padding:60px 20px;">
+                <div style="font-size:32px; margin-bottom:10px;">⏳</div>
+                <p style="color:#64748b; font-size:14px;">Cargando datos del escaneo...</p>
+            </div>
+            <div id="scan_no_data" style="display:none; text-align:center; padding:60px 20px;">
+                <div style="font-size:48px; margin-bottom:15px;">📭</div>
+                <h3 style="color:#334155; margin:0 0 8px;">No hay datos de escaneo</h3>
+                <p style="color:#64748b; font-size:14px; margin:0;">Ve a la <strong>Etapa 1</strong> y ejecuta <strong>"🔍 Escanear Asistentes"</strong> primero.</p>
+            </div>
+            <table id="tbp_scan_table" style="display:none; width:100%; border-collapse:collapse; font-size:13px;">
+                <thead>
+                    <tr style="background:#f1f5f9; border-bottom:2px solid #e2e8f0;">
+                        <th style="padding:12px 16px; text-align:center; width:40px;">
+                            <input type="checkbox" id="chk_select_all" title="Seleccionar / Deseleccionar todos los visibles" style="width:16px; height:16px; cursor:pointer;">
+                        </th>
+                        <th style="padding:12px 16px; text-align:left; font-weight:700; color:#334155; font-size:11px; text-transform:uppercase; letter-spacing:0.5px; cursor:pointer;" data-sort="order_id"># Pedido ↕</th>
+                        <th style="padding:12px 16px; text-align:left; font-weight:700; color:#334155; font-size:11px; text-transform:uppercase; letter-spacing:0.5px; cursor:pointer;" data-sort="nombre">Nombre ↕</th>
+                        <th style="padding:12px 16px; text-align:left; font-weight:700; color:#334155; font-size:11px; text-transform:uppercase; letter-spacing:0.5px; cursor:pointer;" data-sort="grupo">Grupo ↕</th>
+                        <th style="padding:12px 16px; text-align:right; font-weight:700; color:#334155; font-size:11px; text-transform:uppercase; letter-spacing:0.5px; cursor:pointer;" data-sort="cantidad">Piezas ↕</th>
+                    </tr>
+                </thead>
+                <tbody id="tbp_scan_tbody"></tbody>
+            </table>
+            <!-- PAGINACIÓN -->
+            <div id="scan_pagination" style="display:none; padding:12px 16px; border-top:1px solid #e2e8f0; display:flex; align-items:center; justify-content:space-between; background:#f8fafc;">
+                <span style="font-size:12px; color:#64748b;" id="pagination_info">Mostrando 1-50 de 612</span>
+                <div style="display:flex; gap:4px;" id="pagination_buttons"></div>
+            </div>
+        </div>
+
         <?php else : ?>
-            <p><em>Debes guardar la configuración primero para acceder a esta etapa.</em></p>
+            <div class="postbox"><div class="inside"><p><em>Debes guardar la configuración primero para acceder a esta etapa.</em></p></div></div>
         <?php endif; ?>
     </div>
 
@@ -495,14 +389,6 @@ function tbp_asientos_render_edit_view( $config_id = 0 ) {
         .tbp-zona-grid { display: grid; grid-template-columns: repeat(5, 1fr); gap: 15px; margin-bottom:10px; }
         .btn-remove-zona { color: #a00; cursor: pointer; text-decoration:none; }
         .btn-remove-zona:hover { color: red; }
-        
-        .tbp-stage3-tab-btn:focus { outline: none; box-shadow: none; }
-        .tbp-stage3-tab-btn:hover { color: #2271b1 !important; }
-        .manual-order-row:hover { background: #f1f5f9 !important; border-color: #cbd5e1 !important; }
-        .manual-order-row.selected { background: #eff6ff !important; border-color: #3b82f6 !important; box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.2) !important; }
-        .manual-table-item { transition: transform 0.15s, box-shadow 0.15s; }
-        .manual-table-item:hover { transform: scale(1.08); box-shadow: 0 10px 15px -3px rgba(0,0,0,0.1), 0 4px 6px -2px rgba(0,0,0,0.05) !important; z-index: 50 !important; }
-        .manual-canvas-element { user-select: none; pointer-events: none; }
     </style>
 
     <script>
@@ -686,58 +572,6 @@ function tbp_asientos_render_edit_view( $config_id = 0 ) {
                             
                             if (finRes.data.pedidos > 0) {
                                 $('#btn_run_packing').prop('disabled', false);
-                                
-                                // Render DataTables
-                                $('#scan_datatable_wrapper').fadeIn();
-                                
-                                if ( $.fn.DataTable.isDataTable('#scan_datatable') ) {
-                                    $('#scan_datatable').DataTable().clear().rows.add(allResults).draw();
-                                } else {
-                                    $('#scan_datatable').DataTable({
-                                        data: allResults,
-                                        language: { url: "//cdn.datatables.net/plug-ins/1.13.6/i18n/es-ES.json" },
-                                        pageLength: 25,
-                                        columns: [
-                                            { 
-                                                data: null,
-                                                orderable: false,
-                                                render: function(data, type, row) {
-                                                    return '<input type="checkbox" class="dt-row-checkbox" value="'+row.order_id+'">';
-                                                }
-                                            },
-                                            { 
-                                                data: 'order_id',
-                                                render: function(data) { return '<strong>#' + data + '</strong>'; }
-                                            },
-                                            { 
-                                                data: null,
-                                                render: function(data, type, row) { 
-                                                    return (row.nombre || '') + ' ' + (row.apellidos || ''); 
-                                                }
-                                            },
-                                            { 
-                                                data: 'cantidad',
-                                                className: 'text-center'
-                                            },
-                                            { data: 'grupo' }
-                                        ],
-                                        order: [[1, 'desc']],
-                                        drawCallback: function(settings) {
-                                            var api = this.api();
-                                            // Sumar 'cantidad' de las filas actualmente filtradas
-                                            var totalPiezas = api.column(3, {filter: 'applied'}).data().reduce(function(a, b) {
-                                                return parseInt(a || 0) + parseInt(b || 0);
-                                            }, 0);
-                                            $('#dt_total_piezas').text(totalPiezas);
-                                        }
-                                    });
-                                    
-                                    // Handle Select All
-                                    $('#dt_select_all').on('click', function() {
-                                        var isChecked = $(this).prop('checked');
-                                        $('.dt-row-checkbox').prop('checked', isChecked);
-                                    });
-                                }
                             } else {
                                 alert('No se encontraron pedidos con lugares por asignar.');
                             }
@@ -888,424 +722,6 @@ function tbp_asientos_render_edit_view( $config_id = 0 ) {
             });
         }
 
-        // ==========================================
-        // JS para la Asignación Manual (Etapa 3 - Tab 2)
-        // ==========================================
-        <?php if ( $config_id > 0 ) : ?>
-        let manualOrders = <?php echo wp_json_encode( $orders_data ) ?: '[]'; ?>;
-        let manualTables = <?php echo wp_json_encode( $existing_tables ) ?: '[]'; ?>;
-        let manualElements = <?php echo wp_json_encode( $existing_elements ) ?: '[]'; ?>;
-        let selectedOrderId = null;
-        let manualZoom = 0.7;
-        let isPanning = false;
-        let panStart = { x: 0, y: 0 };
-        let panOffset = { x: 50, y: 50 }; // Un offset inicial descentrado pero visible
-
-        // Manejar Tabs de la Etapa 3
-        $('.tbp-stage3-tab-btn').on('click', function() {
-            const target = $(this).data('target');
-            $('.tbp-stage3-tab-btn').removeClass('active').css({borderBottom:'none', color:'#64748b'});
-            $(this).addClass('active').css({borderBottom:'3px solid #2271b1', color:'#2271b1'});
-            $('.tbp-stage3-tab-content').hide();
-            $('#' + target).show();
-            
-            if (target === 'tbp-stage3-manual') {
-                renderManualWorkspace();
-            }
-        });
-
-        // Inicializar Panning
-        $('#tbp-manual-canvas-container').on('mousedown', function(e) {
-            if ($(e.target).closest('.manual-table-item, .manual-canvas-element, #tbp-manual-table-tooltip').length === 0) {
-                isPanning = true;
-                $(this).css('cursor', 'grabbing');
-                panStart = { x: e.clientX - panOffset.x, y: e.clientY - panOffset.y };
-            }
-        });
-
-        $(document).on('mousemove', function(e) {
-            if (isPanning) {
-                panOffset.x = e.clientX - panStart.x;
-                panOffset.y = e.clientY - panStart.y;
-                updateManualZoom();
-            }
-        });
-
-        $(document).on('mouseup', function() {
-            if (isPanning) {
-                isPanning = false;
-                $('#tbp-manual-canvas-container').css('cursor', 'grab');
-            }
-        });
-
-        // Zoom Slider
-        $('#manual_canvas_zoom').on('input', function() {
-            manualZoom = parseFloat($(this).val());
-            updateManualZoom();
-        });
-
-        $('#btn_manual_reset_view').on('click', function() {
-            manualZoom = 0.7;
-            panOffset = { x: 50, y: 50 };
-            $('#manual_canvas_zoom').val(manualZoom);
-            updateManualZoom();
-        });
-
-        // Regenerar Snapshot
-        $('#btn_manual_regenerate_snapshot').on('click', function() {
-            const $btn = $(this);
-            $btn.prop('disabled', true).text('⏳ Generando...');
-            $.post(ajaxurl, {
-                action: 'tbp_asientos_regenerate_snapshot',
-                config_id: <?php echo (int) $config_id; ?>,
-                nonce: '<?php echo wp_create_nonce("tbp_asientos_nonce"); ?>'
-            }, function(response) {
-                $btn.prop('disabled', false).text('🔄 Snapshot Público');
-                if (response.success) {
-                    alert('✅ Snapshot actualizado.');
-                } else {
-                    alert('❌ Error: ' + response.data);
-                }
-            }).fail(function() {
-                $btn.prop('disabled', false).text('🔄 Snapshot Público');
-                alert('❌ Error de red.');
-            });
-        });
-
-        // Cerrar Tooltip al hacer clic fuera
-        $(document).on('click', function(e) {
-            if ($(e.target).closest('.manual-table-item, #tbp-manual-table-tooltip').length === 0) {
-                $('#tbp-manual-table-tooltip').hide();
-            }
-        });
-
-        // Cancelar colocación
-        $('#manual-cancel-placement-btn').on('click', function() {
-            cancelPlacement();
-        });
-
-        // Cambios en filtros
-        $('#manual-filter-group, #manual-filter-status').on('change', function() {
-            renderManualOrders();
-        });
-        $('#manual-search-order').on('keyup', function() {
-            renderManualOrders();
-        });
-
-        function updateManualZoom() {
-            $('#tbp-manual-canvas-items').css({
-                transform: `translate(${panOffset.x}px, ${panOffset.y}px) scale(${manualZoom})`
-            });
-            $('#tbp-manual-canvas-grid').css({
-                transform: `translate(${panOffset.x}px, ${panOffset.y}px) scale(${manualZoom})`
-            });
-        }
-
-        function cancelPlacement() {
-            selectedOrderId = null;
-            $('#manual-placement-banner').hide();
-            $('.manual-order-row').removeClass('selected').css('borderColor', '#e2e8f0');
-        }
-
-        function updateStats() {
-            let assignedCount = 0;
-            manualOrders.forEach(o => {
-                if (o.assigned) assignedCount += o.qty;
-            });
-            
-            const totalCount = <?php echo isset($total_places_registered) ? (int) $total_places_registered : 0; ?>;
-            const pendingCount = totalCount - assignedCount;
-            const pct = totalCount > 0 ? Math.round((assignedCount / totalCount) * 100) : 0;
-            
-            $('#manual-total-assigned').text(assignedCount);
-            $('#manual-total-pending').text(pendingCount);
-            $('#manual-progress-pct').text(pct + '%');
-            $('#manual-progress-bar').css('width', pct + '%');
-        }
-
-        function renderManualOrders() {
-            const groupFilter = $('#manual-filter-group').val();
-            const searchFilter = $('#manual-search-order').val().toLowerCase();
-            const statusFilter = $('#manual-filter-status').val();
-            const $container = $('#manual-orders-list-container');
-            $container.empty();
-
-            const filtered = manualOrders.filter(o => {
-                if (groupFilter && o.grupo !== groupFilter) return false;
-                if (statusFilter === 'pending' && o.assigned) return false;
-                if (statusFilter === 'assigned' && !o.assigned) return false;
-                if (searchFilter) {
-                    const nameMatch = o.nombre.toLowerCase().includes(searchFilter);
-                    const idMatch = o.id.toString().includes(searchFilter);
-                    const groupMatch = o.grupo.toLowerCase().includes(searchFilter);
-                    if (!nameMatch && !idMatch && !groupMatch) return false;
-                }
-                return true;
-            });
-
-            if (filtered.length === 0) {
-                $container.html('<div style="text-align:center; padding:20px; color:#888; font-style:italic;">No se encontraron pedidos.</div>');
-                updateStats();
-                return;
-            }
-
-            filtered.forEach(o => {
-                const isSelected = selectedOrderId === o.id;
-                const statusHtml = o.assigned 
-                    ? `<span class="unassign-btn" data-id="${o.id}" style="background:#e8f5e9; color:#2e7d32; border:1px solid #4caf50; padding:2px 6px; border-radius:12px; font-size:10px; cursor:pointer; font-weight:bold;" title="Desasignar de: ${o.mesa_label}">🟢 ${o.mesa_label} ×</span>` 
-                    : `<span style="background:#fef2f2; color:#ef4444; border:1px solid #fca5a5; padding:2px 6px; border-radius:12px; font-size:10px; font-weight:bold;">🔴 Pendiente</span>`;
-
-                const html = $(`
-                    <div class="manual-order-row ${isSelected ? 'selected' : ''}" data-id="${o.id}" style="background:#fff; border:1px solid ${isSelected ? '#3b82f6' : '#e2e8f0'}; border-radius:6px; padding:10px; margin-bottom:8px; cursor:pointer; transition:all 0.2s; box-shadow: 0 1px 2px rgba(0,0,0,0.02); display:flex; flex-direction:column; gap:4px;">
-                        <div style="display:flex; justify-content:space-between; align-items:center;">
-                            <span style="font-weight:bold; font-size:12px; color:#334155;">#${o.id} - ${o.nombre}</span>
-                            <span style="font-weight:800; font-size:11px; background:#f1f5f9; padding:2px 6px; border-radius:4px; color:#475569;">${o.qty} lug.</span>
-                        </div>
-                        <div style="display:flex; justify-content:space-between; align-items:center; font-size:10px; color:#64748b; margin-top:2px;">
-                            <span>Grupo: <strong>${o.grupo}</strong></span>
-                            <div>${statusHtml}</div>
-                        </div>
-                    </div>
-                `);
-
-                html.on('click', function(e) {
-                    if ($(e.target).hasClass('unassign-btn')) {
-                        e.stopPropagation();
-                        unassignOrder(o.id);
-                        return;
-                    }
-                    
-                    selectedOrderId = o.id;
-                    $('.manual-order-row').removeClass('selected').css('borderColor', '#e2e8f0');
-                    html.addClass('selected').css('borderColor', '#3b82f6');
-                    
-                    $('#manual-placement-banner-text').text(`Asignando pedido #${o.id} (${o.nombre} - ${o.qty} lugares)`);
-                    $('#manual-placement-banner').css('display', 'flex');
-                });
-
-                $container.append(html);
-            });
-
-            updateStats();
-        }
-
-        function renderManualPlan() {
-            const $items = $('#tbp-manual-canvas-items');
-            $items.empty();
-
-            // Dibujar decoración
-            manualElements.forEach(item => {
-                const color = item.color || '#334155';
-                const style = `left:${item.pos_x}px; top:${item.pos_y}px; width:${item.width}px; height:${item.height}px; background:${color}; border-color:${color}; z-index:1; position:absolute; display:flex; align-items:center; justify-content:center; border:2px solid; border-radius:4px; opacity:0.65; color:#fff; font-weight:800; font-size:11px;`;
-                const $el = $(`<div class="manual-canvas-element" style="${style}">${item.label}</div>`);
-                $items.append($el);
-            });
-
-            // Dibujar mesas
-            manualTables.forEach(m => {
-                const isBlocked = m.tipo === 'bloqueada';
-                const isFull = parseInt(m.capacidad_usada) >= parseInt(m.capacidad);
-                const isPartial = parseInt(m.capacidad_usada) > 0 && !isFull;
-                
-                let bg = '#eff6ff';
-                let border = '#3b82f6';
-                let text = '#1d4ed8';
-                let statusText = `${m.capacidad_usada}/${m.capacidad} PAX`;
-                
-                if (isBlocked) {
-                    bg = '#fee2e2';
-                    border = '#ef4444';
-                    text = '#991b1b';
-                    statusText = `🚫 BLOQ.`;
-                } else if (isFull) {
-                    bg = '#d1fae5';
-                    border = '#10b981';
-                    text = '#065f46';
-                } else if (isPartial) {
-                    bg = '#ffedd5';
-                    border = '#f97316';
-                    text = '#9a3412';
-                }
-                
-                const isRound = m.tipo === 'round' || m.tipo === 'normal' || m.tipo === 'bar';
-                const borderRadius = isRound ? '50%' : '4px';
-
-                const style = `left:${m.pos_x}px; top:${m.pos_y}px; width:${m.width}px; height:${m.height}px; background:${bg}; border:2px solid ${border}; color:${text}; border-radius:${borderRadius}; position:absolute; display:flex; flex-direction:column; align-items:center; justify-content:center; cursor:pointer; box-shadow:0 1px 3px rgba(0,0,0,0.1); user-select:none; z-index:10; font-family:-apple-system,BlinkMacSystemFont,sans-serif;`;
-                
-                const $el = $(
-                    `<div class="manual-table-item" data-id="${m.id}" style="${style}">
-                        <div style="font-weight:900; font-size:10px;">${m.numero}</div>
-                        <div style="font-size:7px; font-weight:700; margin-top:2px;">${statusText}</div>
-                    </div>`
-                );
-
-                $el.on('click', function(e) {
-                    e.stopPropagation();
-                    if (selectedOrderId) {
-                        assignOrderToTable(selectedOrderId, m.id);
-                    } else {
-                        showTooltip(m, e);
-                    }
-                });
-
-                $el.on('mouseenter', function(e) {
-                    if (!selectedOrderId) {
-                        showTooltip(m, e);
-                    }
-                });
-
-                $items.append($el);
-            });
-
-            updateManualZoom();
-        }
-
-        function showTooltip(m, e) {
-            const $tooltip = $('#tbp-manual-table-tooltip');
-            const tableAssignedOrders = manualOrders.filter(o => o.mesa_id == m.id);
-
-            let ordersHtml = '';
-            if (m.tipo === 'bloqueada') {
-                ordersHtml = `<p style="color:#ef4444; font-weight:bold; margin:5px 0 0 0;">🚫 Bloqueada: ${m.etiqueta_bloqueo || 'Sin etiqueta'}</p>`;
-            } else if (tableAssignedOrders.length === 0) {
-                ordersHtml = '<p style="color:#94a3b8; font-style:italic; margin:5px 0 0 0;">Mesa vacía</p>';
-            } else {
-                ordersHtml = '<ul style="margin:5px 0 0 0; padding-left:15px; max-height:150px; overflow-y:auto;">';
-                tableAssignedOrders.forEach(o => {
-                    ordersHtml += `
-                        <li style="margin-bottom:6px; padding-bottom:4px; border-bottom:1px dashed #e2e8f0; display:flex; justify-content:space-between; align-items:center;">
-                            <div>
-                                <span style="font-weight:bold;">#${o.id}</span> - ${o.nombre}<br>
-                                <span style="color:#64748b; font-size:9px;">Grupo: ${o.grupo} | <strong>${o.qty} lug.</strong></span>
-                            </div>
-                            <button type="button" class="tooltip-unassign-btn" data-id="${o.id}" style="background:#fee2e2; border:none; color:#ef4444; padding:2px 6px; border-radius:4px; cursor:pointer; font-weight:bold;" title="Desasignar">🗑️</button>
-                        </li>
-                    `;
-                });
-                ordersHtml += '</ul>';
-            }
-
-            const html = `
-                <div style="font-weight:bold; font-size:12px; border-bottom:1px solid #e2e8f0; padding-bottom:5px; margin-bottom:5px; display:flex; justify-content:space-between;">
-                    <span>${m.zona} - Mesa ${m.numero}</span>
-                    <span>${m.capacidad_usada}/${m.capacidad} PAX</span>
-                </div>
-                ${ordersHtml}
-            `;
-
-            $tooltip.html(html).show();
-
-            const containerRect = $('#tbp-manual-canvas-container')[0].getBoundingClientRect();
-            const x = e.clientX - containerRect.left + 15;
-            const y = e.clientY - containerRect.top + 15;
-            
-            $tooltip.css({
-                left: x + 'px',
-                top: y + 'px'
-            });
-
-            $tooltip.find('.tooltip-unassign-btn').off('click').on('click', function(evt) {
-                evt.stopPropagation();
-                const orderId = $(this).data('id');
-                $tooltip.hide();
-                unassignOrder(orderId);
-            });
-        }
-
-        function assignOrderToTable(orderId, mesaId) {
-            const mesa = manualTables.find(t => t.id == mesaId);
-            const order = manualOrders.find(o => o.id == orderId);
-            if (!mesa || !order) return;
-
-            $.post(ajaxurl, {
-                action: 'tbp_asientos_manual_assign',
-                config_id: <?php echo (int) $config_id; ?>,
-                order_id: orderId,
-                mesa_id: mesaId,
-                nonce: '<?php echo wp_create_nonce("tbp_asientos_nonce"); ?>'
-            }, function(response) {
-                if (response.success) {
-                    response.data.mesas.forEach(updatedMesa => {
-                        const m = manualTables.find(t => t.id == updatedMesa.id);
-                        if (m) {
-                            m.capacidad_usada = updatedMesa.capacidad_usada;
-                        }
-                    });
-                    
-                    order.assigned = true;
-                    order.mesa_id = mesaId;
-                    order.mesa_label = `${mesa.zona} - Mesa ${mesa.numero}`;
-                    
-                    // Auto-avanzar al siguiente pedido pendiente del grupo seleccionado o general
-                    const currentGroup = $('#manual-filter-group').val();
-                    let nextOrder = null;
-                    if (currentGroup) {
-                        nextOrder = manualOrders.find(o => o.grupo === currentGroup && !o.assigned && o.id !== orderId);
-                    } else {
-                        nextOrder = manualOrders.find(o => !o.assigned && o.id !== orderId);
-                    }
-
-                    if (nextOrder) {
-                        selectedOrderId = nextOrder.id;
-                        $('#manual-placement-banner-text').text(`Asignando pedido #${nextOrder.id} (${nextOrder.nombre} - ${nextOrder.qty} lugares)`);
-                        $('#manual-placement-banner').css('display', 'flex');
-                    } else {
-                        cancelPlacement();
-                    }
-
-                    renderManualOrders();
-                    renderManualPlan();
-                } else {
-                    alert('❌ Error: ' + response.data);
-                }
-            }).fail(function() {
-                alert('❌ Error de red al asignar.');
-            });
-        }
-
-        function unassignOrder(orderId) {
-            if (!confirm('¿Desea desasignar este pedido de la mesa?')) return;
-            
-            $.post(ajaxurl, {
-                action: 'tbp_asientos_manual_unassign',
-                config_id: <?php echo (int) $config_id; ?>,
-                order_id: orderId,
-                nonce: '<?php echo wp_create_nonce("tbp_asientos_nonce"); ?>'
-            }, function(response) {
-                if (response.success) {
-                    const order = manualOrders.find(o => o.id === orderId);
-                    if (order) {
-                        order.assigned = false;
-                        order.mesa_id = 0;
-                        order.mesa_label = '';
-                    }
-                    const updatedMesa = response.data.mesa;
-                    const m = manualTables.find(t => t.id == updatedMesa.id);
-                    if (m) {
-                        m.capacidad_usada = updatedMesa.capacidad_usada;
-                    }
-                    
-                    if (selectedOrderId === orderId) {
-                        cancelPlacement();
-                    }
-                    
-                    renderManualOrders();
-                    renderManualPlan();
-                } else {
-                    alert('❌ Error: ' + response.data);
-                }
-            }).fail(function() {
-                alert('❌ Error de red al desasignar.');
-            });
-        }
-
-        function renderManualWorkspace() {
-            renderManualOrders();
-            renderManualPlan();
-            updateManualZoom();
-        }
-        <?php endif; ?>
-
         if ($('#event_id').val()) {
             refreshGroupFields($('#event_id').val());
         }
@@ -1313,6 +729,342 @@ function tbp_asientos_render_edit_view( $config_id = 0 ) {
         $('#event_id').on('change', function() {
             refreshGroupFields($(this).val());
         });
+
+        // =====================================================================
+        // ETAPA 3: TABLA DE PEDIDOS ESCANEADOS
+        // =====================================================================
+        var scanAllData = [];        // Todos los pedidos del escaneo
+        var scanFilteredData = [];   // Pedidos tras aplicar filtros
+        var scanSelectedIds = {};    // { order_id: true }
+        var scanCurrentPage = 1;
+        var scanPageSize = 50;
+        var scanSortField = 'order_id';
+        var scanSortDir = 'asc';
+        var scanGruposStats = {};
+
+        // Cargar datos cuando se muestre la Etapa 3
+        var stage3Loaded = false;
+        $('.stage-item[data-stage="3"]').on('click', function() {
+            if (!stage3Loaded) {
+                stage3Loaded = true;
+                loadScanData();
+            }
+        });
+
+        function loadScanData() {
+            var configId = <?php echo $config_id; ?>;
+            if (!configId) return;
+
+            $('#scan_table_loader').show();
+            $('#scan_no_data').hide();
+            $('#tbp_scan_table').hide();
+
+            $.post(ajaxurl, {
+                action: 'tbp_asientos_get_scan_data',
+                config_id: configId,
+                nonce: '<?php echo wp_create_nonce("tbp_asientos_nonce"); ?>'
+            }, function(response) {
+                $('#scan_table_loader').hide();
+
+                if (!response.success) {
+                    $('#scan_no_data').show();
+                    // Poner guiones en stats
+                    $('#stat_pedidos_filtrados, #stat_piezas_filtradas, #stat_grupos_filtrados').text('—');
+                    return;
+                }
+
+                scanAllData = response.data.pedidos || [];
+                scanGruposStats = response.data.grupos_stats || {};
+
+                // Poblar dropdown de grupos
+                var $gf = $('#filter_grupo');
+                $gf.find('option:not(:first)').remove();
+                $.each(scanGruposStats, function(grupo, stats) {
+                    $gf.append('<option value="' + $('<div>').text(grupo).html() + '">' + grupo + ' (' + stats.piezas + ' pzas, ' + stats.pedidos + ' pedidos)</option>');
+                });
+
+                // Renderizar
+                applyFilters();
+                $('#tbp_scan_table').show();
+
+            }).fail(function() {
+                $('#scan_table_loader').hide();
+                $('#scan_no_data').show();
+            });
+        }
+
+        function applyFilters() {
+            var fGrupo = $('#filter_grupo').val().toLowerCase();
+            var fPedido = $('#filter_pedido').val().trim();
+            var fNombre = $('#filter_nombre').val().trim().toLowerCase();
+
+            scanFilteredData = scanAllData.filter(function(p) {
+                if (fGrupo && (p.grupo || '').toLowerCase() !== fGrupo) return false;
+                if (fPedido && String(p.order_id).indexOf(fPedido) === -1) return false;
+                if (fNombre) {
+                    var fullName = ((p.nombre || '') + ' ' + (p.apellidos || '')).toLowerCase();
+                    if (fullName.indexOf(fNombre) === -1) return false;
+                }
+                return true;
+            });
+
+            // Aplicar ordenamiento
+            sortData();
+
+            // Reset a página 1
+            scanCurrentPage = 1;
+
+            // Actualizar stats
+            updateFilteredStats();
+
+            // Renderizar tabla
+            renderTable();
+
+            // Actualizar checkbox "seleccionar todos"
+            updateSelectAllState();
+        }
+
+        function sortData() {
+            var field = scanSortField;
+            var dir = scanSortDir;
+
+            scanFilteredData.sort(function(a, b) {
+                var va = a[field], vb = b[field];
+
+                if (field === 'order_id' || field === 'cantidad') {
+                    va = parseInt(va) || 0;
+                    vb = parseInt(vb) || 0;
+                } else if (field === 'nombre') {
+                    va = ((a.nombre || '') + ' ' + (a.apellidos || '')).toLowerCase();
+                    vb = ((b.nombre || '') + ' ' + (b.apellidos || '')).toLowerCase();
+                } else {
+                    va = (va || '').toString().toLowerCase();
+                    vb = (vb || '').toString().toLowerCase();
+                }
+
+                if (va < vb) return dir === 'asc' ? -1 : 1;
+                if (va > vb) return dir === 'asc' ? 1 : -1;
+                return 0;
+            });
+        }
+
+        function updateFilteredStats() {
+            var totalPedidos = scanFilteredData.length;
+            var totalPiezas = 0;
+            var gruposSet = {};
+            scanFilteredData.forEach(function(p) {
+                totalPiezas += parseInt(p.cantidad) || 0;
+                gruposSet[p.grupo || 'Sin grupo'] = true;
+            });
+
+            $('#stat_pedidos_filtrados').text(totalPedidos.toLocaleString());
+            $('#stat_piezas_filtradas').text(totalPiezas.toLocaleString());
+            $('#stat_grupos_filtrados').text(Object.keys(gruposSet).length);
+        }
+
+        function renderTable() {
+            var $tbody = $('#tbp_scan_tbody');
+            $tbody.empty();
+
+            var start = (scanCurrentPage - 1) * scanPageSize;
+            var end = Math.min(start + scanPageSize, scanFilteredData.length);
+            var pageData = scanFilteredData.slice(start, end);
+
+            if (pageData.length === 0) {
+                $tbody.append('<tr><td colspan="5" style="text-align:center; padding:40px; color:#94a3b8; font-size:14px;">No se encontraron pedidos con los filtros aplicados.</td></tr>');
+                $('#scan_pagination').hide();
+                return;
+            }
+
+            pageData.forEach(function(p, idx) {
+                var isChecked = scanSelectedIds[p.order_id] ? 'checked' : '';
+                var rowBg = idx % 2 === 0 ? '#fff' : '#f8fafc';
+                var selectedBg = scanSelectedIds[p.order_id] ? '#eff6ff' : rowBg;
+
+                var row = '<tr data-order-id="' + p.order_id + '" style="border-bottom:1px solid #f1f5f9; background:' + selectedBg + '; transition:background 0.15s;">';
+                row += '<td style="padding:10px 16px; text-align:center;"><input type="checkbox" class="chk_row" value="' + p.order_id + '" ' + isChecked + ' style="width:15px; height:15px; cursor:pointer;"></td>';
+                row += '<td style="padding:10px 16px; font-weight:600; color:#1e40af;">#' + p.order_id + '</td>';
+                row += '<td style="padding:10px 16px; color:#334155;">' + escHtml(p.nombre || '') + ' ' + escHtml(p.apellidos || '') + '</td>';
+                row += '<td style="padding:10px 16px;"><span style="background:#e0e7ff; color:#3730a3; padding:3px 10px; border-radius:20px; font-size:11px; font-weight:600;">' + escHtml(p.grupo || 'Sin grupo') + '</span></td>';
+                row += '<td style="padding:10px 16px; text-align:right; font-weight:700; color:#334155;">' + parseInt(p.cantidad) + '</td>';
+                row += '</tr>';
+
+                $tbody.append(row);
+            });
+
+            renderPagination(start, end);
+        }
+
+        function renderPagination(start, end) {
+            var total = scanFilteredData.length;
+            var totalPages = Math.ceil(total / scanPageSize);
+
+            if (totalPages <= 1) {
+                $('#scan_pagination').hide();
+                return;
+            }
+
+            $('#scan_pagination').css('display', 'flex');
+            $('#pagination_info').text('Mostrando ' + (start + 1) + '-' + end + ' de ' + total.toLocaleString());
+
+            var $btns = $('#pagination_buttons');
+            $btns.empty();
+
+            // Calcular rango de páginas a mostrar
+            var startPage = Math.max(1, scanCurrentPage - 3);
+            var endPage = Math.min(totalPages, scanCurrentPage + 3);
+
+            if (scanCurrentPage > 1) {
+                $btns.append('<button type="button" class="button button-small pg-btn" data-page="' + (scanCurrentPage - 1) + '" style="min-width:32px;">‹</button>');
+            }
+
+            for (var i = startPage; i <= endPage; i++) {
+                var active = i === scanCurrentPage ? 'background:#2271b1; color:#fff; border-color:#2271b1;' : '';
+                $btns.append('<button type="button" class="button button-small pg-btn" data-page="' + i + '" style="min-width:32px; ' + active + '">' + i + '</button>');
+            }
+
+            if (scanCurrentPage < totalPages) {
+                $btns.append('<button type="button" class="button button-small pg-btn" data-page="' + (scanCurrentPage + 1) + '" style="min-width:32px;">›</button>');
+            }
+        }
+
+        // Pagination click
+        $(document).on('click', '.pg-btn', function() {
+            scanCurrentPage = parseInt($(this).data('page'));
+            renderTable();
+            updateSelectAllState();
+            // Scroll to top of table
+            $('html, body').animate({ scrollTop: $('#tbp_scan_table').offset().top - 50 }, 200);
+        });
+
+        // Column sorting
+        $('#tbp_scan_table thead th[data-sort]').on('click', function() {
+            var field = $(this).data('sort');
+            if (scanSortField === field) {
+                scanSortDir = scanSortDir === 'asc' ? 'desc' : 'asc';
+            } else {
+                scanSortField = field;
+                scanSortDir = 'asc';
+            }
+            sortData();
+            scanCurrentPage = 1;
+            renderTable();
+        });
+
+        // Filters
+        var filterTimeout;
+        $('#filter_grupo').on('change', function() { applyFilters(); });
+        $('#filter_pedido, #filter_nombre').on('input', function() {
+            clearTimeout(filterTimeout);
+            filterTimeout = setTimeout(function() { applyFilters(); }, 250);
+        });
+        $('#btn_clear_filters').on('click', function() {
+            $('#filter_grupo').val('');
+            $('#filter_pedido').val('');
+            $('#filter_nombre').val('');
+            applyFilters();
+        });
+
+        // ---- CHECKBOX LOGIC ----
+        // Select all (visible page)
+        $('#chk_select_all').on('change', function() {
+            var isChecked = $(this).prop('checked');
+            var start = (scanCurrentPage - 1) * scanPageSize;
+            var end = Math.min(start + scanPageSize, scanFilteredData.length);
+
+            for (var i = start; i < end; i++) {
+                var oid = scanFilteredData[i].order_id;
+                if (isChecked) {
+                    scanSelectedIds[oid] = true;
+                } else {
+                    delete scanSelectedIds[oid];
+                }
+            }
+
+            // Actualizar checkboxes de la página actual
+            $('#tbp_scan_tbody .chk_row').prop('checked', isChecked);
+            updateSelectionUI();
+        });
+
+        // Individual checkbox
+        $(document).on('change', '.chk_row', function() {
+            var oid = parseInt($(this).val());
+            if ($(this).prop('checked')) {
+                scanSelectedIds[oid] = true;
+                $(this).closest('tr').css('background', '#eff6ff');
+            } else {
+                delete scanSelectedIds[oid];
+                var idx = $(this).closest('tr').index();
+                $(this).closest('tr').css('background', idx % 2 === 0 ? '#fff' : '#f8fafc');
+            }
+            updateSelectAllState();
+            updateSelectionUI();
+        });
+
+        // Row hover highlight
+        $(document).on('mouseenter', '#tbp_scan_tbody tr', function() {
+            if (!scanSelectedIds[$(this).data('order-id')]) {
+                $(this).css('background', '#f0f9ff');
+            }
+        });
+        $(document).on('mouseleave', '#tbp_scan_tbody tr', function() {
+            var oid = $(this).data('order-id');
+            if (!scanSelectedIds[oid]) {
+                var idx = $(this).index();
+                $(this).css('background', idx % 2 === 0 ? '#fff' : '#f8fafc');
+            }
+        });
+
+        // Deselect all
+        $('#btn_deselect_all').on('click', function() {
+            scanSelectedIds = {};
+            $('#chk_select_all').prop('checked', false);
+            $('#tbp_scan_tbody .chk_row').prop('checked', false);
+            renderTable();
+            updateSelectionUI();
+        });
+
+        function updateSelectAllState() {
+            var start = (scanCurrentPage - 1) * scanPageSize;
+            var end = Math.min(start + scanPageSize, scanFilteredData.length);
+            var allChecked = true;
+            var anyOnPage = false;
+
+            for (var i = start; i < end; i++) {
+                anyOnPage = true;
+                if (!scanSelectedIds[scanFilteredData[i].order_id]) {
+                    allChecked = false;
+                    break;
+                }
+            }
+            $('#chk_select_all').prop('checked', anyOnPage && allChecked);
+        }
+
+        function updateSelectionUI() {
+            var count = Object.keys(scanSelectedIds).length;
+            $('#stat_seleccionados').text(count);
+            $('#selection_count').text(count);
+
+            // Calcular piezas seleccionadas
+            var piezas = 0;
+            scanAllData.forEach(function(p) {
+                if (scanSelectedIds[p.order_id]) {
+                    piezas += parseInt(p.cantidad) || 0;
+                }
+            });
+            $('#selection_piezas').text(piezas.toLocaleString());
+
+            if (count > 0) {
+                $('#selection_toolbar').css('display', 'flex');
+            } else {
+                $('#selection_toolbar').css('display', 'none');
+            }
+        }
+
+        function escHtml(str) {
+            return $('<span>').text(str).html();
+        }
+
     });
     </script>
     <?php

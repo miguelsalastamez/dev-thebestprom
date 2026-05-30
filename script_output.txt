@@ -1,0 +1,776 @@
+1: jQuery(document).ready(function($) {
+2: 
+3:         // Navegación de Etapas
+4:         $('.stage-item').on('click', function() {
+5:             const stage = $(this).data('stage');
+6:             $('.stage-item').removeClass('active').css({background:'none', color:'#64748b', border:'none'});
+7:             $(this).addClass('active').css({background:'#f0f6fb', color:'#2271b1', border:'1px solid #2271b1'});
+8:             
+9:             $('.tbp-stage-content').hide();
+10:             $('#tbp-stage-' + stage).show();
+11:         });
+12: 
+13:         let zonas = [];
+14:         try {
+15:             const rawZonas = $('#zonas_json').val();
+16:             if (rawZonas) zonas = JSON.parse(rawZonas);
+17:         } catch(e) { console.error('Error parsing zonas', e); }
+18: 
+19:         function renderZonas() {
+20:             const $container = $('#zonas-container');
+21:             $container.empty();
+22: 
+23:             zonas.forEach((zona, index) => {
+24:                 const prioridad = index + 1;
+25:                 zona.prioridad = prioridad;
+26: 
+27:                 const html = `
+28:                     <div class="tbp-zona-box" data-index="${index}">
+29:                         <h4>
+30:                             <span>⭐ Prioridad #${prioridad}</span>
+31:                             <a class="btn-remove-zona">× Eliminar</a>
+32:                         </h4>
+33:                         <div class="tbp-zona-grid">
+34:                             <div>
+35:                                 <label>Nombre de la Zona</label>
+36:                                 <input type="text" class="widefat z-nombre" value="${zona.nombre || ''}" placeholder="Ej. Zona C">
+37:                             </div>
+38:                             <div>
+39:                                 <label>Cantidad de Mesas</label>
+40:                                 <input type="number" class="widefat z-mesas" value="${zona.mesas || 10}" min="1">
+41:                             </div>
+42:                             <div>
+43:                                 <label>Lugares por Mesa</label>
+44:                                 <input type="number" class="widefat z-capacidad" value="${zona.capacidad || 10}" min="1">
+45:                             </div>
+46:                             <div>
+47:                                 <label>Mínimo Grupo</label>
+48:                                 <input type="number" class="widefat z-min" value="${zona.grupo_min || 1}" min="1" title="Tamaño mínimo del grupo para entrar en esta zona">
+49:                             </div>
+50:                             <div>
+51:                                 <label>Máximo Grupo</label>
+52:                                 <input type="number" class="widefat z-max" value="${zona.grupo_max || 999}" min="1" title="Tamaño máximo del grupo para entrar en esta zona (999 = sin límite)">
+53:                             </div>
+54:                         </div>
+55:                         <p style="margin-bottom:0;">
+56:                             <small>Para bloquear mesas, guarda la configuración primero y usa la vista detallada.</small>
+57:                         </p>
+58:                     </div>
+59:                 `;
+60:                 $container.append(html);
+61:             });
+62: 
+63:             updateJsonField();
+64:         }
+65: 
+66:         function updateJsonField() {
+67:             $('#zonas-container .tbp-zona-box').each(function() {
+68:                 const idx = $(this).data('index');
+69:                 zonas[idx].nombre = $(this).find('.z-nombre').val();
+70:                 zonas[idx].mesas = parseInt($(this).find('.z-mesas').val()) || 0;
+71:                 zonas[idx].capacidad = parseInt($(this).find('.z-capacidad').val()) || 0;
+72:                 zonas[idx].grupo_min = parseInt($(this).find('.z-min').val()) || 1;
+73:                 zonas[idx].grupo_max = parseInt($(this).find('.z-max').val()) || 999;
+74:             });
+75:             $('#zonas_json').val(JSON.stringify(zonas));
+76:         }
+77: 
+78:         $('#add_zona_btn').on('click', function() {
+79:             zonas.push({ nombre: '', mesas: 10, capacidad: 10, grupo_min: 1, grupo_max: 999 });
+80:             renderZonas();
+81:         });
+82: 
+83:         $('#zonas-container').on('click', '.btn-remove-zona', function() {
+84:             const idx = $(this).closest('.tbp-zona-box').data('index');
+85:             zonas.splice(idx, 1);
+86:             renderZonas();
+87:         });
+88: 
+89:         $('#zonas-container').on('input', 'input', function() {
+90:             updateJsonField();
+91:         });
+92: 
+93:         // Inicializar
+94:         renderZonas();
+95: 
+96:         // Escanear asistentes en lotes (Batching para evitar 504)
+97:         $('#btn_scan_event').on('click', function() {
+98:             const configId = 25;
+99:             const $btn = $(this);
+100:             $btn.prop('disabled', true);
+101:             $('#btn_run_packing').prop('disabled', true);
+102:             $('#scan_results').hide();
+103:             $('#scan_loader').show().html('⏳ Iniciando escaneo...');
+104: 
+105:             // Paso 1: Init (Obtener todos los IDs)
+106:             $.post(ajaxurl, {
+107:                 action: 'tbp_asientos_scan_init',
+108:                 config_id: configId,
+109:                 nonce: '"dummy_nonce"'
+110:             }, function(initRes) {
+111:                 if (!initRes.success) {
+112:                     $('#scan_loader').hide();
+113:                     $btn.prop('disabled', false);
+114:                     alert('Error: ' + (initRes.data.message || initRes.data));
+115:                     return;
+116:                 }
+117: 
+118:                 const orderIds = initRes.data.order_ids;
+119:                 const totalOrders = orderIds.length;
+120:                 if (totalOrders === 0) {
+121:                     $('#scan_loader').hide();
+122:                     $btn.prop('disabled', false);
+123:                     alert('No se encontraron pedidos con asientos para este evento.');
+124:                     return;
+125:                 }
+126: 
+127:                 const batchSize = 50;
+128:                 let currentIndex = 0;
+129:                 let allResults = [];
+130: 
+131:                 function processNextBatch() {
+132:                     if (currentIndex >= totalOrders) {
+133:                         finishScan();
+134:                         return;
+135:                     }
+136: 
+137:                     const batch = orderIds.slice(currentIndex, currentIndex + batchSize);
+138:                     const pct = Math.round((currentIndex / totalOrders) * 100);
+139:                     $('#scan_loader').html('⏳ Escaneando pedidos... ' + pct + '% (' + currentIndex + ' de ' + totalOrders + ')');
+140: 
+141:                     $.post(ajaxurl, {
+142:                         action: 'tbp_asientos_scan_batch',
+143:                         config_id: configId,
+144:                         order_ids: batch,
+145:                         nonce: '"dummy_nonce"'
+146:                     }, function(batchRes) {
+147:                         if (batchRes.success) {
+148:                             allResults = allResults.concat(batchRes.data);
+149:                             currentIndex += batchSize;
+150:                             processNextBatch();
+151:                         } else {
+152:                             $('#scan_loader').hide();
+153:                             $btn.prop('disabled', false);
+154:                             alert('Error en lote: ' + (batchRes.data.message || batchRes.data));
+155:                         }
+156:                     }).fail(function(xhr) {
+157:                         $('#scan_loader').hide();
+158:                         $btn.prop('disabled', false);
+159:                         alert('Error de conexión en lote. Servidor (' + xhr.status + ').');
+160:                     });
+161:                 }
+162: 
+163:                 function finishScan() {
+164:                     $('#scan_loader').html('⏳ Consolidando resultados...');
+165:                     $.post(ajaxurl, {
+166:                         action: 'tbp_asientos_scan_finish',
+167:                         config_id: configId,
+168:                         results: allResults,
+169:                         nonce: '"dummy_nonce"'
+170:                     }, function(finRes) {
+171:                         $('#scan_loader').hide();
+172:                         $btn.prop('disabled', false);
+173:                         
+174:                         if (finRes.success) {
+175:                             $('#scan_asistentes').text(finRes.data.asistentes);
+176:                             $('#scan_grupos').text(finRes.data.grupos);
+177:                             $('#scan_pedidos').text(finRes.data.pedidos);
+178:                             $('#scan_results').slideDown();
+179:                             
+180:                             if (finRes.data.pedidos > 0) {
+181:                                 $('#btn_run_packing').prop('disabled', false);
+182:                             } else {
+183:                                 alert('No se encontraron pedidos con lugares por asignar.');
+184:                             }
+185:                         } else {
+186:                             alert('Error al consolidar: ' + (finRes.data.message || finRes.data));
+187:                         }
+188:                     }).fail(function(xhr) {
+189:                         $('#scan_loader').hide();
+190:                         $btn.prop('disabled', false);
+191:                         alert('Error al guardar datos (' + xhr.status + ').');
+192:                     });
+193:                 }
+194: 
+195:                 // Iniciar procesamiento en lotes
+196:                 processNextBatch();
+197: 
+198:             }).fail(function(xhr) {
+199:                 $('#scan_loader').hide();
+200:                 $btn.prop('disabled', false);
+201:                 alert('Error de conexión inicial. Servidor (' + xhr.status + ').');
+202:             });
+203:         });
+204: 
+205:         // Ejecutar algoritmo
+206:         $('#btn_run_packing, #btn_run_packing_v2').on('click', function() {
+207:             if(!confirm('¿Estás seguro? Esto calculará las asignaciones y sobrescribirá cualquier asignación manual previa.')) return;
+208:             
+209:             const configId = 25;
+210:             const $btn = $(this);
+211:             const originalText = $btn.text();
+212:             
+213:             $('#btn_run_packing, #btn_run_packing_v2').prop('disabled', true);
+214:             $btn.text('⏳ Asignando...');
+215:             $('#packing_loader').show();
+216: 
+217:             $.post(ajaxurl, {
+218:                 action: 'tbp_asientos_run_packing',
+219:                 config_id: configId,
+220:                 nonce: '"dummy_nonce"'
+221:             }, function(response) {
+222:                 $('#packing_loader').hide();
+223:                 $('#btn_run_packing, #btn_run_packing_v2').prop('disabled', false);
+224:                 $btn.text(originalText);
+225: 
+226:                 if (response.success) {
+227:                     var stats = response.data.stats;
+228:                     var debug = response.data.debug || {};
+229:                     
+230:                     if (stats.total_asignados === 0) {
+231:                         // Mostrar diagnóstico detallado cuando hay 0 asignaciones
+232:                         var diagMsg = '⚠️ Asignación completada con 0 resultados.\n\n';
+233:                         diagMsg += '📊 DIAGNÓSTICO:\n';
+234:                         diagMsg += '• Event ID: ' + (debug.event_id || 'N/A') + '\n';
+235:                         diagMsg += '• Proveedor ID: ' + (debug.proveedor_id || 'N/A') + '\n';
+236:                         diagMsg += '• Campo de Grupo: ' + (debug.group_field || 'N/A') + '\n';
+237:                         diagMsg += '• Fuente de pedidos: ' + (debug.pedidos_source || 'N/A') + '\n';
+238:                         diagMsg += '• Pedidos encontrados: ' + (debug.pedidos_raw_count || 0) + '\n';
+239:                         diagMsg += '• Zonas configuradas: ' + (debug.zonas_count || 0) + '\n';
+240:                         diagMsg += '• Nombres de zonas: ' + (debug.zonas_nombres ? debug.zonas_nombres.join(', ') : 'N/A') + '\n';
+241:                         diagMsg += '• Grupos encontrados: ' + (debug.grupos_count || 0) + '\n';
+242:                         
+243:                         if (debug.mesas_por_zona) {
+244:                             diagMsg += '• Mesas por zona:\n';
+245:                             for (var z in debug.mesas_por_zona) {
+246:                                 diagMsg += '    - ' + z + ': ' + debug.mesas_por_zona[z] + ' mesas\n';
+247:                             }
+248:                         }
+249:                         
+250:                         diagMsg += '\n💡 Si "Pedidos encontrados" es 0, verifica que el evento tenga pedidos completados/procesando.';
+251:                         diagMsg += '\nSi "Mesas por zona" muestra 0, regenera el plano visual.';
+252:                         
+253:                         alert(diagMsg);
+254:                     } else {
+255:                         alert('✅ Asignación completada.\n\nPedidos asignados: ' + stats.total_asignados + '\nLugares ocupados: ' + (stats.total_lugares || 0) + '\nEficiencia: ' + stats.eficiencia_pct + '%');
+256:                     }
+257:                     window.location.href = '?page=tbp-actividades-asientos&action=view&id=' + configId;
+258:                 } else {
+259:                     alert('Error: ' + (response.data.message || response.data));
+260:                 }
+261:             });
+262:         });
+263: 
+264:         // Eliminar configuración
+265:         $('#btn_delete_config').on('click', function(e) {
+266:             e.preventDefault();
+267:             if(!confirm('⚠️ ¿ESTÁS SEGURO? Se eliminará la configuración, todas las mesas y todas las asignaciones generadas. Esto no se puede deshacer.')) return;
+268:             
+269:             // Cambiar la acción del formulario y hacer submit
+270:             $('#tbp-asientos-form').append('<input type="hidden" name="_wpnonce" value=""dummy_nonce"">');
+271:             $('input[name="tbp_asientos_action"]').val('delete_config');
+272:             $('#tbp-asientos-form').submit();
+273:         });
+274: 
+275:         // Regenerar Snapshot Manualmente
+276:         $('#btn_regenerate_snapshot').on('click', function() {
+277:             const configId = 25;
+278:             const $btn = $(this);
+279:             $btn.prop('disabled', true);
+280:             $('#snapshot_loader').show();
+281: 
+282:             $.post(ajaxurl, {
+283:                 action: 'tbp_asientos_regenerate_snapshot',
+284:                 config_id: configId,
+285:                 nonce: '"dummy_nonce"'
+286:             }, function(response) {
+287:                 $('#snapshot_loader').hide();
+288:                 $btn.prop('disabled', false);
+289:                 if (response.success) {
+290:                     alert('✅ ' + response.data);
+291:                 } else {
+292:                     alert('❌ Error: ' + response.data);
+293:                 }
+294:             }).fail(function() {
+295:                 $('#snapshot_loader').hide();
+296:                 $btn.prop('disabled', false);
+297:                 alert('❌ Error de red al generar snapshot.');
+298:             });
+299:         });
+300:         // Lógica de carga de campos de metadatos (Reutilizando AJAX de premiaciones)
+301:         const currentGroupField = '25';
+302: 
+303:         function refreshGroupFields(eventId) {
+304:             const $field = $('#group_field');
+305:             if (!eventId) {
+306:                 $field.html('<option value="">-- Seleccionar Evento primero --</option>');
+307:                 return;
+308:             }
+309: 
+310:             $field.html('<option value="">⏳ Cargando campos...</option>');
+311: 
+312:             $.get(ajaxurl, {
+313:                 action: 'tbp_actividades_get_event_attendee_fields',
+314:                 event_id: eventId
+315:             }, function(response) {
+316:                 let html = '<option value="">-- Seleccionar Campo --</option>';
+317:                 if (response.success && response.data && response.data.length > 0) {
+318:                     response.data.forEach(function(label) {
+319:                         const selected = (label === currentGroupField) ? 'selected' : '';
+320:                         html += `<option value="${label}" ${selected}>${label}</option>`;
+321:                     });
+322:                 } else {
+323:                     html = '<option value="">❌ No se encontraron campos en los tickets de este evento</option>';
+324:                     if (currentGroupField) {
+325:                         html += `<option value="${currentGroupField}" selected>${currentGroupField} (Actual)</option>`;
+326:                     }
+327:                 }
+328:                 $field.html(html);
+329:             });
+330:         }
+331: 
+332:         // ==========================================
+333:         // JS para la Asignación Manual (Etapa 3 - Tab 2)
+334:         // ==========================================
+335:         let manualOrders = [];
+336:         let manualTables = [];
+337:         let manualElements = [];
+338:         
+339:         manualOrders = [];
+340:         manualTables = [];
+341:         manualElements = [];
+342:         let selectedOrderId = null;
+343:         let manualZoom = 0.7;
+344:         let isPanning = false;
+345:         let panStart = { x: 0, y: 0 };
+346:         let panOffset = { x: 50, y: 50 }; // Un offset inicial descentrado pero visible
+347: 
+348:         // Manejar Tabs de la Etapa 3
+349:         $('.tbp-stage3-tab-btn').on('click', function() {
+350:             const target = $(this).data('target');
+351:             $('.tbp-stage3-tab-btn').removeClass('active').css({borderBottom:'none', color:'#64748b'});
+352:             $(this).addClass('active').css({borderBottom:'3px solid #2271b1', color:'#2271b1'});
+353:             $('.tbp-stage3-tab-content').hide();
+354:             $('#' + target).show();
+355:             
+356:             if (target === 'tbp-stage3-manual') {
+357:                 renderManualWorkspace();
+358:             }
+359:         });
+360: 
+361:         // Inicializar Panning
+362:         $('#tbp-manual-canvas-container').on('mousedown', function(e) {
+363:             if ($(e.target).closest('.manual-table-item, .manual-canvas-element, #tbp-manual-table-tooltip').length === 0) {
+364:                 isPanning = true;
+365:                 $(this).css('cursor', 'grabbing');
+366:                 panStart = { x: e.clientX - panOffset.x, y: e.clientY - panOffset.y };
+367:             }
+368:         });
+369: 
+370:         $(document).on('mousemove', function(e) {
+371:             if (isPanning) {
+372:                 panOffset.x = e.clientX - panStart.x;
+373:                 panOffset.y = e.clientY - panStart.y;
+374:                 updateManualZoom();
+375:             }
+376:         });
+377: 
+378:         $(document).on('mouseup', function() {
+379:             if (isPanning) {
+380:                 isPanning = false;
+381:                 $('#tbp-manual-canvas-container').css('cursor', 'grab');
+382:             }
+383:         });
+384: 
+385:         // Zoom Slider
+386:         $('#manual_canvas_zoom').on('input', function() {
+387:             manualZoom = parseFloat($(this).val());
+388:             updateManualZoom();
+389:         });
+390: 
+391:         $('#btn_manual_reset_view').on('click', function() {
+392:             manualZoom = 0.7;
+393:             panOffset = { x: 50, y: 50 };
+394:             $('#manual_canvas_zoom').val(manualZoom);
+395:             updateManualZoom();
+396:         });
+397: 
+398:         // Regenerar Snapshot
+399:         $('#btn_manual_regenerate_snapshot').on('click', function() {
+400:             const $btn = $(this);
+401:             $btn.prop('disabled', true).text('⏳ Generando...');
+402:             $.post(ajaxurl, {
+403:                 action: 'tbp_asientos_regenerate_snapshot',
+404:                 config_id: 25,
+405:                 nonce: '"dummy_nonce"'
+406:             }, function(response) {
+407:                 $btn.prop('disabled', false).text('🔄 Snapshot Público');
+408:                 if (response.success) {
+409:                     alert('✅ Snapshot actualizado.');
+410:                 } else {
+411:                     alert('❌ Error: ' + response.data);
+412:                 }
+413:             }).fail(function() {
+414:                 $btn.prop('disabled', false).text('🔄 Snapshot Público');
+415:                 alert('❌ Error de red.');
+416:             });
+417:         });
+418: 
+419:         // Cerrar Tooltip al hacer clic fuera
+420:         $(document).on('click', function(e) {
+421:             if ($(e.target).closest('.manual-table-item, #tbp-manual-table-tooltip').length === 0) {
+422:                 $('#tbp-manual-table-tooltip').hide();
+423:             }
+424:         });
+425: 
+426:         // Cancelar colocación
+427:         $('#manual-cancel-placement-btn').on('click', function() {
+428:             cancelPlacement();
+429:         });
+430: 
+431:         // Cambios en filtros
+432:         $('#manual-filter-group, #manual-filter-status').on('change', function() {
+433:             renderManualOrders();
+434:         });
+435:         $('#manual-search-order').on('keyup', function() {
+436:             renderManualOrders();
+437:         });
+438: 
+439:         function updateManualZoom() {
+440:             $('#tbp-manual-canvas-items').css({
+441:                 transform: `translate(${panOffset.x}px, ${panOffset.y}px) scale(${manualZoom})`
+442:             });
+443:             $('#tbp-manual-canvas-grid').css({
+444:                 transform: `translate(${panOffset.x}px, ${panOffset.y}px) scale(${manualZoom})`
+445:             });
+446:         }
+447: 
+448:         function cancelPlacement() {
+449:             selectedOrderId = null;
+450:             $('#manual-placement-banner').hide();
+451:             $('.manual-order-row').removeClass('selected').css('borderColor', '#e2e8f0');
+452:         }
+453: 
+454:         function updateStats() {
+455:             let assignedCount = 0;
+456:             if (Array.isArray(manualOrders)) {
+457:                 manualOrders.forEach(o => {
+458:                     if (o.assigned) assignedCount += o.qty;
+459:                 });
+460:             }
+461:             
+462:             const totalCount = 25;
+463:             const pendingCount = totalCount - assignedCount;
+464:             const pct = totalCount > 0 ? Math.round((assignedCount / totalCount) * 100) : 0;
+465:             
+466:             $('#manual-total-assigned').text(assignedCount);
+467:             $('#manual-total-pending').text(pendingCount);
+468:             $('#manual-progress-pct').text(pct + '%');
+469:             $('#manual-progress-bar').css('width', pct + '%');
+470:         }
+471: 
+472:         function renderManualOrders() {
+473:             const groupFilter = $('#manual-filter-group').val();
+474:             const searchFilter = $('#manual-search-order').val().toLowerCase();
+475:             const statusFilter = $('#manual-filter-status').val();
+476:             const $container = $('#manual-orders-list-container');
+477:             if (!Array.isArray(manualOrders)) return;
+478:             $container.empty();
+479: 
+480:             const filtered = manualOrders.filter(o => {
+481:                 if (groupFilter && o.grupo !== groupFilter) return false;
+482:                 if (statusFilter === 'pending' && o.assigned) return false;
+483:                 if (statusFilter === 'assigned' && !o.assigned) return false;
+484:                 if (searchFilter) {
+485:                     const nameMatch = o.nombre.toLowerCase().includes(searchFilter);
+486:                     const idMatch = o.id.toString().includes(searchFilter);
+487:                     const groupMatch = o.grupo.toLowerCase().includes(searchFilter);
+488:                     if (!nameMatch && !idMatch && !groupMatch) return false;
+489:                 }
+490:                 return true;
+491:             });
+492: 
+493:             if (filtered.length === 0) {
+494:                 $container.html('<div style="text-align:center; padding:20px; color:#888; font-style:italic;">No se encontraron pedidos.</div>');
+495:                 updateStats();
+496:                 return;
+497:             }
+498: 
+499:             filtered.forEach(o => {
+500:                 const isSelected = selectedOrderId === o.id;
+501:                 const statusHtml = o.assigned 
+502:                     ? `<span class="unassign-btn" data-id="${o.id}" style="background:#e8f5e9; color:#2e7d32; border:1px solid #4caf50; padding:2px 6px; border-radius:12px; font-size:10px; cursor:pointer; font-weight:bold;" title="Desasignar de: ${o.mesa_label}">🟢 ${o.mesa_label} ×</span>` 
+503:                     : `<span style="background:#fef2f2; color:#ef4444; border:1px solid #fca5a5; padding:2px 6px; border-radius:12px; font-size:10px; font-weight:bold;">🔴 Pendiente</span>`;
+504: 
+505:                 const html = $(`
+506:                     <div class="manual-order-row ${isSelected ? 'selected' : ''}" data-id="${o.id}" style="background:#fff; border:1px solid ${isSelected ? '#3b82f6' : '#e2e8f0'}; border-radius:6px; padding:10px; margin-bottom:8px; cursor:pointer; transition:all 0.2s; box-shadow: 0 1px 2px rgba(0,0,0,0.02); display:flex; flex-direction:column; gap:4px;">
+507:                         <div style="display:flex; justify-content:space-between; align-items:center;">
+508:                             <span style="font-weight:bold; font-size:12px; color:#334155;">#${o.id} - ${o.nombre}</span>
+509:                             <span style="font-weight:800; font-size:11px; background:#f1f5f9; padding:2px 6px; border-radius:4px; color:#475569;">${o.qty} lug.</span>
+510:                         </div>
+511:                         <div style="display:flex; justify-content:space-between; align-items:center; font-size:10px; color:#64748b; margin-top:2px;">
+512:                             <span>Grupo: <strong>${o.grupo}</strong></span>
+513:                             <div>${statusHtml}</div>
+514:                         </div>
+515:                     </div>
+516:                 `);
+517: 
+518:                 html.on('click', function(e) {
+519:                     if ($(e.target).hasClass('unassign-btn')) {
+520:                         e.stopPropagation();
+521:                         unassignOrder(o.id);
+522:                         return;
+523:                     }
+524:                     
+525:                     selectedOrderId = o.id;
+526:                     $('.manual-order-row').removeClass('selected').css('borderColor', '#e2e8f0');
+527:                     html.addClass('selected').css('borderColor', '#3b82f6');
+528:                     
+529:                     $('#manual-placement-banner-text').text(`Asignando pedido #${o.id} (${o.nombre} - ${o.qty} lugares)`);
+530:                     $('#manual-placement-banner').css('display', 'flex');
+531:                 });
+532: 
+533:                 $container.append(html);
+534:             });
+535: 
+536:             updateStats();
+537:         }
+538: 
+539:         function renderManualPlan() {
+540:             const $items = $('#tbp-manual-canvas-items');
+541:             $items.empty();
+542: 
+543:             // Dibujar decoración
+544:             manualElements.forEach(item => {
+545:                 const color = item.color || '#334155';
+546:                 const style = `left:${item.pos_x}px; top:${item.pos_y}px; width:${item.width}px; height:${item.height}px; background:${color}; border-color:${color}; z-index:1; position:absolute; display:flex; align-items:center; justify-content:center; border:2px solid; border-radius:4px; opacity:0.65; color:#fff; font-weight:800; font-size:11px;`;
+547:                 const $el = $(`<div class="manual-canvas-element" style="${style}">${item.label}</div>`);
+548:                 $items.append($el);
+549:             });
+550: 
+551:             // Dibujar mesas
+552:             manualTables.forEach(m => {
+553:                 const isBlocked = m.tipo === 'bloqueada';
+554:                 const isFull = parseInt(m.capacidad_usada) >= parseInt(m.capacidad);
+555:                 const isPartial = parseInt(m.capacidad_usada) > 0 && !isFull;
+556:                 
+557:                 let bg = '#eff6ff';
+558:                 let border = '#3b82f6';
+559:                 let text = '#1d4ed8';
+560:                 let statusText = `${m.capacidad_usada}/${m.capacidad} PAX`;
+561:                 
+562:                 if (isBlocked) {
+563:                     bg = '#fee2e2';
+564:                     border = '#ef4444';
+565:                     text = '#991b1b';
+566:                     statusText = `🚫 BLOQ.`;
+567:                 } else if (isFull) {
+568:                     bg = '#d1fae5';
+569:                     border = '#10b981';
+570:                     text = '#065f46';
+571:                 } else if (isPartial) {
+572:                     bg = '#ffedd5';
+573:                     border = '#f97316';
+574:                     text = '#9a3412';
+575:                 }
+576:                 
+577:                 const isRound = m.tipo === 'round' || m.tipo === 'normal' || m.tipo === 'bar';
+578:                 const borderRadius = isRound ? '50%' : '4px';
+579: 
+580:                 const style = `left:${m.pos_x}px; top:${m.pos_y}px; width:${m.width}px; height:${m.height}px; background:${bg}; border:2px solid ${border}; color:${text}; border-radius:${borderRadius}; position:absolute; display:flex; flex-direction:column; align-items:center; justify-content:center; cursor:pointer; box-shadow:0 1px 3px rgba(0,0,0,0.1); user-select:none; z-index:10; font-family:-apple-system,BlinkMacSystemFont,sans-serif;`;
+581:                 
+582:                 const $el = $(
+583:                     `<div class="manual-table-item" data-id="${m.id}" style="${style}">
+584:                         <div style="font-weight:900; font-size:10px;">${m.numero}</div>
+585:                         <div style="font-size:7px; font-weight:700; margin-top:2px;">${statusText}</div>
+586:                     </div>`
+587:                 );
+588: 
+589:                 $el.on('click', function(e) {
+590:                     e.stopPropagation();
+591:                     if (selectedOrderId) {
+592:                         assignOrderToTable(selectedOrderId, m.id);
+593:                     } else {
+594:                         showTooltip(m, e);
+595:                     }
+596:                 });
+597: 
+598:                 $el.on('mouseenter', function(e) {
+599:                     if (!selectedOrderId) {
+600:                         showTooltip(m, e);
+601:                     }
+602:                 });
+603: 
+604:                 $items.append($el);
+605:             });
+606: 
+607:             updateManualZoom();
+608:         }
+609: 
+610:         function showTooltip(m, e) {
+611:             const $tooltip = $('#tbp-manual-table-tooltip');
+612:             const tableAssignedOrders = manualOrders.filter(o => o.mesa_id == m.id);
+613: 
+614:             let ordersHtml = '';
+615:             if (m.tipo === 'bloqueada') {
+616:                 ordersHtml = `<p style="color:#ef4444; font-weight:bold; margin:5px 0 0 0;">🚫 Bloqueada: ${m.etiqueta_bloqueo || 'Sin etiqueta'}</p>`;
+617:             } else if (tableAssignedOrders.length === 0) {
+618:                 ordersHtml = '<p style="color:#94a3b8; font-style:italic; margin:5px 0 0 0;">Mesa vacía</p>';
+619:             } else {
+620:                 ordersHtml = '<ul style="margin:5px 0 0 0; padding-left:15px; max-height:150px; overflow-y:auto;">';
+621:                 tableAssignedOrders.forEach(o => {
+622:                     ordersHtml += `
+623:                         <li style="margin-bottom:6px; padding-bottom:4px; border-bottom:1px dashed #e2e8f0; display:flex; justify-content:space-between; align-items:center;">
+624:                             <div>
+625:                                 <span style="font-weight:bold;">#${o.id}</span> - ${o.nombre}<br>
+626:                                 <span style="color:#64748b; font-size:9px;">Grupo: ${o.grupo} | <strong>${o.qty} lug.</strong></span>
+627:                             </div>
+628:                             <button type="button" class="tooltip-unassign-btn" data-id="${o.id}" style="background:#fee2e2; border:none; color:#ef4444; padding:2px 6px; border-radius:4px; cursor:pointer; font-weight:bold;" title="Desasignar">🗑️</button>
+629:                         </li>
+630:                     `;
+631:                 });
+632:                 ordersHtml += '</ul>';
+633:             }
+634: 
+635:             const html = `
+636:                 <div style="font-weight:bold; font-size:12px; border-bottom:1px solid #e2e8f0; padding-bottom:5px; margin-bottom:5px; display:flex; justify-content:space-between;">
+637:                     <span>${m.zona} - Mesa ${m.numero}</span>
+638:                     <span>${m.capacidad_usada}/${m.capacidad} PAX</span>
+639:                 </div>
+640:                 ${ordersHtml}
+641:             `;
+642: 
+643:             $tooltip.html(html).show();
+644: 
+645:             const containerRect = $('#tbp-manual-canvas-container')[0].getBoundingClientRect();
+646:             const x = e.clientX - containerRect.left + 15;
+647:             const y = e.clientY - containerRect.top + 15;
+648:             
+649:             $tooltip.css({
+650:                 left: x + 'px',
+651:                 top: y + 'px'
+652:             });
+653: 
+654:             $tooltip.find('.tooltip-unassign-btn').off('click').on('click', function(evt) {
+655:                 evt.stopPropagation();
+656:                 const orderId = $(this).data('id');
+657:                 $tooltip.hide();
+658:                 unassignOrder(orderId);
+659:             });
+660:         }
+661: 
+662:         function assignOrderToTable(orderId, mesaId) {
+663:             const mesa = manualTables.find(t => t.id == mesaId);
+664:             const order = manualOrders.find(o => o.id == orderId);
+665:             if (!mesa || !order) return;
+666: 
+667:             $.post(ajaxurl, {
+668:                 action: 'tbp_asientos_manual_assign',
+669:                 config_id: 25,
+670:                 order_id: orderId,
+671:                 mesa_id: mesaId,
+672:                 nonce: '"dummy_nonce"'
+673:             }, function(response) {
+674:                 if (response.success) {
+675:                     response.data.mesas.forEach(updatedMesa => {
+676:                         const m = manualTables.find(t => t.id == updatedMesa.id);
+677:                         if (m) {
+678:                             m.capacidad_usada = updatedMesa.capacidad_usada;
+679:                         }
+680:                     });
+681:                     
+682:                     order.assigned = true;
+683:                     order.mesa_id = mesaId;
+684:                     order.mesa_label = `${mesa.zona} - Mesa ${mesa.numero}`;
+685:                     
+686:                     // Auto-avanzar al siguiente pedido pendiente del grupo seleccionado o general
+687:                     const currentGroup = $('#manual-filter-group').val();
+688:                     let nextOrder = null;
+689:                     if (currentGroup) {
+690:                         nextOrder = manualOrders.find(o => o.grupo === currentGroup && !o.assigned && o.id !== orderId);
+691:                     } else {
+692:                         nextOrder = manualOrders.find(o => !o.assigned && o.id !== orderId);
+693:                     }
+694: 
+695:                     if (nextOrder) {
+696:                         selectedOrderId = nextOrder.id;
+697:                         $('#manual-placement-banner-text').text(`Asignando pedido #${nextOrder.id} (${nextOrder.nombre} - ${nextOrder.qty} lugares)`);
+698:                         $('#manual-placement-banner').css('display', 'flex');
+699:                     } else {
+700:                         cancelPlacement();
+701:                     }
+702: 
+703:                     renderManualOrders();
+704:                     renderManualPlan();
+705:                 } else {
+706:                     alert('❌ Error: ' + response.data);
+707:                 }
+708:             }).fail(function() {
+709:                 alert('❌ Error de red al asignar.');
+710:             });
+711:         }
+712: 
+713:         function unassignOrder(orderId) {
+714:             if (!confirm('¿Desea desasignar este pedido de la mesa?')) return;
+715:             
+716:             $.post(ajaxurl, {
+717:                 action: 'tbp_asientos_manual_unassign',
+718:                 config_id: 25,
+719:                 order_id: orderId,
+720:                 nonce: '"dummy_nonce"'
+721:             }, function(response) {
+722:                 if (response.success) {
+723:                     const order = manualOrders.find(o => o.id === orderId);
+724:                     if (order) {
+725:                         order.assigned = false;
+726:                         order.mesa_id = 0;
+727:                         order.mesa_label = '';
+728:                     }
+729:                     const updatedMesa = response.data.mesa;
+730:                     const m = manualTables.find(t => t.id == updatedMesa.id);
+731:                     if (m) {
+732:                         m.capacidad_usada = updatedMesa.capacidad_usada;
+733:                     }
+734:                     
+735:                     if (selectedOrderId === orderId) {
+736:                         cancelPlacement();
+737:                     }
+738:                     
+739:                     renderManualOrders();
+740:                     renderManualPlan();
+741:                 } else {
+742:                     alert('❌ Error: ' + response.data);
+743:                 }
+744:             }).fail(function() {
+745:                 alert('❌ Error de red al desasignar.');
+746:             });
+747:         }
+748: 
+749:         function renderManualWorkspace() {
+750:             renderManualOrders();
+751:             renderManualPlan();
+752:             updateManualZoom();
+753:         }
+754:         
+755: 
+756:         if ($('#event_id').val()) {
+757:             refreshGroupFields($('#event_id').val());
+758:         }
+759: 
+760:         $('#event_id').on('change', function() {
+761:             refreshGroupFields($(this).val());
+762:         });
+763:     });
+764:     
+765: });
+766: });
+ERROR: SyntaxError: Unexpected token '}'
+    at Object.<anonymous> (/Users/miguelsalas/Proyectos Antigravity/dev.thebestprom.com/debug_syntax.js:12:10)
+    at Module._compile (node:internal/modules/cjs/loader:1761:14)
+    at Object..js (node:internal/modules/cjs/loader:1893:10)
+    at Module.load (node:internal/modules/cjs/loader:1481:32)
+    at Module._load (node:internal/modules/cjs/loader:1300:12)
+    at TracingChannel.traceSync (node:diagnostics_channel:328:14)
+    at wrapModuleLoad (node:internal/modules/cjs/loader:245:24)
+    at Module.executeUserEntryPoint [as runMain] (node:internal/modules/run_main:154:5)
+    at node:internal/main/run_main_module:33:47

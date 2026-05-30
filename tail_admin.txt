@@ -1,0 +1,450 @@
+  1140	        function assignOrderToTable(orderId, mesaId) {
+  1141	            const mesa = manualTables.find(t => t.id == mesaId);
+  1142	            const order = manualOrders.find(o => o.id == orderId);
+  1143	            if (!mesa || !order) return;
+  1144	
+  1145	            $.post(ajaxurl, {
+  1146	                action: 'tbp_asientos_manual_assign',
+  1147	                config_id: <?php echo (int) $config_id; ?>,
+  1148	                order_id: orderId,
+  1149	                mesa_id: mesaId,
+  1150	                nonce: '<?php echo wp_create_nonce("tbp_asientos_nonce"); ?>'
+  1151	            }, function(response) {
+  1152	                if (response.success) {
+  1153	                    response.data.mesas.forEach(updatedMesa => {
+  1154	                        const m = manualTables.find(t => t.id == updatedMesa.id);
+  1155	                        if (m) {
+  1156	                            m.capacidad_usada = updatedMesa.capacidad_usada;
+  1157	                        }
+  1158	                    });
+  1159	                    
+  1160	                    order.assigned = true;
+  1161	                    order.mesa_id = mesaId;
+  1162	                    order.mesa_label = `${mesa.zona} - Mesa ${mesa.numero}`;
+  1163	                    
+  1164	                    // Auto-avanzar al siguiente pedido pendiente del grupo seleccionado o general
+  1165	                    const currentGroup = $('#manual-filter-group').val();
+  1166	                    let nextOrder = null;
+  1167	                    if (currentGroup) {
+  1168	                        nextOrder = manualOrders.find(o => o.grupo === currentGroup && !o.assigned && o.id !== orderId);
+  1169	                    } else {
+  1170	                        nextOrder = manualOrders.find(o => !o.assigned && o.id !== orderId);
+  1171	                    }
+  1172	
+  1173	                    if (nextOrder) {
+  1174	                        selectedOrderId = nextOrder.id;
+  1175	                        $('#manual-placement-banner-text').text(`Asignando pedido #${nextOrder.id} (${nextOrder.nombre} - ${nextOrder.qty} lugares)`);
+  1176	                        $('#manual-placement-banner').css('display', 'flex');
+  1177	                    } else {
+  1178	                        cancelPlacement();
+  1179	                    }
+  1180	
+  1181	                    renderManualOrders();
+  1182	                    renderManualPlan();
+  1183	                } else {
+  1184	                    alert('❌ Error: ' + response.data);
+  1185	                }
+  1186	            }).fail(function() {
+  1187	                alert('❌ Error de red al asignar.');
+  1188	            });
+  1189	        }
+  1190	
+  1191	        function unassignOrder(orderId) {
+  1192	            if (!confirm('¿Desea desasignar este pedido de la mesa?')) return;
+  1193	            
+  1194	            $.post(ajaxurl, {
+  1195	                action: 'tbp_asientos_manual_unassign',
+  1196	                config_id: <?php echo (int) $config_id; ?>,
+  1197	                order_id: orderId,
+  1198	                nonce: '<?php echo wp_create_nonce("tbp_asientos_nonce"); ?>'
+  1199	            }, function(response) {
+  1200	                if (response.success) {
+  1201	                    const order = manualOrders.find(o => o.id === orderId);
+  1202	                    if (order) {
+  1203	                        order.assigned = false;
+  1204	                        order.mesa_id = 0;
+  1205	                        order.mesa_label = '';
+  1206	                    }
+  1207	                    const updatedMesa = response.data.mesa;
+  1208	                    const m = manualTables.find(t => t.id == updatedMesa.id);
+  1209	                    if (m) {
+  1210	                        m.capacidad_usada = updatedMesa.capacidad_usada;
+  1211	                    }
+  1212	                    
+  1213	                    if (selectedOrderId === orderId) {
+  1214	                        cancelPlacement();
+  1215	                    }
+  1216	                    
+  1217	                    renderManualOrders();
+  1218	                    renderManualPlan();
+  1219	                } else {
+  1220	                    alert('❌ Error: ' + response.data);
+  1221	                }
+  1222	            }).fail(function() {
+  1223	                alert('❌ Error de red al desasignar.');
+  1224	            });
+  1225	        }
+  1226	
+  1227	        function renderManualWorkspace() {
+  1228	            renderManualOrders();
+  1229	            renderManualPlan();
+  1230	            updateManualZoom();
+  1231	        }
+  1232	        <?php endif; ?>
+  1233	
+  1234	        if ($('#event_id').val()) {
+  1235	            refreshGroupFields($('#event_id').val());
+  1236	        }
+  1237	
+  1238	        $('#event_id').on('change', function() {
+  1239	            refreshGroupFields($(this).val());
+  1240	        });
+  1241	    });
+  1242	    </script>
+  1243	    <?php
+  1244	}
+  1245	
+  1246	/**
+  1247	 * Procesa el formulario de guardado
+  1248	 */
+  1249	function tbp_asientos_handle_save_config() {
+  1250	    $config_id = isset( $_POST['config_id'] ) ? (int) $_POST['config_id'] : 0;
+  1251	    
+  1252	    $zonas_json = stripslashes( $_POST['zonas_json'] ?? '[]' );
+  1253	    $zonas_config = json_decode( $zonas_json, true );
+  1254	
+  1255	    if ( ! is_array( $zonas_config ) ) {
+  1256	        $zonas_config = array();
+  1257	    }
+  1258	
+  1259	    $data = array(
+  1260	        'event_id'     => (int) $_POST['event_id'],
+  1261	        'proveedor_id' => (int) ($_POST['proveedor_id'] ?? 0),
+  1262	        'nombre'       => sanitize_text_field( $_POST['nombre'] ),
+  1263	        'group_field'  => sanitize_text_field( $_POST['group_field'] ),
+  1264	        'zonas_config' => $zonas_config,
+  1265	    );
+  1266	
+  1267	    $saved_id = tbp_asientos_save_config( $data, $config_id > 0 ? $config_id : null );
+  1268	
+  1269	    if ( $saved_id ) {
+  1270	        // Generar mesas físicas en la BD
+  1271	        tbp_asientos_generate_tables( $saved_id, $zonas_config );
+  1272	        
+  1273	        $url = admin_url( 'admin.php?page=tbp-actividades-asientos&action=edit&id=' . $saved_id . '&updated=1' );
+  1274	        wp_safe_redirect( $url );
+  1275	        exit;
+  1276	    } else {
+  1277	        global $wpdb;
+  1278	        $err = $wpdb->last_error ? $wpdb->last_error : 'No se modificaron datos o error desconocido.';
+  1279	        wp_die( '<h1>Error de Base de Datos</h1><p>Error al guardar la configuración: ' . esc_html($err) . '</p><a href="javascript:history.back()">Volver</a>' );
+  1280	    }
+  1281	}
+  1282	
+  1283	/**
+  1284	 * Procesa la eliminación de una configuración
+  1285	 */
+  1286	function tbp_asientos_handle_delete_config() {
+  1287	    $config_id = isset( $_POST['config_id'] ) ? (int) $_POST['config_id'] : 0;
+  1288	    if ( $config_id ) {
+  1289	        global $wpdb;
+  1290	        $wpdb->delete( $wpdb->prefix . 'tbp_seat_configurations', array( 'id' => $config_id ) );
+  1291	        $wpdb->delete( $wpdb->prefix . 'tbp_seat_tables', array( 'config_id' => $config_id ) );
+  1292	        $wpdb->delete( $wpdb->prefix . 'tbp_seat_assignments', array( 'config_id' => $config_id ) );
+  1293	        $wpdb->delete( $wpdb->prefix . 'tbp_seat_group_zones', array( 'config_id' => $config_id ) );
+  1294	        delete_transient( 'tbp_seat_scan_' . $config_id );
+  1295	
+  1296	        $url = admin_url( 'admin.php?page=tbp-actividades-asientos&deleted=1' );
+  1297	        wp_safe_redirect( $url );
+  1298	        exit;
+  1299	    }
+  1300	}
+  1301	
+  1302	/**
+  1303	 * Vista 3: Resultados (Ver Asignaciones)
+  1304	 */
+  1305	function tbp_asientos_render_results_view( $config_id ) {
+  1306	    $config = tbp_asientos_get_config( $config_id );
+  1307	    if ( ! $config ) {
+  1308	        echo '<div class="notice notice-error"><p>Configuración no encontrada.</p></div>';
+  1309	        return;
+  1310	    }
+  1311	
+  1312	    $asignaciones = tbp_asientos_get_assignments( $config_id );
+  1313	    $mesas = tbp_asientos_get_tables( $config_id );
+  1314	
+  1315	    echo '<div style="display:flex; justify-content:space-between; align-items:center;">';
+  1316	    echo '<a href="?page=tbp-actividades-asientos&action=edit&id=' . $config_id . '" class="page-title-action">← Volver a Configuración</a>';
+  1317	    
+  1318	    // Botones de exportación
+  1319	    echo '<div>';
+  1320	    echo '<a href="?page=tbp-actividades-asientos&tbp_export_asientos=asistentes&config_id=' . $config_id . '" class="button" style="margin-right:10px;">📊 Exportar Lista de Asistentes (CSV)</a>';
+  1321	    echo '<a href="?page=tbp-actividades-asientos&tbp_export_asientos=mesas&config_id=' . $config_id . '" class="button">🪑 Exportar Estado de Mesas (CSV)</a>';
+  1322	    echo '</div>';
+  1323	    
+  1324	    echo '</div>';
+  1325	    echo '<hr class="wp-header-end">';
+  1326	    
+  1327	    echo '<h2>Resultados: ' . esc_html( $config->nombre ) . '</h2>';
+  1328	
+  1329	    // Construir mapa de mesas para renderizar rápido
+  1330	    $mesas_map = array();
+  1331	    foreach ( $mesas as $m ) {
+  1332	        if ( ! isset( $mesas_map[$m->zona] ) ) $mesas_map[$m->zona] = array();
+  1333	        $m->asignaciones = array();
+  1334	        $mesas_map[$m->zona][$m->numero] = $m;
+  1335	    }
+  1336	
+  1337	    foreach ( $asignaciones as $a ) {
+  1338	        if ( isset( $mesas_map[$a->zona][$a->numero] ) ) {
+  1339	            $mesas_map[$a->zona][$a->numero]->asignaciones[] = $a;
+  1340	        }
+  1341	    }
+  1342	
+  1343	    echo '<div style="margin-top:20px;">';
+  1344	    foreach ( $mesas_map as $zona_nombre => $mesas_zona ) {
+  1345	        echo '<h3>' . esc_html( $zona_nombre ) . '</h3>';
+  1346	        echo '<div style="display:flex; flex-wrap:wrap; gap:15px; margin-bottom:30px;">';
+  1347	        
+  1348	        foreach ( $mesas_zona as $numero => $mesa ) {
+  1349	            $is_full = $mesa->capacidad_usada >= $mesa->capacidad;
+  1350	            $bg_color = $is_full ? '#e8f5e9' : '#fff'; // verde claro si está llena
+  1351	            $border = $is_full ? '#4caf50' : '#ccc';
+  1352	
+  1353	            if ( $mesa->tipo === 'bloqueada' ) {
+  1354	                $bg_color = '#ffebee';
+  1355	                $border = '#f44336';
+  1356	            }
+  1357	
+  1358	            echo '<div style="border:1px solid ' . $border . '; background:' . $bg_color . '; border-radius:4px; padding:10px; width:250px; box-shadow:0 1px 2px rgba(0,0,0,0.05); position:relative;">';
+  1359	            echo '<div style="border-bottom:1px solid #ddd; padding-bottom:5px; margin-bottom:5px; display:flex; justify-content:space-between; align-items:center;">';
+  1360	            echo '<strong>Mesa ' . esc_html( $numero ) . '</strong>';
+  1361	            echo '<span style="font-size:12px; font-weight:bold; color:' . ($is_full ? '#2e7d32' : '#666') . ';">' . $mesa->capacidad_usada . '/' . $mesa->capacidad . '</span>';
+  1362	            echo '</div>';
+  1363	
+  1364	            if ( $mesa->tipo === 'bloqueada' ) {
+  1365	                echo '<p style="color:#d32f2f; text-align:center; margin:15px 0;"><strong>🚫 BLOQUEADA</strong><br><small>' . esc_html( $mesa->etiqueta_bloqueo ) . '</small></p>';
+  1366	            } else {
+  1367	                if ( empty( $mesa->asignaciones ) ) {
+  1368	                    echo '<p style="color:#888; font-style:italic; font-size:11px; text-align:center;">Mesa vacía</p>';
+  1369	                } else {
+  1370	                    echo '<ul style="margin:0; padding-left:15px; font-size:11px;">';
+  1371	                    foreach ( $mesa->asignaciones as $a ) {
+  1372	                        echo '<li style="margin-bottom:6px; padding-bottom:4px; border-bottom:1px dashed #eee;">';
+  1373	                        echo '<span style="background:#f0f0f0; padding:1px 4px; border-radius:3px; font-weight:bold; color:#333; margin-right:5px;">' . esc_html( $a->grupo ) . '</span>';
+  1374	                        echo '<strong>' . esc_html( $a->cantidad ) . ' lug.</strong> ';
+  1375	                        echo '<a href="#" class="btn-move-order" data-order="' . $a->order_id . '" data-qty="' . $a->cantidad . '" data-mesa-actual="' . $mesa->id . '" title="Mover a otra mesa" style="text-decoration:none;">🔄</a><br>';
+  1376	                        echo '<span style="color:#666;">(#' . $a->order_id . ') ' . esc_html( $a->nombre . ' ' . $a->apellidos ) . '</span>';
+  1377	                        echo '</li>';
+  1378	                    }
+  1379	                    echo '</ul>';
+  1380	                }
+  1381	            }
+  1382	
+  1383	            echo '</div>';
+  1384	        }
+  1385	        echo '</div>'; // flex wrap
+  1386	    }
+  1387	    echo '</div>';
+  1388	
+  1389	    // Modal para mover
+  1390	    ?>
+  1391	    <div id="tbp-move-modal" style="display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.5); z-index:9999; justify-content:center; align-items:center;">
+  1392	        <div style="background:#fff; padding:20px; border-radius:5px; width:400px; box-shadow:0 4px 15px rgba(0,0,0,0.2);">
+  1393	            <h3>Mover Pedido a Otra Mesa</h3>
+  1394	            <p>Selecciona la mesa destino (debe tener espacio suficiente).</p>
+  1395	            <input type="hidden" id="move_order_id">
+  1396	            <p>
+  1397	                <select id="move_mesa_id" style="width:100%;">
+  1398	                    <option value="">-- Seleccionar Mesa --</option>
+  1399	                    <?php 
+  1400	                    foreach ($mesas as $m) {
+  1401	                        if ($m->tipo === 'bloqueada') continue;
+  1402	                        $libre = $m->capacidad - $m->capacidad_usada;
+  1403	                        if ($libre > 0) {
+  1404	                            echo '<option value="' . $m->id . '" data-libre="' . $libre . '">' . esc_html($m->zona) . ' - Mesa ' . esc_html($m->numero) . ' (' . $libre . ' lugares libres)</option>';
+  1405	                        }
+  1406	                    }
+  1407	                    ?>
+  1408	                </select>
+  1409	            </p>
+  1410	            <div style="text-align:right; margin-top:20px;">
+  1411	                <button type="button" class="button" id="btn_cancel_move">Cancelar</button>
+  1412	                <button type="button" class="button button-primary" id="btn_confirm_move">Confirmar Movimiento</button>
+  1413	            </div>
+  1414	        </div>
+  1415	    </div>
+  1416	
+  1417	    <script>
+  1418	    jQuery(document).ready(function($) {
+  1419	        let currentQty = 0;
+  1420	
+  1421	        $('.btn-move-order').on('click', function(e) {
+  1422	            e.preventDefault();
+  1423	            const orderId = $(this).data('order');
+  1424	            currentQty = parseInt($(this).data('qty'));
+  1425	            const currentMesa = $(this).data('mesa-actual');
+  1426	
+  1427	            $('#move_order_id').val(orderId);
+  1428	            
+  1429	            // Ocultar mesas que no tienen capacidad para este pedido
+  1430	            $('#move_mesa_id option').each(function() {
+  1431	                if (!$(this).val()) return; // skip default
+  1432	                if ($(this).val() == currentMesa) {
+  1433	                    $(this).hide(); // No mover a la misma mesa
+  1434	                    return;
+  1435	                }
+  1436	                const libre = parseInt($(this).data('libre'));
+  1437	                if (libre < currentQty) {
+  1438	                    $(this).prop('disabled', true).css('color', '#ccc');
+  1439	                } else {
+  1440	                    $(this).prop('disabled', false).css('color', '').show();
+  1441	                }
+  1442	            });
+  1443	
+  1444	            $('#move_mesa_id').val('');
+  1445	            $('#tbp-move-modal').css('display', 'flex');
+  1446	        });
+  1447	
+  1448	        $('#btn_cancel_move').on('click', function() {
+  1449	            $('#tbp-move-modal').hide();
+  1450	        });
+  1451	
+  1452	        $('#btn_confirm_move').on('click', function() {
+  1453	            const newMesaId = $('#move_mesa_id').val();
+  1454	            const orderId = $('#move_order_id').val();
+  1455	
+  1456	            if (!newMesaId) {
+  1457	                alert('Selecciona una mesa destino válida.');
+  1458	                return;
+  1459	            }
+  1460	
+  1461	            $(this).prop('disabled', true).text('Moviendo...');
+  1462	
+  1463	            $.post(ajaxurl, {
+  1464	                action: 'tbp_asientos_move_order',
+  1465	                config_id: <?php echo $config_id; ?>,
+  1466	                order_id: orderId,
+  1467	                new_mesa_id: newMesaId,
+  1468	                nonce: '<?php echo wp_create_nonce("tbp_asientos_nonce"); ?>'
+  1469	            }, function(response) {
+  1470	                if (response.success) {
+  1471	                    window.location.reload();
+  1472	                } else {
+  1473	                    alert('Error: ' + (response.data.message || response.data));
+  1474	                    $('#btn_confirm_move').prop('disabled', false).text('Confirmar Movimiento');
+  1475	                }
+  1476	            });
+  1477	        });
+  1478	    });
+  1479	    </script>
+  1480	    <?php
+  1481	}
+  1482	
+  1483	/**
+  1484	 * AJAX: Guarda el diseño del plano (Posiciones de mesas y elementos)
+  1485	 */
+  1486	add_action( 'wp_ajax_tbp_asientos_save_layout', 'tbp_asientos_ajax_save_layout' );
+  1487	function tbp_asientos_ajax_save_layout() {
+  1488	    if ( ! wp_verify_nonce( $_POST['nonce'] ?? '', 'tbp_asientos_nonce' ) ) {
+  1489	        wp_send_json_error( 'Nonce inválido.' );
+  1490	    }
+  1491	
+  1492	    global $wpdb;
+  1493	    $config_id   = intval( $_POST['config_id'] );
+  1494	    $layout_data = json_decode( stripslashes( $_POST['layout_data'] ), true );
+  1495	
+  1496	    if ( ! $config_id || ! is_array( $layout_data ) ) {
+  1497	        wp_send_json_error( 'Datos insuficientes.' );
+  1498	    }
+  1499	
+  1500	    $table_seats    = $wpdb->prefix . 'tbp_seat_tables';
+  1501	    $table_elements = $wpdb->prefix . 'tbp_seat_elements';
+  1502	
+  1503	    // 1. Limpiar elementos previos (los elementos se recrean, las mesas se actualizan o recrean)
+  1504	    $wpdb->delete( $table_elements, array( 'config_id' => $config_id ) );
+  1505	
+  1506	    // Keep track of the active table IDs
+  1507	    $active_table_ids = array();
+  1508	
+  1509	    foreach ( $layout_data as $item ) {
+  1510	        if ( $item['type'] === 'element' ) {
+  1511	            $wpdb->insert( $table_elements, array(
+  1512	                'config_id' => $config_id,
+  1513	                'tipo'      => sanitize_key( $item['shape'] ),
+  1514	                'label'     => sanitize_text_field( $item['label'] ),
+  1515	                'pos_x'     => intval( $item['x'] ),
+  1516	                'pos_y'     => intval( $item['y'] ),
+  1517	                'width'     => intval( $item['w'] ),
+  1518	                'height'    => intval( $item['h'] ),
+  1519	                'color'     => sanitize_hex_color( $item['color'] ?? '#334155' )
+  1520	            ));
+  1521	        } else {
+  1522	            // Mesa: Si tiene ID, actualizar. Si no, insertar.
+  1523	            $table_payload = array(
+  1524	                'config_id' => $config_id,
+  1525	                'zona'      => sanitize_text_field( $item['zona'] ?? 'Sin Zona' ),
+  1526	                'numero'    => sanitize_text_field( $item['label'] ),
+  1527	                'capacidad' => intval( $item['pax'] ?? 10 ),
+  1528	                'tipo'      => sanitize_key( $item['shape'] ?? 'round' ),
+  1529	                'pos_x'     => intval( $item['x'] ),
+  1530	                'pos_y'     => intval( $item['y'] ),
+  1531	                'width'     => intval( $item['w'] ),
+  1532	                'height'    => intval( $item['h'] ),
+  1533	                'color'     => sanitize_hex_color( $item['color'] ?? '#2271b1' )
+  1534	            );
+  1535	
+  1536	            $existing_id = null;
+  1537	            if ( ! empty($item['id']) ) {
+  1538	                $existing_id = intval($item['id']);
+  1539	            } else {
+  1540	                // Buscar si ya existe por número y zona para no duplicar
+  1541	                $existing_id = $wpdb->get_var( $wpdb->prepare(
+  1542	                    "SELECT id FROM $table_seats WHERE config_id = %d AND zona = %s AND numero = %s",
+  1543	                    $config_id, $table_payload['zona'], $table_payload['numero']
+  1544	                ));
+  1545	            }
+  1546	
+  1547	            if ( $existing_id ) {
+  1548	                $wpdb->update( $table_seats, $table_payload, array( 'id' => $existing_id ) );
+  1549	                $active_table_ids[] = $existing_id;
+  1550	            } else {
+  1551	                $wpdb->insert( $table_seats, $table_payload );
+  1552	                if ( $wpdb->insert_id ) {
+  1553	                    $active_table_ids[] = intval($wpdb->insert_id);
+  1554	                }
+  1555	            }
+  1556	        }
+  1557	    }
+  1558	
+  1559	    // 2. Eliminar mesas que no están en el layout activo
+  1560	    $query_deleted = "SELECT id FROM $table_seats WHERE config_id = %d";
+  1561	    $params_deleted = array( $config_id );
+  1562	    if ( ! empty($active_table_ids) ) {
+  1563	        $placeholders = implode(',', array_fill(0, count($active_table_ids), '%d'));
+  1564	        $query_deleted .= " AND id NOT IN ($placeholders)";
+  1565	        $params_deleted = array_merge($params_deleted, $active_table_ids);
+  1566	    }
+  1567	    $deleted_table_ids = $wpdb->get_col( $wpdb->prepare($query_deleted, ...$params_deleted) );
+  1568	
+  1569	    if ( ! empty($deleted_table_ids) ) {
+  1570	        $deleted_ids_str = implode(',', array_map('intval', $deleted_table_ids));
+  1571	        
+  1572	        $table_assignments = $wpdb->prefix . 'tbp_seat_assignments';
+  1573	        $order_ids = $wpdb->get_col("SELECT order_id FROM $table_assignments WHERE mesa_id IN ($deleted_ids_str)");
+  1574	        
+  1575	        $wpdb->query("DELETE FROM $table_assignments WHERE mesa_id IN ($deleted_ids_str)");
+  1576	        $wpdb->query("DELETE FROM $table_seats WHERE id IN ($deleted_ids_str)");
+  1577	
+  1578	        if ( ! empty($order_ids) ) {
+  1579	            foreach ( $order_ids as $oid ) {
+  1580	                delete_post_meta(intval($oid), '_tbp_seat_assignment');
+  1581	            }
+  1582	        }
+  1583	    }
+  1584	
+  1585	    // Al guardar el layout, regeneramos el snapshot automáticamente
+  1586	    tbp_asientos_generate_public_snapshot( $config_id );
+  1587	
+  1588	    wp_send_json_success( 'Diseño guardado y Snapshot actualizado.' );
+  1589	}

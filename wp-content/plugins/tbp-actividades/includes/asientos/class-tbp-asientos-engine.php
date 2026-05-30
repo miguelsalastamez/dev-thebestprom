@@ -577,6 +577,52 @@ function tbp_asientos_get_all_orders_with_seats( $event_id, $group_field, $prove
 // =====================================================================
 
 /**
+ * AJAX: Obtener datos del escaneo para la tabla de la Etapa 3.
+ */
+add_action( 'wp_ajax_tbp_asientos_get_scan_data', 'tbp_asientos_ajax_get_scan_data' );
+function tbp_asientos_ajax_get_scan_data() {
+    check_ajax_referer( 'tbp_asientos_nonce', 'nonce' );
+    if ( ! current_user_can( 'manage_options' ) ) wp_send_json_error( 'Sin permisos.' );
+
+    $config_id = (int) ( $_POST['config_id'] ?? 0 );
+    if ( ! $config_id ) wp_send_json_error( 'ID de configuración inválido.' );
+
+    $scan_data = get_transient( 'tbp_seat_scan_' . $config_id );
+    if ( empty( $scan_data ) || ! is_array( $scan_data ) ) {
+        wp_send_json_error( array(
+            'message' => 'no_scan',
+            'label'   => 'No hay datos de escaneo. Ejecuta "🔍 Escanear Asistentes" en la Etapa 1 primero.'
+        ) );
+    }
+
+    // Calcular estadísticas por grupo
+    $grupos_stats = array();
+    $total_piezas = 0;
+    foreach ( $scan_data as $p ) {
+        $g = $p['grupo'] ?? 'Sin grupo';
+        if ( ! isset( $grupos_stats[ $g ] ) ) {
+            $grupos_stats[ $g ] = array( 'pedidos' => 0, 'piezas' => 0 );
+        }
+        $grupos_stats[ $g ]['pedidos']++;
+        $grupos_stats[ $g ]['piezas'] += (int) $p['cantidad'];
+        $total_piezas += (int) $p['cantidad'];
+    }
+
+    // Ordenar grupos naturalmente
+    uksort( $grupos_stats, 'strnatcasecmp' );
+
+    wp_send_json_success( array(
+        'pedidos'      => $scan_data,
+        'grupos_stats' => $grupos_stats,
+        'totales'      => array(
+            'pedidos' => count( $scan_data ),
+            'piezas'  => $total_piezas,
+            'grupos'  => count( $grupos_stats ),
+        ),
+    ) );
+}
+
+/**
  * AJAX: Init Scan (Paso 1: Obtener todos los IDs de pedidos a procesar)
  */
 add_action( 'wp_ajax_tbp_asientos_scan_init', 'tbp_asientos_ajax_scan_init' );
