@@ -116,6 +116,11 @@ function tbp_asientos_save_config( array $data, $config_id = null ) {
  * @return int  Número de mesas insertadas.
  */
 function tbp_asientos_generate_tables( $config_id, array $zonas_config ) {
+    // Guardia: si no hay zonas configuradas, no hacer nada para evitar borrar mesas del plano visual.
+    if ( empty( $zonas_config ) ) {
+        return 0;
+    }
+
     global $wpdb;
     $table = $wpdb->prefix . 'tbp_seat_tables';
 

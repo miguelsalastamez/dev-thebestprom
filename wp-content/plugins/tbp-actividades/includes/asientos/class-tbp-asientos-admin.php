@@ -811,6 +811,7 @@ function tbp_asientos_render_edit_view( $config_id = 0 ) {
         // =====================================================================
         // ETAPA 3: TABLA DE PEDIDOS ESCANEADOS
         // =====================================================================
+        try { // try-catch para no romper handlers previos (scan, packing)
         var scanAllData = [];        // Todos los pedidos del escaneo
         var scanFilteredData = [];   // Pedidos tras aplicar filtros
         var scanSelectedIds = {};    // { order_id: true }
@@ -1143,9 +1144,12 @@ function tbp_asientos_render_edit_view( $config_id = 0 ) {
             return $('<span>').text(str).html();
         }
 
+        } catch(e) { console.error('TBP Etapa 3 error:', e); }
+
         // =====================================================================
         // MODAL: ASIGNACIÓN MANUAL POR GRUPO
         // =====================================================================
+        try {
         var assignQueue = [];           // Orders pending assignment
         var assignDone = [];            // Orders already assigned { order, mesa_id }
         var assignFloorTables = [];     // Floor plan tables from DB
@@ -1543,6 +1547,8 @@ function tbp_asientos_render_edit_view( $config_id = 0 ) {
             }
         });
 
+        } catch(e) { console.error('TBP Modal Asignación error:', e); }
+
     });
     </script>
     <?php
@@ -1572,8 +1578,11 @@ function tbp_asientos_handle_save_config() {
     $saved_id = tbp_asientos_save_config( $data, $config_id > 0 ? $config_id : null );
 
     if ( $saved_id ) {
-        // Generar mesas físicas en la BD
-        tbp_asientos_generate_tables( $saved_id, $zonas_config );
+        // Solo generar/sincronizar mesas desde zonas_config si hay zonas definidas.
+        // Si está vacío, el usuario solo usa el plano visual (Etapa 2) y NO debemos borrar nada.
+        if ( ! empty( $zonas_config ) ) {
+            tbp_asientos_generate_tables( $saved_id, $zonas_config );
+        }
         
         $url = admin_url( 'admin.php?page=tbp-actividades-asientos&action=edit&id=' . $saved_id . '&updated=1' );
         wp_safe_redirect( $url );
