@@ -1,3 +1,7 @@
+## [11.9.76] - 2026-06-01
+### Agregado
+- **Visualización y Remoción de Pedidos en Mesas**: Añadida una lista interactiva de pedidos asignados (tanto guardados en base de datos como de la sesión activa de asignación) dentro del modal de edición de cada mesa. Se incorporaron botones para remover y desasignar individualmente los pedidos de la mesa seleccionada, actualizando las capacidades en base de datos (vía AJAX) o localmente de inmediato y devolviendo el pedido a la cola de pendientes.
+
 ## [11.9.75] - 2026-06-01
 ### Agregado
 - **Asignación Manual Selectiva mediante Casillas**: Se añadieron casillas de verificación (checkboxes) y selección interactiva en la lista de pedidos pendientes de la Etapa 3. Ahora los operadores pueden seleccionar uno o varios pedidos específicos haciendo clic en la fila o checkbox y luego hacer clic en una mesa para asignarlos. Si la capacidad restante de la mesa no es suficiente para la selección, se sugiere expandirla calculando el total requerido de PAX de los pedidos seleccionados.

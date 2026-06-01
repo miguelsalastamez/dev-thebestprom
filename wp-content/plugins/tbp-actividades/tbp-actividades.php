@@ -2,11 +2,12 @@
 /**
  * Plugin Name: The Best Prom - Actividades
  * Plugin URI: https://dev.thebestprom.com
- * Version: 11.9.75
+ * Version: 11.9.76
  * Author: Antigravity Team
  * Text Domain: tbp-actividades
  *
  * Changelog:
+ * 11.9.76 - Feature: Added list of assigned WooCommerce orders inside the Edit Table modal during manual seat assignments (Stage 3), with capability to unassign orders from session or database dynamically.
  * 11.9.75 - Feature: Added selective manual seat assignment in Stage 3 using checkboxes to allow operators to choose specific orders and click a table to assign them.
  * 11.9.74 - Enhancement: Swapped temporary transients for persistent DB options (with no-autoload) for storing scanned attendee lists to prevent scan cache expiration and page reload blockages after 12 hours.
  * 11.9.73 - Feature: Added table edit option (capacity & type/shape) during Stage 3 seat assignment, triggered on double-click or automatically if a pending group doesn't fit in the remaining space of the clicked table.
@@ -103,7 +104,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 }
 
 // Define constants
-define( 'TBP_ACTIVIDADES_VERSION', '11.9.75' );
+define( 'TBP_ACTIVIDADES_VERSION', '11.9.76' );
 define( 'TBP_ACTIVIDADES_PATH', plugin_dir_path( __FILE__ ) );
 define( 'TBP_ACTIVIDADES_URL', plugin_dir_url( __FILE__ ) );
 

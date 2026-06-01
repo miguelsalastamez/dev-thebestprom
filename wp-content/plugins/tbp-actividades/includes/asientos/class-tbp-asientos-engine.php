@@ -811,9 +811,29 @@ function tbp_asientos_ajax_get_floor_data() {
         );
     }
 
+    // Get all assignments for this configuration
+    $assignments = $wpdb->get_results( $wpdb->prepare(
+        "SELECT id, order_id, mesa_id, grupo, cantidad, nombre, apellidos FROM {$wpdb->prefix}tbp_seat_assignments WHERE config_id = %d",
+        $config_id
+    ) );
+    
+    $assignments_out = array();
+    foreach ( $assignments as $a ) {
+        $assignments_out[] = array(
+            'id'        => (int) $a->id,
+            'order_id'  => (int) $a->order_id,
+            'mesa_id'   => (int) $a->mesa_id,
+            'grupo'     => $a->grupo,
+            'cantidad'  => (int) $a->cantidad,
+            'nombre'    => $a->nombre,
+            'apellidos' => $a->apellidos,
+        );
+    }
+
     wp_send_json_success( array(
-        'tables'   => $tables_out,
-        'elements' => $elements_out,
+        'tables'      => $tables_out,
+        'elements'    => $elements_out,
+        'assignments' => $assignments_out,
     ) );
 }
 
@@ -952,6 +972,35 @@ function tbp_asientos_ajax_update_single_table() {
         'width'     => $width > 0 ? $width : (int) $current_table->width,
         'height'    => $height > 0 ? $height : (int) $current_table->height,
     ) );
+}
+
+/**
+ * AJAX: Desasignar un pedido individual de la mesa en la base de datos.
+ */
+add_action( 'wp_ajax_tbp_asientos_unassign_single_order', 'tbp_asientos_ajax_unassign_single_order' );
+function tbp_asientos_ajax_unassign_single_order() {
+    check_ajax_referer( 'tbp_asientos_nonce', 'nonce' );
+    if ( ! current_user_can( 'manage_options' ) ) wp_send_json_error( 'Sin permisos.' );
+
+    $config_id = (int) ( $_POST['config_id'] ?? 0 );
+    $order_id  = (int) ( $_POST['order_id'] ?? 0 );
+
+    if ( ! $config_id || ! $order_id ) {
+        wp_send_json_error( 'Datos insuficientes.' );
+    }
+
+    // Llamar a la función db para desasignar
+    $result = tbp_asientos_unassign_order( $config_id, $order_id );
+
+    if ( $result ) {
+        // Regenerar el public snapshot
+        if ( function_exists( 'tbp_asientos_generate_public_snapshot' ) ) {
+            tbp_asientos_generate_public_snapshot( $config_id );
+        }
+        wp_send_json_success( 'Pedido desasignado correctamente.' );
+    } else {
+        wp_send_json_error( 'No se pudo desasignar el pedido o no estaba asignado.' );
+    }
 }
 
 /**

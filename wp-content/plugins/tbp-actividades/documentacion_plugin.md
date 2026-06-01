@@ -1,4 +1,4 @@
-# Documentación Técnica Completa: TBP - Actividades (v11.9.75)
+# Documentación Técnica Completa: TBP - Actividades (v11.9.76)
 
 Este documento sirve como memoria técnica, mapa arquitectónico y manual de operaciones del plugin **The Best Prom - Actividades**. Su propósito es resumir todas las funcionalidades, flujos de datos críticos, integraciones con *Event Tickets Plus*, ganchos de WooCommerce y el nuevo módulo de **Asignación de Asientos** para guiar futuras iteraciones sin pérdida de contexto.
 
@@ -65,12 +65,24 @@ El panel de administración se divide en tres pestañas que guían al usuario en
 *   **Problema**: Anteriormente, al hacer clic en una mesa, el sistema realizaba una asignación automática secuencial rellenándola con los primeros pedidos pendientes del grupo. El operador no podía elegir de forma individual qué pedidos específicos ubicar en una mesa determinada.
 *   **Solución**: Se agregaron casillas de verificación (checkboxes) y control de selección en las filas de pedidos pendientes en la Etapa 3. Al marcar una o varias casillas y hacer clic en una mesa, únicamente los pedidos seleccionados se asignan a esa mesa. Si la capacidad restante de la mesa es insuficiente para acomodar a todos los pedidos seleccionados, se despliega el modal de edición sugiriendo de forma inteligente la capacidad total requerida acumulando los lugares de la selección.
 
-#### F. Robustez e Integridad de AJAX Endpoints (v11.9.66, v11.9.67)
-*   Se corrigieron errores fatales de php (`ArgumentCountError`) y endpoints AJAX ausentes:
-    *   `tbp_asientos_get_floor_data`: Carga los datos guardados del plano.
+#### F. Robustez e Integridad de AJAX Endpoints (v11.9.66, v11.9.67, v11.9.76)
+*   Se corrigieron errores fatales de php (`ArgumentCountError`) y se agregaron endpoints AJAX:
+    *   `tbp_asientos_get_floor_data`: Carga los datos del plano (ahora extendido para retornar también todas las asignaciones existentes en base de datos).
     *   `tbp_asientos_manual_assign_batch`: Procesa la asignación masiva de múltiples asistentes a una mesa.
     *   `tbp_asientos_get_scan_data`: Consulta los datos escaneados consolidados.
+    *   `tbp_asientos_unassign_single_order`: Remueve un solo pedido de la base de datos y libera los PAX de la mesa correspondiente.
 *   *Resiliencia JS (v11.9.63)*: Se encapsularon e ignoraron las promesas rotas ajenas al plugin (como los avisos de Elementor en el panel de control) que detenían la ejecución de Javascript e impedían interactuar con la pantalla de asientos.
+
+#### G. Visualización y Remoción de Pedidos en Mesas (v11.9.76)
+*   **Problema**: Al dar doble clic en una mesa o intentar cambiar su capacidad/forma, los operadores necesitaban visualizar qué pedidos con nombre y lugares exactos ocupaban la mesa para poder remover selectivamente alguno de ellos en caso de reacomodos.
+*   **Solución**: Se implementó una sección dinámica `#edit_table_assigned_list` dentro del modal "Modificar Mesa". Al abrirse, renderiza los pedidos distinguiendo su estado:
+    *   **Sesión (Verde)**: Pedidos recién asignados en la pestaña actual pero no confirmados. Al removerlos, se restan localmente del plano y regresan a la cola de selección (`assignQueue`).
+    *   **Guardado (Gris)**: Pedidos ya guardados físicamente en la base de datos. Al removerlos, se pide confirmación y se realiza una llamada AJAX (`tbp_asientos_unassign_single_order`), la cual ejecuta la función PHP `tbp_asientos_unassign_order` para:
+        1. Eliminar el registro en `wp_tbp_seat_assignments`.
+        2. Restar la capacidad usada de la mesa mediante `tbp_asientos_update_table_used`.
+        3. Borrar el meta cache `_tbp_seat_assignment` del pedido WooCommerce.
+        4. Regenerar el snapshot público del plano de asientos.
+    El pedido desasignado regresa a la cola y se actualiza instantáneamente su estado en la cuadrícula principal de la Etapa 3.
 
 ---
 

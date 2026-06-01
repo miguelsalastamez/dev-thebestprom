@@ -291,6 +291,46 @@ function tbp_asientos_assign_order( $config_id, $mesa_id, $order_id, $grupo, $ca
 }
 
 /**
+ * Desasigna un pedido de una configuración.
+ *
+ * @param int $config_id
+ * @param int $order_id
+ * @return bool True si se eliminó, false en caso contrario.
+ */
+function tbp_asientos_unassign_order( $config_id, $order_id ) {
+    global $wpdb;
+
+    // Obtener la asignación existente
+    $assignment = $wpdb->get_row( $wpdb->prepare(
+        "SELECT id, mesa_id, cantidad FROM {$wpdb->prefix}tbp_seat_assignments
+         WHERE config_id = %d AND order_id = %d",
+        $config_id, $order_id
+    ) );
+
+    if ( ! $assignment ) {
+        return false;
+    }
+
+    // Restituir capacidad de la mesa
+    tbp_asientos_update_table_used( $assignment->mesa_id, - (int) $assignment->cantidad );
+
+    // Eliminar la asignación
+    $deleted = $wpdb->delete(
+        $wpdb->prefix . 'tbp_seat_assignments',
+        array( 'id' => $assignment->id ),
+        array( '%d' )
+    );
+
+    if ( false !== $deleted ) {
+        // Eliminar caché de post_meta
+        delete_post_meta( (int) $order_id, '_tbp_seat_assignment' );
+        return true;
+    }
+
+    return false;
+}
+
+/**
  * Escribe el post_meta caché de asignación en el pedido WooCommerce.
  *
  * @param int    $config_id

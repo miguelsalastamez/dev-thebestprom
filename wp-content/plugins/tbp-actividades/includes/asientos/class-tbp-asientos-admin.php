@@ -1074,6 +1074,14 @@ function tbp_asientos_render_edit_view( $config_id = 0 ) {
                         <option value="bar">Mesa Bar / Coctel</option>
                     </select>
                 </div>
+
+                <!-- Seccion de Pedidos Asignados -->
+                <div style="border-top:1px solid #e2e8f0; padding-top:16px; margin-top:16px;">
+                    <label style="display:block; font-size:12px; font-weight:600; color:#334155; margin-bottom:8px;">Pedidos asignados a esta mesa</label>
+                    <div id="edit_table_assigned_list" style="max-height:180px; overflow-y:auto; border:1px solid #cbd5e1; border-radius:6px; padding:6px; background:#f8fafc; font-size:12px;">
+                        <!-- dynamic content -->
+                    </div>
+                </div>
             </div>
 
             <!-- Footer -->
@@ -1628,6 +1636,7 @@ function tbp_asientos_render_edit_view( $config_id = 0 ) {
         var assignDone = [];            // Orders already assigned { order, mesa_id }
         var assignFloorTables = [];     // Floor plan tables from DB
         var assignFloorElements = [];   // Floor plan decorative elements
+        var assignFloorAssignments = []; // Assignments saved in DB
         var assignHistory = [];         // Undo stack: [ { mesa_id, orders: [...] } ]
         var assignZoom = 0.6;
         var assignTotalPiezas = 0;
@@ -1705,6 +1714,7 @@ function tbp_asientos_render_edit_view( $config_id = 0 ) {
 
                 assignFloorTables = res.data.tables || [];
                 assignFloorElements = res.data.elements || [];
+                assignFloorAssignments = res.data.assignments || [];
 
                 renderAssignFloor();
                 renderAssignQueue();
@@ -1971,6 +1981,68 @@ function tbp_asientos_render_edit_view( $config_id = 0 ) {
         // ---- EDIT TABLE MODAL LOGIC ----
         var editAutoAssign = false;
 
+        function renderEditTableAssignedOrders(tableId) {
+            var $list = $('#edit_table_assigned_list');
+            $list.empty();
+
+            var tbl = findTable(tableId);
+            if (!tbl) return;
+
+            // 1. Get saved DB assignments for this table
+            var dbAssigned = [];
+            if (Array.isArray(assignFloorAssignments)) {
+                dbAssigned = assignFloorAssignments.filter(function(a) {
+                    return a.mesa_id === tableId;
+                });
+            }
+
+            // 2. Get current session assignments for this table
+            var sessionAssigned = [];
+            if (Array.isArray(assignDone)) {
+                sessionAssigned = assignDone.filter(function(item) {
+                    return item.mesa_id === tableId;
+                });
+            }
+
+            var count = dbAssigned.length + sessionAssigned.length;
+
+            if (count === 0) {
+                $list.html('<div style="text-align:center; padding:12px; color:#94a3b8; font-style:italic;">No hay pedidos asignados.</div>');
+                return;
+            }
+
+            // Render database assignments first
+            dbAssigned.forEach(function(a) {
+                var html = '<div style="display:flex; justify-content:space-between; align-items:center; padding:6px 8px; border-bottom:1px solid #e2e8f0; background:#f1f5f9; border-radius:4px; margin-bottom:4px;">' +
+                    '<div>' +
+                        '<div style="font-weight:600; color:#1e293b;">#' + a.order_id + ' - ' + escHtml(a.nombre || '') + ' ' + escHtml(a.apellidos || '') + '</div>' +
+                        '<div style="font-size:10px; color:#64748b;">Grupo: ' + escHtml(a.grupo || 'Sin grupo') + ' <span style="background:#e0f2fe; color:#0369a1; padding:1px 4px; border-radius:4px; font-weight:600; margin-left:4px;">Guardado</span></div>' +
+                    '</div>' +
+                    '<div style="display:flex; align-items:center; gap:8px;">' +
+                        '<span style="font-weight:700; color:#0f172a;">' + a.cantidad + ' lugares</span>' +
+                        '<button type="button" class="btn-remove-db-assignment button" data-order-id="' + a.order_id + '" data-table-id="' + tableId + '" data-cantidad="' + a.cantidad + '" style="background:#ef4444; color:#fff; border:none; border-radius:4px; padding:3px 8px; font-size:10px; font-weight:600; cursor:pointer; height:24px; line-height:1; display:flex; align-items:center; justify-content:center; box-shadow:none;">Quitar</button>' +
+                    '</div>' +
+                '</div>';
+                $list.append(html);
+            });
+
+            // Render session assignments
+            sessionAssigned.forEach(function(item) {
+                var o = item.order;
+                var html = '<div style="display:flex; justify-content:space-between; align-items:center; padding:6px 8px; border-bottom:1px solid #e2e8f0; background:#f0fdf4; border-radius:4px; margin-bottom:4px;">' +
+                    '<div>' +
+                        '<div style="font-weight:600; color:#1e293b;">#' + o.order_id + ' - ' + escHtml(o.nombre || '') + ' ' + escHtml(o.apellidos || '') + '</div>' +
+                        '<div style="font-size:10px; color:#64748b;">Grupo: ' + escHtml(o.grupo || 'Sin grupo') + ' <span style="background:#dcfce7; color:#166534; padding:1px 4px; border-radius:4px; font-weight:600; margin-left:4px;">Sesión</span></div>' +
+                    '</div>' +
+                    '<div style="display:flex; align-items:center; gap:8px;">' +
+                        '<span style="font-weight:700; color:#0f172a;">' + o.cantidad + ' lugares</span>' +
+                        '<button type="button" class="btn-remove-session-assignment button" data-order-id="' + o.order_id + '" data-table-id="' + tableId + '" style="background:#ea580c; color:#fff; border:none; border-radius:4px; padding:3px 8px; font-size:10px; font-weight:600; cursor:pointer; height:24px; line-height:1; display:flex; align-items:center; justify-content:center; box-shadow:none;">Quitar</button>' +
+                    '</div>' +
+                '</div>';
+                $list.append(html);
+            });
+        }
+
         function openEditTableModal(tableId, autoAssign, specificOrders) {
             var tbl = findTable(tableId);
             if (!tbl) return;
@@ -2024,11 +2096,139 @@ function tbp_asientos_render_edit_view( $config_id = 0 ) {
                 $('#edit_table_suggestion').hide();
             }
 
+            renderEditTableAssignedOrders(tableId);
+
             $('#tbp-edit-table-modal').css('display', 'flex');
         }
 
         $(document).on('click', '.btn_close_edit_table', function() {
             $('#tbp-edit-table-modal').hide();
+        });
+
+        // ---- REMOVE SESSION ASSIGNMENT ----
+        $(document).on('click', '.btn-remove-session-assignment', function(e) {
+            e.preventDefault();
+            var orderId = parseInt($(this).data('order-id'));
+            var tableId = parseInt($(this).data('table-id'));
+            
+            var tbl = findTable(tableId);
+            if (!tbl) return;
+
+            // Find the assignment in assignDone
+            var removedItem = null;
+            assignDone = assignDone.filter(function(item) {
+                if (item.order.order_id === orderId && item.mesa_id === tableId) {
+                    removedItem = item;
+                    return false;
+                }
+                return true;
+            });
+
+            if (removedItem) {
+                // Restore status in assignQueue
+                var qItem = assignQueue.find(function(o) { return o.order_id === orderId; });
+                if (qItem) {
+                    qItem.status = 'pending';
+                }
+
+                // Restore table capacity
+                tbl.used = Math.max(0, tbl.used - removedItem.order.cantidad);
+                tbl.libre = Math.max(0, tbl.capacidad - tbl.used);
+
+                // Update UI fields in modal
+                $('#edit_table_used').text(tbl.used + ' lugares');
+                $('#edit_table_capacity').attr('min', tbl.used);
+
+                // Re-render
+                renderEditTableAssignedOrders(tableId);
+                renderAssignFloor();
+                renderAssignQueue();
+                updateAssignStats();
+            }
+        });
+
+        // ---- REMOVE DB ASSIGNMENT ----
+        $(document).on('click', '.btn-remove-db-assignment', function(e) {
+            e.preventDefault();
+            var orderId = parseInt($(this).data('order-id'));
+            var tableId = parseInt($(this).data('table-id'));
+            var cantidad = parseInt($(this).data('cantidad')) || 0;
+            var configId = <?php echo $config_id; ?>;
+
+            var tbl = findTable(tableId);
+            if (!tbl) return;
+
+            if (!confirm('¿Seguro que deseas quitar el pedido #' + orderId + ' de esta mesa de forma permanente?\n\nEsto eliminará la asignación de la base de datos de inmediato.')) {
+                return;
+            }
+
+            var $btn = $(this);
+            $btn.prop('disabled', true).text('⏳...');
+
+            $.post(ajaxurl, {
+                action: 'tbp_asientos_unassign_single_order',
+                config_id: configId,
+                order_id: orderId,
+                nonce: '<?php echo wp_create_nonce("tbp_asientos_nonce"); ?>'
+            }, function(res) {
+                $btn.prop('disabled', false).text('Quitar');
+                if (!res.success) {
+                    alert('❌ Error: ' + res.data);
+                    return;
+                }
+
+                // Remove from assignFloorAssignments
+                assignFloorAssignments = assignFloorAssignments.filter(function(a) {
+                    return a.order_id !== orderId;
+                });
+
+                // Find the original scanned order to add to queue if possible
+                var scanOrder = scanAllData.find(function(p) { return parseInt(p.order_id) === orderId; });
+                if (scanOrder) {
+                    // Check if it's already in assignQueue, if not, add it
+                    var inQueue = assignQueue.some(function(o) { return o.order_id === orderId; });
+                    if (!inQueue) {
+                        assignQueue.push({
+                            order_id: orderId,
+                            nombre: scanOrder.nombre || '',
+                            apellidos: scanOrder.apellidos || '',
+                            grupo: scanOrder.grupo || 'Sin grupo',
+                            cantidad: parseInt(scanOrder.cantidad) || cantidad,
+                            status: 'pending'
+                        });
+                    } else {
+                        var qItem = assignQueue.find(function(o) { return o.order_id === orderId; });
+                        if (qItem) qItem.status = 'pending';
+                    }
+                }
+
+                // Restore table capacity locally
+                tbl.used = Math.max(0, tbl.used - cantidad);
+                tbl.libre = Math.max(0, tbl.capacidad - tbl.used);
+
+                // Clear from scanAssignedMap and scanTableMap in Stage 3 main list
+                if (typeof scanAssignedMap !== 'undefined') {
+                    delete scanAssignedMap[orderId];
+                }
+                if (typeof applyFilters === 'function') {
+                    applyFilters();
+                }
+
+                // Update UI fields in modal
+                $('#edit_table_used').text(tbl.used + ' lugares');
+                $('#edit_table_capacity').attr('min', tbl.used);
+
+                // Re-render
+                renderEditTableAssignedOrders(tableId);
+                renderAssignFloor();
+                renderAssignQueue();
+                updateAssignStats();
+
+                alert('✅ Pedido desasignado de la base de datos.');
+            }).fail(function() {
+                $btn.prop('disabled', false).text('Quitar');
+                alert('❌ Error de conexión al intentar desasignar.');
+            });
         });
 
         $('#btn_save_edit_table').on('click', function() {
@@ -2208,6 +2408,7 @@ function tbp_asientos_render_edit_view( $config_id = 0 ) {
             assignDone = [];
             assignHistory = [];
             selectedOrderIds = [];
+            assignFloorAssignments = [];
         }
 
         // ---- ZOOM ----
