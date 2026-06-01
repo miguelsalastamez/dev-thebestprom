@@ -172,54 +172,43 @@ function tbp_asientos_get_order_group_value( $order_id, $group_field ) {
 
 /**
  * Obtiene los IDs de pedidos WooCommerce asociados a un evento.
- *
- * IMPORTANTE: Delega a tbp_report_get_event_order_ids() que es 100% compatible
- * con HPOS (High-Performance Order Storage) y usa múltiples métodos de resolución
- * (tec_tickets_attendees, woocommerce_order_items, attendee posts).
- *
- * Luego filtra por estados válidos (completed, processing) usando la API oficial
- * de WooCommerce en lugar de consultar wp_posts directamente.
+ * Reutiliza la lógica del plugin existente (motor de 7 capas).
  *
  * @param int $event_id ID del evento.
- * @return int[]        Array de order_ids filtrados por estado válido.
+ * @return int[]        Array de order_ids.
  */
 function tbp_asientos_get_orders_for_event( $event_id ) {
-    // Usar el motor HPOS-compatible del plugin (4 métodos de resolución)
-    if ( ! function_exists( 'tbp_report_get_event_order_ids' ) ) {
-        // Cargar frontend-reports.php si aún no se ha cargado
-        $reports_file = dirname( __DIR__ ) . '/frontend-reports.php';
-        if ( file_exists( $reports_file ) ) {
-            require_once $reports_file;
-        }
-    }
+    global $wpdb;
 
-    if ( ! function_exists( 'tbp_report_get_event_order_ids' ) ) {
-        error_log( '[TBP Asientos] CRITICAL: tbp_report_get_event_order_ids() no disponible.' );
+    // Obtener los ticket IDs (productos) vinculados al evento de forma agresiva (7 capas)
+    $ticket_ids = $wpdb->get_col( $wpdb->prepare( "
+        SELECT post_id FROM {$wpdb->postmeta} 
+        WHERE (meta_value = %d OR meta_value = %s)
+        AND meta_key IN ('_tribe_tickets_event', '_tribe_wooticket_for_event', '_event_id', 'event_id')
+    ", $event_id, (string)$event_id ) );
+
+    if ( empty( $ticket_ids ) ) {
         return array();
     }
 
-    // Obtener TODOS los order_ids del evento (sin filtro de estado)
-    $all_order_ids = tbp_report_get_event_order_ids( $event_id );
+    // Buscar pedidos que contengan esos tickets (solo completados o procesando)
+    $placeholders = implode( ',', array_fill( 0, count( $ticket_ids ), '%d' ) );
+    $statuses     = array( 'wc-completed', 'wc-processing' );
+    $status_in    = "'" . implode( "','", array_map( 'esc_sql', $statuses ) ) . "'";
 
-    if ( empty( $all_order_ids ) ) {
-        return array();
-    }
+    $order_ids = $wpdb->get_col( $wpdb->prepare(
+        "SELECT DISTINCT o.ID
+         FROM {$wpdb->posts} o
+         INNER JOIN {$wpdb->prefix}woocommerce_order_items oi ON oi.order_id = o.ID
+         INNER JOIN {$wpdb->prefix}woocommerce_order_itemmeta oim
+             ON oim.order_item_id = oi.order_item_id
+             AND oim.meta_key = '_product_id'
+             AND oim.meta_value IN ($placeholders)
+         WHERE o.post_status IN ($status_in)",
+        ...$ticket_ids
+    ) );
 
-    // Filtrar por estados válidos usando la API de WooCommerce (compatible con HPOS)
-    $valid_statuses = array( 'completed', 'processing' );
-    $filtered_ids   = array();
-
-    foreach ( $all_order_ids as $order_id ) {
-        $order = wc_get_order( $order_id );
-        if ( ! $order ) {
-            continue;
-        }
-        if ( in_array( $order->get_status(), $valid_statuses, true ) ) {
-            $filtered_ids[] = (int) $order_id;
-        }
-    }
-
-    return $filtered_ids;
+    return array_map( 'intval', $order_ids );
 }
 
 // =====================================================================

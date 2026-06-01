@@ -30,26 +30,10 @@ if ( ! defined( 'ABSPATH' ) ) {
  * }
  */
 function tbp_asientos_run_packing( $config_id, $dry_run = false ) {
-    global $wpdb;
-
     $config = tbp_asientos_get_config( $config_id );
     if ( ! $config ) {
         return array( 'success' => false, 'message' => 'Configuración no encontrada.' );
     }
-
-    // Debug tracker para diagnóstico
-    $debug = array(
-        'config_id'     => $config_id,
-        'event_id'      => $config->event_id ?? 0,
-        'proveedor_id'  => $config->proveedor_id ?? 0,
-        'group_field'   => $config->group_field ?? '',
-        'zonas_count'   => 0,
-        'zonas_nombres' => array(),
-        'pedidos_source'=> 'none',
-        'pedidos_raw_count' => 0,
-        'mesas_por_zona'=> array(),
-        'grupos_count'  => 0,
-    );
 
     // ================================================================
     // FASE 0: PREPARACIÓN
@@ -57,27 +41,21 @@ function tbp_asientos_run_packing( $config_id, $dry_run = false ) {
 
     $zonas_config = $config->zonas_config; // Array de zonas ordenadas por prioridad
     if ( empty( $zonas_config ) ) {
-        return array( 'success' => false, 'message' => 'No hay zonas configuradas.', 'debug' => $debug );
+        return array( 'success' => false, 'message' => 'No hay zonas configuradas.' );
     }
-    $debug['zonas_count'] = count( $zonas_config );
-    $debug['zonas_nombres'] = array_column( $zonas_config, 'nombre' );
 
     // Ordenar zonas por prioridad (1 = mejor zona, asignada a grupos más grandes)
     usort( $zonas_config, fn( $a, $b ) => ( $a['prioridad'] ?? 99 ) <=> ( $b['prioridad'] ?? 99 ) );
 
     // Obtener todos los pedidos del evento con su grupo y cantidad de lugares
-    // Verificar si ya tenemos el resultado escaneado en cache (transient)
-    $pedidos_raw = get_transient( 'tbp_seat_scan_' . $config_id );
+    // Verificar si ya tenemos el resultado escaneado en cache (option)
+    $pedidos_raw = get_option( 'tbp_seat_scan_' . $config_id );
     
     if ( false === $pedidos_raw || empty( $pedidos_raw ) ) {
         // Fallback: si no hay escaneo previo, hacerlo en el momento
         $proveedor_id = (int) ($config->proveedor_id ?? 0);
         $pedidos_raw = tbp_asientos_get_all_orders_with_seats( $config->event_id, $config->group_field, $proveedor_id );
-        $debug['pedidos_source'] = 'fallback_live';
-    } else {
-        $debug['pedidos_source'] = 'transient_cache';
     }
-    $debug['pedidos_raw_count'] = count( $pedidos_raw );
 
     // Calcular grupos totales desde los pedidos (ordenados mayor → menor)
     $grupos_totales = array();
@@ -93,29 +71,15 @@ function tbp_asientos_run_packing( $config_id, $dry_run = false ) {
     // Obtener overrides manuales de zona (grupo → zona forzada)
     $zone_overrides = tbp_asientos_get_group_zone_overrides( $config_id );
 
-    // Obtener mesas disponibles por zona
+    // Obtener mesas disponibles por zona (solo tipo 'normal')
     $mesas_por_zona = array();
     foreach ( $zonas_config as $zona ) {
         $zona_nombre = $zona['nombre'];
-        $mesas = tbp_asientos_get_tables( $config_id, $zona_nombre );
-        // Filtrar mesas que no estén bloqueadas, permitiendo mesas normales con formas (round, rectangular, etc.)
-        $mesas = array_values( array_filter( $mesas, function( $m ) {
-            return $m->tipo !== 'bloqueada' && $m->tipo !== 'bloqueado' && $m->tipo !== 'blocked';
-        } ) );
+        $mesas = tbp_asientos_get_tables( $config_id, $zona_nombre, 'normal' );
         $mesas_por_zona[ $zona_nombre ] = $mesas;
-        $debug['mesas_por_zona'][ $zona_nombre ] = count( $mesas );
     }
 
-    // Resetear capacidad_usada de TODAS las mesas de esta config
-    // para que el algoritmo trabaje con mesas limpias (las asignaciones
-    // previas se borrarán en la FASE 3).
-    $wpdb->update(
-        $wpdb->prefix . 'tbp_seat_tables',
-        array( 'capacidad_usada' => 0 ),
-        array( 'config_id' => $config_id ),
-        array( '%d' ),
-        array( '%d' )
-    );
+    // (pedidos_raw ya se obtuvo arriba)
 
     // Agrupar pedidos por grupo
     $pedidos_por_grupo = array();
@@ -126,7 +90,6 @@ function tbp_asientos_run_packing( $config_id, $dry_run = false ) {
         }
         $pedidos_por_grupo[ $g ][] = $p;
     }
-    $debug['grupos_count'] = count( $pedidos_por_grupo );
 
     // ================================================================
     // FASE 1: ASIGNACIÓN DE GRUPOS A ZONAS
@@ -186,8 +149,6 @@ function tbp_asientos_run_packing( $config_id, $dry_run = false ) {
     $unassigned   = array(); // pedidos que no pudieron asignarse
 
     // Estado de mesas por zona: lista con capacidad restante
-    // Usamos capacidad TOTAL (no restamos capacidad_usada) porque ya la reseteamos
-    // y las asignaciones anteriores se borrarán en la FASE 3.
     $mesas_estado = array(); // zona => array de [ 'mesa' => obj, 'libre' => int ]
     foreach ( $zonas_config as $zona ) {
         $n = $zona['nombre'];
@@ -195,7 +156,7 @@ function tbp_asientos_run_packing( $config_id, $dry_run = false ) {
         foreach ( $mesas_por_zona[ $n ] as $m ) {
             $mesas_estado[ $n ][] = array(
                 'mesa'      => $m,
-                'libre'     => (int) $m->capacidad, // Capacidad TOTAL (partimos de mesas vacías)
+                'libre'     => ( $m->capacidad - $m->capacidad_usada ),
                 'tipo_mesa' => null, // 'singles' o 'families'
             );
         }
@@ -528,7 +489,6 @@ function tbp_asientos_run_packing( $config_id, $dry_run = false ) {
             'advertencias'    => count( $warnings ),
             'eficiencia_pct'  => $eficiencia,
         ),
-        'debug'       => $debug,
     );
 }
 
@@ -577,48 +537,208 @@ function tbp_asientos_get_all_orders_with_seats( $event_id, $group_field, $prove
 // =====================================================================
 
 /**
- * AJAX: Obtener datos del escaneo para la tabla de la Etapa 3.
+ * AJAX: Init Scan (Paso 1: Obtener todos los IDs de pedidos a procesar)
  */
-add_action( 'wp_ajax_tbp_asientos_get_scan_data', 'tbp_asientos_ajax_get_scan_data' );
-function tbp_asientos_ajax_get_scan_data() {
+add_action( 'wp_ajax_tbp_asientos_scan_init', 'tbp_asientos_ajax_scan_init' );
+function tbp_asientos_ajax_scan_init() {
     check_ajax_referer( 'tbp_asientos_nonce', 'nonce' );
     if ( ! current_user_can( 'manage_options' ) ) wp_send_json_error( 'Sin permisos.' );
 
     $config_id = (int) ( $_POST['config_id'] ?? 0 );
-    if ( ! $config_id ) wp_send_json_error( 'ID de configuración inválido.' );
+    $config = tbp_asientos_get_config( $config_id );
+    if ( ! $config ) wp_send_json_error( 'Configuración no encontrada.' );
 
-    $scan_data = get_transient( 'tbp_seat_scan_' . $config_id );
-    if ( empty( $scan_data ) || ! is_array( $scan_data ) ) {
-        wp_send_json_error( array(
-            'message' => 'no_scan',
-            'label'   => 'No hay datos de escaneo. Ejecuta "🔍 Escanear Asistentes" en la Etapa 1 primero.'
-        ) );
-    }
+    // Eliminar caché viejo
+    delete_option( 'tbp_seat_scan_' . $config_id );
+    delete_option( 'tbp_seat_scan_time_' . $config_id );
 
-    // Calcular estadísticas por grupo
-    $grupos_stats = array();
-    $total_piezas = 0;
-    foreach ( $scan_data as $p ) {
-        $g = $p['grupo'] ?? 'Sin grupo';
-        if ( ! isset( $grupos_stats[ $g ] ) ) {
-            $grupos_stats[ $g ] = array( 'pedidos' => 0, 'piezas' => 0 );
+    // Solo obtener la lista de order IDs
+    $order_ids = tbp_asientos_get_orders_for_event( $config->event_id );
+    
+    // Filtrar pedidos que no tienen cantidad (optimización rápida)
+    $valid_orders = [];
+    $proveedor_id = (int) ($config->proveedor_id ?? 0);
+    foreach ($order_ids as $oid) {
+        if ( tbp_get_order_seat_qty( $oid, $proveedor_id ) > 0 ) {
+            $valid_orders[] = $oid;
         }
-        $grupos_stats[ $g ]['pedidos']++;
-        $grupos_stats[ $g ]['piezas'] += (int) $p['cantidad'];
-        $total_piezas += (int) $p['cantidad'];
     }
 
-    // Ordenar grupos naturalmente
-    uksort( $grupos_stats, 'strnatcasecmp' );
+    wp_send_json_success( array( 'order_ids' => $valid_orders ) );
+}
+
+/**
+ * AJAX: Scan Batch (Paso 2: Procesar un lote de pedidos)
+ */
+add_action( 'wp_ajax_tbp_asientos_scan_batch', 'tbp_asientos_ajax_scan_batch' );
+function tbp_asientos_ajax_scan_batch() {
+    check_ajax_referer( 'tbp_asientos_nonce', 'nonce' );
+    if ( ! current_user_can( 'manage_options' ) ) wp_send_json_error( 'Sin permisos.' );
+
+    $config_id = (int) ( $_POST['config_id'] ?? 0 );
+    $order_ids = isset($_POST['order_ids']) && is_array($_POST['order_ids']) ? array_map('intval', $_POST['order_ids']) : [];
+    
+    $config = tbp_asientos_get_config( $config_id );
+    if ( ! $config || empty($order_ids) ) wp_send_json_error( 'Datos inválidos.' );
+
+    $batch_results = [];
+    $proveedor_id = (int) ($config->proveedor_id ?? 0);
+    foreach ( $order_ids as $order_id ) {
+        $orden = wc_get_order( $order_id );
+        if ( ! $orden ) continue;
+
+        $cantidad = tbp_get_order_seat_qty( $order_id, $proveedor_id );
+        $grupo = tbp_asientos_get_order_group_value( $order_id, $config->group_field );
+        if ( empty( $grupo ) ) $grupo = 'Sin grupo';
+
+        $batch_results[] = array(
+            'order_id'  => $order_id,
+            'grupo'     => $grupo,
+            'cantidad'  => $cantidad,
+            'nombre'    => $orden->get_billing_first_name(),
+            'apellidos' => $orden->get_billing_last_name(),
+            'email'     => $orden->get_billing_email(),
+        );
+    }
+
+    wp_send_json_success( $batch_results );
+}
+
+/**
+ * AJAX: Finish Scan (Paso 3: Consolidar y guardar en transient)
+ */
+add_action( 'wp_ajax_tbp_asientos_scan_finish', 'tbp_asientos_ajax_scan_finish' );
+function tbp_asientos_ajax_scan_finish() {
+    check_ajax_referer( 'tbp_asientos_nonce', 'nonce' );
+    if ( ! current_user_can( 'manage_options' ) ) wp_send_json_error( 'Sin permisos.' );
+
+    $config_id = (int) ( $_POST['config_id'] ?? 0 );
+    
+    // Si viene como string JSON, decodificarlo. Si es array, usarlo directo (fallback).
+    $raw_results = wp_unslash( $_POST['results'] ?? '' );
+    if ( is_string( $raw_results ) && ! empty( $raw_results ) ) {
+        $results = json_decode( $raw_results, true );
+    } elseif ( is_array( $raw_results ) ) {
+        $results = $raw_results;
+    } else {
+        $results = [];
+    }
+    
+    if ( ! $config_id ) wp_send_json_error( 'ID inválido.' );
+
+    // Group Inheritance Rule: Extra plates ordered separately without a group
+    // should inherit the group from another order with the same Name or Email.
+    $group_by_email = array();
+    $group_by_name = array();
+    
+    // First pass: collect valid groups mapped by email and full name
+    foreach ( $results as $p ) {
+        if ( ! empty( $p['grupo'] ) && $p['grupo'] !== 'Sin grupo' ) {
+            if ( ! empty( $p['email'] ) ) {
+                $group_by_email[ strtolower( trim( $p['email'] ) ) ] = $p['grupo'];
+            }
+            $full_name = strtolower( trim( ($p['nombre'] ?? '') . ' ' . ($p['apellidos'] ?? '') ) );
+            if ( ! empty( $full_name ) ) {
+                $group_by_name[ $full_name ] = $p['grupo'];
+            }
+        }
+    }
+
+    // Second pass: assign inherited groups to those 'Sin grupo'
+    foreach ( $results as &$p ) {
+        if ( empty( $p['grupo'] ) || $p['grupo'] === 'Sin grupo' ) {
+            $email = isset($p['email']) ? strtolower( trim( $p['email'] ) ) : '';
+            $full_name = strtolower( trim( ($p['nombre'] ?? '') . ' ' . ($p['apellidos'] ?? '') ) );
+
+            if ( $email && isset( $group_by_email[ $email ] ) ) {
+                $p['grupo'] = $group_by_email[ $email ];
+            } elseif ( $full_name && isset( $group_by_name[ $full_name ] ) ) {
+                $p['grupo'] = $group_by_name[ $full_name ];
+            }
+        }
+    }
+    unset($p); // break reference
+
+    // Guardar array completo en Option de forma permanente sin autoload
+    update_option( 'tbp_seat_scan_' . $config_id, $results, 'no' );
+    update_option( 'tbp_seat_scan_time_' . $config_id, time() );
+
+    // Calcular estadísticas
+    $total_asistentes = 0;
+    $grupos_unicos = array();
+    foreach ( $results as $p ) {
+        $total_asistentes += (int) $p['cantidad'];
+        $grupos_unicos[ $p['grupo'] ] = true;
+    }
 
     wp_send_json_success( array(
-        'pedidos'      => $scan_data,
+        'asistentes' => $total_asistentes,
+        'grupos'     => count( $grupos_unicos ),
+        'pedidos'    => count( $results )
+    ) );
+}
+
+/**
+ * AJAX: Obtener datos de escaneo consolidado
+ */
+add_action( 'wp_ajax_tbp_asientos_get_scan_data', 'tbp_asientos_ajax_get_scan_data' );
+function tbp_asientos_ajax_get_scan_data() {
+    check_ajax_referer( 'tbp_asientos_nonce', 'nonce' );
+    if ( ! current_user_can( 'manage_options' ) ) {
+        wp_send_json_error( 'Sin permisos.' );
+    }
+
+    $config_id = (int) ( $_POST['config_id'] ?? 0 );
+    if ( ! $config_id ) {
+        wp_send_json_error( 'ID inválido.' );
+    }
+
+    $pedidos_raw = get_option( 'tbp_seat_scan_' . $config_id );
+    if ( false === $pedidos_raw || ! is_array( $pedidos_raw ) ) {
+        wp_send_json_error( 'No hay datos de escaneo en caché.' );
+    }
+
+    // Calcular estadísticas de grupos
+    $grupos_stats = array();
+    foreach ( $pedidos_raw as $p ) {
+        $g = $p['grupo'] ?? 'Sin Grupo';
+        if ( ! isset( $grupos_stats[ $g ] ) ) {
+            $grupos_stats[ $g ] = array(
+                'pedidos' => 0,
+                'piezas'  => 0,
+            );
+        }
+        $grupos_stats[ $g ]['pedidos']++;
+        $grupos_stats[ $g ]['piezas'] += (int) ( $p['cantidad'] ?? 0 );
+    }
+
+    // Fetch current assignments for this config
+    global $wpdb;
+    $assignments = $wpdb->get_results( $wpdb->prepare(
+        "SELECT order_id, mesa_id FROM {$wpdb->prefix}tbp_seat_assignments WHERE config_id = %d",
+        $config_id
+    ) );
+    
+    $assigned_map = array();
+    foreach ( $assignments as $a ) {
+        $assigned_map[ (int) $a->order_id ] = (int) $a->mesa_id;
+    }
+
+    // Include the table numbers for better frontend display
+    $tables = $wpdb->get_results( $wpdb->prepare(
+        "SELECT id, numero FROM {$wpdb->prefix}tbp_seat_tables WHERE config_id = %d",
+        $config_id
+    ) );
+    $table_map = array();
+    foreach ( $tables as $t ) {
+        $table_map[ (int) $t->id ] = $t->numero;
+    }
+
+    wp_send_json_success( array(
+        'pedidos'      => $pedidos_raw,
         'grupos_stats' => $grupos_stats,
-        'totales'      => array(
-            'pedidos' => count( $scan_data ),
-            'piezas'  => $total_piezas,
-            'grupos'  => count( $grupos_stats ),
-        ),
+        'assigned_map' => $assigned_map,
+        'table_map'    => $table_map,
     ) );
 }
 
@@ -698,7 +818,7 @@ function tbp_asientos_ajax_get_floor_data() {
 }
 
 /**
- * AJAX: Asignación manual por lote.
+ * AJAX: Guardar lote de asignaciones manuales.
  */
 add_action( 'wp_ajax_tbp_asientos_manual_assign_batch', 'tbp_asientos_ajax_manual_assign_batch' );
 function tbp_asientos_ajax_manual_assign_batch() {
@@ -756,99 +876,81 @@ function tbp_asientos_ajax_manual_assign_batch() {
 }
 
 /**
- * AJAX: Init Scan (Paso 1: Obtener todos los IDs de pedidos a procesar)
+ * AJAX: Actualizar capacidad y tipo de una mesa individual.
  */
-add_action( 'wp_ajax_tbp_asientos_scan_init', 'tbp_asientos_ajax_scan_init' );
-function tbp_asientos_ajax_scan_init() {
+add_action( 'wp_ajax_tbp_asientos_update_single_table', 'tbp_asientos_ajax_update_single_table' );
+function tbp_asientos_ajax_update_single_table() {
     check_ajax_referer( 'tbp_asientos_nonce', 'nonce' );
     if ( ! current_user_can( 'manage_options' ) ) wp_send_json_error( 'Sin permisos.' );
 
     $config_id = (int) ( $_POST['config_id'] ?? 0 );
-    $config = tbp_asientos_get_config( $config_id );
-    if ( ! $config ) wp_send_json_error( 'Configuración no encontrada.' );
+    $table_id  = (int) ( $_POST['table_id'] ?? 0 );
+    $capacity  = (int) ( $_POST['capacidad'] ?? 0 );
+    $shape     = sanitize_key( $_POST['tipo'] ?? '' );
+    $width     = (int) ( $_POST['width'] ?? 0 );
+    $height    = (int) ( $_POST['height'] ?? 0 );
 
-    // Eliminar caché viejo
-    delete_transient( 'tbp_seat_scan_' . $config_id );
-
-    // Solo obtener la lista de order IDs
-    $order_ids = tbp_asientos_get_orders_for_event( $config->event_id );
-    
-    // Filtrar pedidos que no tienen cantidad (optimización rápida)
-    $valid_orders = [];
-    $proveedor_id = (int) ($config->proveedor_id ?? 0);
-    foreach ($order_ids as $oid) {
-        if ( tbp_get_order_seat_qty( $oid, $proveedor_id ) > 0 ) {
-            $valid_orders[] = $oid;
-        }
+    if ( ! $config_id || ! $table_id || $capacity <= 0 || empty( $shape ) ) {
+        wp_send_json_error( 'Datos insuficientes.' );
     }
 
-    wp_send_json_success( array( 'order_ids' => $valid_orders ) );
-}
+    global $wpdb;
+    $table_name = $wpdb->prefix . 'tbp_seat_tables';
 
-/**
- * AJAX: Scan Batch (Paso 2: Procesar un lote de pedidos)
- */
-add_action( 'wp_ajax_tbp_asientos_scan_batch', 'tbp_asientos_ajax_scan_batch' );
-function tbp_asientos_ajax_scan_batch() {
-    check_ajax_referer( 'tbp_asientos_nonce', 'nonce' );
-    if ( ! current_user_can( 'manage_options' ) ) wp_send_json_error( 'Sin permisos.' );
+    // Obtener mesa actual
+    $current_table = $wpdb->get_row( $wpdb->prepare(
+        "SELECT * FROM $table_name WHERE id = %d AND config_id = %d",
+        $table_id,
+        $config_id
+    ) );
 
-    $config_id = (int) ( $_POST['config_id'] ?? 0 );
-    $order_ids = isset($_POST['order_ids']) && is_array($_POST['order_ids']) ? array_map('intval', $_POST['order_ids']) : [];
-    
-    $config = tbp_asientos_get_config( $config_id );
-    if ( ! $config || empty($order_ids) ) wp_send_json_error( 'Datos inválidos.' );
-
-    $batch_results = [];
-    $proveedor_id = (int) ($config->proveedor_id ?? 0);
-    foreach ( $order_ids as $order_id ) {
-        $orden = wc_get_order( $order_id );
-        if ( ! $orden ) continue;
-
-        $cantidad = tbp_get_order_seat_qty( $order_id, $proveedor_id );
-        $grupo = tbp_asientos_get_order_group_value( $order_id, $config->group_field );
-        if ( empty( $grupo ) ) $grupo = 'Sin grupo';
-
-        $batch_results[] = array(
-            'order_id'  => $order_id,
-            'grupo'     => $grupo,
-            'cantidad'  => $cantidad,
-            'nombre'    => $orden->get_billing_first_name(),
-            'apellidos' => $orden->get_billing_last_name(),
-        );
+    if ( ! $current_table ) {
+        wp_send_json_error( 'Mesa no encontrada.' );
     }
 
-    wp_send_json_success( $batch_results );
-}
+    // Validar que la nueva capacidad no sea menor a la capacidad usada actualmente
+    if ( $capacity < (int) $current_table->capacidad_usada ) {
+        wp_send_json_error( 'La capacidad no puede ser menor que la cantidad de lugares ya ocupados (' . $current_table->capacidad_usada . ').' );
+    }
 
-/**
- * AJAX: Finish Scan (Paso 3: Consolidar y guardar en transient)
- */
-add_action( 'wp_ajax_tbp_asientos_scan_finish', 'tbp_asientos_ajax_scan_finish' );
-function tbp_asientos_ajax_scan_finish() {
-    check_ajax_referer( 'tbp_asientos_nonce', 'nonce' );
-    if ( ! current_user_can( 'manage_options' ) ) wp_send_json_error( 'Sin permisos.' );
+    // Payload de actualización
+    $payload = array(
+        'capacidad' => $capacity,
+        'tipo'      => $shape,
+    );
+    $format = array( '%d', '%s' );
 
-    $config_id = (int) ( $_POST['config_id'] ?? 0 );
-    $results = isset($_POST['results']) && is_array($_POST['results']) ? wp_unslash($_POST['results']) : [];
-    
-    if ( ! $config_id ) wp_send_json_error( 'ID inválido.' );
+    // Si se pasaron dimensiones válidas, actualizarlas
+    if ( $width > 0 && $height > 0 ) {
+        $payload['width']  = $width;
+        $payload['height'] = $height;
+        $format[] = '%d';
+        $format[] = '%d';
+    }
 
-    // Guardar array completo en Transient por 12 horas
-    set_transient( 'tbp_seat_scan_' . $config_id, $results, 12 * HOUR_IN_SECONDS );
+    $updated = $wpdb->update(
+        $table_name,
+        $payload,
+        array( 'id' => $table_id, 'config_id' => $config_id ),
+        $format,
+        array( '%d', '%d' )
+    );
 
-    // Calcular estadísticas
-    $total_asistentes = 0;
-    $grupos_unicos = array();
-    foreach ( $results as $p ) {
-        $total_asistentes += (int) $p['cantidad'];
-        $grupos_unicos[ $p['grupo'] ] = true;
+    if ( false === $updated ) {
+        wp_send_json_error( 'Error al actualizar la base de datos.' );
+    }
+
+    // Regenerar public snapshot para que el asistente vea los cambios en el plano
+    if ( function_exists( 'tbp_asientos_generate_public_snapshot' ) ) {
+        tbp_asientos_generate_public_snapshot( $config_id );
     }
 
     wp_send_json_success( array(
-        'asistentes' => $total_asistentes,
-        'grupos'     => count( $grupos_unicos ),
-        'pedidos'    => count( $results )
+        'message'   => 'Mesa actualizada correctamente.',
+        'capacidad' => $capacity,
+        'tipo'      => $shape,
+        'width'     => $width > 0 ? $width : (int) $current_table->width,
+        'height'    => $height > 0 ? $height : (int) $current_table->height,
     ) );
 }
 
@@ -995,8 +1097,9 @@ function tbp_asientos_generate_public_snapshot( $config_id ) {
     foreach ( $assignments as $a ) {
         $stats['confirmed']++;
         
+        $order = wc_get_order( $a->order_id );
         // Detalles para agregados (chips)
-        $full_details = tbp_report_format_details(tbp_actividades_get_order_attendees_meta($a->order_id));
+        $full_details = $order ? tbp_report_format_details( tbp_actividades_get_order_attendees_meta( $a->order_id, $order ) ) : array();
 
         $rows[] = [
             'order_id'     => $a->order_id,
@@ -1113,5 +1216,76 @@ function tbp_asientos_ajax_regenerate_snapshot() {
         wp_send_json_success('Snapshot actualizado correctamente.');
     } else {
         wp_send_json_error('Error al generar snapshot.');
+    }
+}
+
+/**
+ * AJAX: Visual Assign (Manual assignment from Stage 4)
+ */
+add_action( 'wp_ajax_tbp_asientos_visual_assign', 'tbp_asientos_ajax_visual_assign' );
+function tbp_asientos_ajax_visual_assign() {
+    check_ajax_referer( 'tbp_asientos_nonce', 'nonce' );
+    if ( ! current_user_can( 'manage_options' ) ) wp_send_json_error( 'Sin permisos.' );
+
+    $config_id       = (int) ( $_POST['config_id'] ?? 0 );
+    $order_id        = (int) ( $_POST['order_id'] ?? 0 );
+    $mesa_id         = (int) ( $_POST['mesa_id'] ?? 0 );
+    $qty             = (int) ( $_POST['qty'] ?? 0 );
+    $change_capacity = (int) ( $_POST['change_capacity'] ?? 0 );
+
+    if ( ! $config_id || ! $order_id || ! $mesa_id || ! $qty ) {
+        wp_send_json_error( 'Parámetros inválidos.' );
+    }
+
+    global $wpdb;
+    
+    // Check Mesa
+    $mesa = $wpdb->get_row( $wpdb->prepare(
+        "SELECT * FROM {$wpdb->prefix}tbp_seat_tables WHERE id = %d AND config_id = %d",
+        $mesa_id, $config_id
+    ) );
+    if ( ! $mesa ) wp_send_json_error( 'Mesa no encontrada.' );
+
+    // Check capacity update
+    if ( $change_capacity ) {
+        $required_capacity = $mesa->capacidad_usada + $qty;
+        if ( $required_capacity > $mesa->capacidad ) {
+            $wpdb->update(
+                "{$wpdb->prefix}tbp_seat_tables",
+                array( 'capacidad' => $required_capacity ),
+                array( 'id' => $mesa_id )
+            );
+        }
+    } else {
+        $libre = $mesa->capacidad - $mesa->capacidad_usada;
+        if ( $libre < $qty ) wp_send_json_error( "Solo quedan $libre lugares en esta mesa." );
+    }
+
+    // Get Order Details
+    $orden = wc_get_order( $order_id );
+    if ( ! $orden ) wp_send_json_error( 'Pedido no encontrado.' );
+    
+    $config = tbp_asientos_get_config( $config_id );
+    $grupo = tbp_asientos_get_order_group_value( $order_id, $config->group_field );
+    if ( empty( $grupo ) ) $grupo = 'Sin grupo';
+    $nombre = $orden->get_billing_first_name();
+    $apellidos = $orden->get_billing_last_name();
+
+    // Assign
+    $result = tbp_asientos_assign_order(
+        $config_id,
+        $mesa_id,
+        $order_id,
+        $grupo,
+        $qty,
+        $nombre,
+        $apellidos
+    );
+
+    if ( $result ) {
+        tbp_asientos_generate_public_snapshot( $config_id );
+        wp_send_json_success( array( 'assignment_id' => $result ) );
+    } else {
+        wp_send_json_error( 'No se pudo asignar a la mesa.' );
     }
 }

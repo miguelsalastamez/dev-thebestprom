@@ -41,6 +41,74 @@ function tbp_asientos_admin_page() {
     echo '<div class="wrap tbp-asientos-wrap">';
     echo '<h1 class="wp-heading-inline">🪑 Asignación de Asientos (Grupal)</h1>';
 
+    // Contenedor de errores JavaScript visible (Pantalla que arroja los errores)
+    echo '
+    <div id="tbp-js-error-screen" style="display:none; background:#fee2e2; border: 4px solid #ef4444; color:#991b1b; padding:20px; margin: 20px 0; border-radius:8px; font-family: monospace; white-space: pre-wrap; font-size: 14px; box-shadow: 0 4px 6px rgba(0,0,0,0.1); z-index: 99999;">
+        <h3 style="margin-top:0; color:#b91c1c; font-size:18px; display:flex; align-items:center; gap:8px;">⚠️ ERROR DE JAVASCRIPT DETECTADO</h3>
+        <p style="margin:5px 0 15px 0; color:#7f1d1d; font-weight:bold;">Se ha detectado un error al cargar o ejecutar los scripts de esta página. Por favor copia y comparte este mensaje:</p>
+        <div id="tbp-js-error-content" style="background:#fff; border:1px solid #fca5a5; padding:15px; border-radius:4px; max-height:400px; overflow-y:auto; color:#111827;"></div>
+        <div style="margin-top:15px;">
+            <button type="button" class="button" onclick="window.location.reload(true)" style="background:#ef4444; color:#fff; border-color:#dc2626; font-weight:bold; height:auto; padding:6px 12px;">🔄 Forzar Recarga Limpiando Caché</button>
+        </div>
+    </div>
+    <script>
+        (function() {
+            // Guardar errores que ocurran antes de que el DOM esté listo
+            window.tbp_js_errors = [];
+            window.tbp_report_error = function(msg, file, line, col, err) {
+                var msgStr = String(msg || "");
+                var fileStr = String(file || "");
+                var stackStr = err && err.stack ? String(err.stack) : "";
+                
+                // Ignorar errores conocidos externos o inocuos
+                if (msgStr.indexOf("Angie") !== -1 || stackStr.indexOf("elementor") !== -1) {
+                    return;
+                }
+                
+                // Determinar si se origina en los scripts de nuestro plugin
+                var isOurs = msgStr.indexOf("tbp-actividades") !== -1 || 
+                             fileStr.indexOf("tbp-actividades") !== -1 || 
+                             stackStr.indexOf("tbp-actividades") !== -1 ||
+                             msgStr.indexOf("tbp_asientos") !== -1 ||
+                             stackStr.indexOf("tbp_asientos") !== -1;
+                             
+                if (!isOurs) {
+                    return;
+                }
+
+                var content = "Mensaje: " + msg + "\\n" +
+                              "Archivo: " + file + "\\n" +
+                              "Línea/Col: " + line + ":" + col + "\\n";
+                if (err && err.stack) {
+                    content += "Stack Trace:\\n" + err.stack + "\\n";
+                }
+                content += "----------------------------------------\\n";
+                window.tbp_js_errors.push(content);
+                
+                // Intentar renderizar si el DOM ya tiene el elemento
+                var el = document.getElementById("tbp-js-error-content");
+                var screen = document.getElementById("tbp-js-error-screen");
+                if (el && screen) {
+                    screen.style.display = "block";
+                    el.textContent = window.tbp_js_errors.join("\\n");
+                }
+            };
+            
+            window.addEventListener("error", function(e) {
+                window.tbp_report_error(e.message, e.filename, e.lineno, e.colno, e.error);
+            });
+            
+            window.addEventListener("unhandledrejection", function(e) {
+                var reason = e.reason;
+                var msg = "Promesa rechazada: " + (reason && reason.message ? reason.message : reason);
+                var errObj = reason instanceof Error ? reason : null;
+                window.tbp_report_error(msg, "N/A", 0, 0, errObj);
+            });
+            
+        })();
+    </script>
+    ';
+
     switch ( $action ) {
         case 'edit':
         case 'new':
@@ -102,11 +170,12 @@ function tbp_asientos_render_list_view() {
         echo '<td>' . esc_html( date_i18n( get_option( 'date_format' ), strtotime( $config->created_at ) ) ) . '</td>';
         echo '<td>';
         echo '<div style="display:flex; gap: 5px; align-items:center;">';
+        $v_param = '&v=' . TBP_ACTIVIDADES_VERSION;
         if ( $config->status === 'active' ) {
-            echo '<a href="?page=tbp-actividades-asientos&action=view&id=' . $config->id . '" class="button button-primary button-small">Ver Asignaciones</a>';
-            echo '<a href="?page=tbp-actividades-asientos&action=edit&id=' . $config->id . '" class="button button-small">Re-configurar</a>';
+            echo '<a href="?page=tbp-actividades-asientos&action=view&id=' . $config->id . $v_param . '" class="button button-primary button-small">Ver Asignaciones</a>';
+            echo '<a href="?page=tbp-actividades-asientos&action=edit&id=' . $config->id . $v_param . '" class="button button-small">Re-configurar</a>';
         } else {
-            echo '<a href="?page=tbp-actividades-asientos&action=edit&id=' . $config->id . '" class="button button-primary button-small">Editar / Asignar</a>';
+            echo '<a href="?page=tbp-actividades-asientos&action=edit&id=' . $config->id . $v_param . '" class="button button-primary button-small">Editar / Asignar</a>';
         }
         
         // Formulario de eliminación
@@ -137,6 +206,71 @@ function tbp_asientos_render_edit_view( $config_id = 0 ) {
             return;
         }
     }
+
+    // Detectar estado del servidor para la activación de botones y visualización
+    $has_scan = false;
+    $scan_count = 0;
+    $scan_pedidos_count = 0;
+    $scan_grupos_count = 0;
+    $scan_date_formatted = '';
+    
+    if ( $config_id > 0 ) {
+        $scan_data = get_option( 'tbp_seat_scan_' . $config_id );
+        if ( is_array( $scan_data ) && ! empty( $scan_data ) ) {
+            $has_scan = true;
+            $scan_pedidos_count = count( $scan_data );
+            $temp_grupos = array();
+            foreach ( $scan_data as $p ) {
+                $scan_count += (int) ( $p['cantidad'] ?? 0 );
+                if ( ! empty( $p['grupo'] ) ) {
+                    $temp_grupos[ $p['grupo'] ] = true;
+                }
+            }
+            $scan_grupos_count = count( $temp_grupos );
+            
+            $scan_time = get_option( 'tbp_seat_scan_time_' . $config_id );
+            if ( $scan_time ) {
+                $scan_date_formatted = date_i18n( 'd M Y, h:i A', $scan_time + ( get_option( 'gmt_offset' ) * HOUR_IN_SECONDS ) );
+            } else {
+                $scan_date_formatted = 'Reciente';
+            }
+        }
+    }
+
+    global $wpdb;
+    $assignments_count = 0;
+    $total_assigned_seats = 0;
+    $total_assigned_groups = 0;
+    $has_assignments = false;
+    
+    if ( $config_id > 0 ) {
+        $assignments_count = (int) $wpdb->get_var( $wpdb->prepare(
+            "SELECT COUNT(DISTINCT order_id) FROM {$wpdb->prefix}tbp_seat_assignments WHERE config_id = %d",
+            $config_id
+        ) );
+        $has_assignments = $assignments_count > 0;
+        
+        $total_assigned_seats = (int) $wpdb->get_var( $wpdb->prepare(
+            "SELECT SUM(cantidad) FROM {$wpdb->prefix}tbp_seat_assignments WHERE config_id = %d",
+            $config_id
+        ) );
+        
+        $total_assigned_groups = (int) $wpdb->get_var( $wpdb->prepare(
+            "SELECT COUNT(DISTINCT grupo) FROM {$wpdb->prefix}tbp_seat_assignments WHERE config_id = %d",
+            $config_id
+        ) );
+    }
+
+    // Detectar si el plano tiene mesas diseñadas y habilitar la Etapa 3
+    $tables_count = 0;
+    if ( $config_id > 0 ) {
+        $tables_count = (int) $wpdb->get_var( $wpdb->prepare(
+            "SELECT COUNT(*) FROM {$wpdb->prefix}tbp_seat_tables WHERE config_id = %d",
+            $config_id
+        ) );
+    }
+    $has_floor_plan = $tables_count > 0;
+    $stage3_enabled = ( $has_scan && $has_floor_plan );
 
     // Valores por defecto
     $nombre       = $config ? $config->nombre : '';
@@ -169,9 +303,13 @@ function tbp_asientos_render_edit_view( $config_id = 0 ) {
 
     <!-- NAVEGACIÓN DE ETAPAS -->
     <div class="tbp-stage-nav" style="display:flex; gap:10px; margin: 20px 0; background:#fff; padding:10px; border-radius:8px; border:1px solid #ccd0d4; box-shadow:0 1px 1px rgba(0,0,0,0.04);">
-        <div class="stage-item active" data-stage="1" style="flex:1; text-align:center; padding:15px; border-radius:6px; cursor:pointer; font-weight:800; background:#f0f6fb; color:#2271b1; border:1px solid #2271b1;">1. Configuración de Metadatos</div>
-        <div class="stage-item" data-stage="2" style="flex:1; text-align:center; padding:15px; border-radius:6px; cursor:pointer; font-weight:800; color:#64748b;">2. Procesamiento del Plano</div>
-        <div class="stage-item" data-stage="3" style="flex:1; text-align:center; padding:15px; border-radius:6px; cursor:pointer; font-weight:800; color:#64748b;">3. Generación y Asignación</div>
+        <div class="stage-item active" data-stage="1" data-enabled="1" style="flex:1; text-align:center; padding:15px; border-radius:6px; cursor:pointer; font-weight:800; background:#f0f6fb; color:#2271b1; border:1px solid #2271b1;">1. Configuración de Metadatos</div>
+        <div class="stage-item" data-stage="2" data-enabled="1" style="flex:1; text-align:center; padding:15px; border-radius:6px; cursor:pointer; font-weight:800; color:#64748b;">2. Procesamiento del Plano</div>
+        <?php if ( $stage3_enabled ) : ?>
+            <div class="stage-item" data-stage="3" data-enabled="1" style="flex:1; text-align:center; padding:15px; border-radius:6px; cursor:pointer; font-weight:800; color:#64748b;">3. Generación y Asignación</div>
+        <?php else : ?>
+            <div class="stage-item" data-stage="3" data-enabled="0" style="flex:1; text-align:center; padding:15px; border-radius:6px; cursor:not-allowed; font-weight:800; color:#cbd5e1; opacity:0.6;" title="Requiere plano diseñado (Etapa 2) y asistentes escaneados (Etapa 1)">3. Generación y Asignación 🔒</div>
+        <?php endif; ?>
     </div>
 
     <div id="tbp-stage-1" class="tbp-stage-content">
@@ -223,41 +361,450 @@ function tbp_asientos_render_edit_view( $config_id = 0 ) {
                     </div>
                 </div>
 
-                <div class="postbox">
-                    <div class="postbox-header"><h2 class="hndle">Acciones</h2></div>
-                    <div class="inside">
-                        <p>
-                            <button type="submit" class="button button-primary button-large" style="width:100%;">💾 Guardar Configuración y Mesas</button>
-                        </p>
-                        <?php if ( $config_id > 0 ) : ?>
-                            <hr>
-                            <div style="margin-bottom:15px;">
-                                <button type="button" id="btn_scan_event" class="button button-large" style="width:100%; border-color:#2271b1; color:#2271b1;">🔍 1. Escanear Asistentes</button>
-                                <div id="scan_results" style="display:none; background:#e8f5e9; border:1px solid #4caf50; padding:10px; margin-top:10px; border-radius:4px; font-size:13px;">
-                                    <strong>✅ Escaneo Completo</strong><br>
-                                    Asistentes: <strong id="scan_asistentes">0</strong><br>
-                                    Grupos: <strong id="scan_grupos">0</strong><br>
-                                    Pedidos: <strong id="scan_pedidos">0</strong>
-                                </div>
-                                <div id="scan_loader" style="display:none; text-align:center; padding:10px; font-size:12px;">⏳ Extrayendo metadatos (puede tardar minutos)...</div>
-                            </div>
-                            <p>
-                                <button type="button" id="btn_run_packing" class="button button-large" style="width:100%; background:#2271b1; color:white; border-color:#2271b1;" disabled>▶ 2. Ejecutar Asignación</button>
-                            </p>
-                            <p style="text-align:center;"><small>Sobreescribirá las asignaciones actuales.</small></p>
-                            <div id="packing_loader" style="display:none; text-align:center; padding:10px;">⏳ Asignando lugares...</div>
-                            <hr>
-                            <div style="background:#fff9e6; border:1px solid #ffcc00; padding:12px; border-radius:6px; margin-bottom:15px;">
-                                <h4 style="margin:0 0 5px 0;">🛡️ Consulta Pública (Anti-Colapso)</h4>
-                                <p style="margin:0 0 10px 0; font-size:11px;">El sistema genera un archivo JSON estático para que el sitio no se caiga cuando miles de alumnos consultan sus mesas.</p>
-                                <button type="button" id="btn_regenerate_snapshot" class="button button-small" style="width:100%;">🔄 Regenerar Snapshot Ahora</button>
-                                <div id="snapshot_loader" style="display:none; text-align:center; padding:8px; font-size:11px;">⏳ Generando JSON...</div>
-                            </div>
-                            <hr>
-                            <p style="text-align:center;">
-                                <button type="button" class="button button-link-delete" id="btn_delete_config" style="color:#b32d2e; text-decoration:underline;">🗑️ Eliminar Configuración</button>
-                            </p>
+                <div class="postbox tbp-acciones-postbox" style="border: 1px solid #cbd5e1; border-radius: 12px; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.05); background: #ffffff; overflow: hidden;">
+                    <div class="postbox-header" style="background: #f8fafc; border-bottom: 1px solid #e2e8f0; padding: 15px 20px; display: flex; align-items: center; justify-content: space-between; height: auto;">
+                        <h2 class="hndle" style="margin: 0; font-size: 14px; font-weight: 700; color: #475569; text-transform: uppercase; letter-spacing: 0.5px; padding: 0; border: none; background: none;">Acciones del Evento</h2>
+                        <?php if ( $has_assignments ) : ?>
+                            <span style="background: #d1fae5; color: #065f46; font-size: 11px; font-weight: 700; padding: 4px 8px; border-radius: 9999px; text-transform: uppercase; letter-spacing: 0.5px;">✅ Activo</span>
+                        <?php else : ?>
+                            <span style="background: #fef3c7; color: #92400e; font-size: 11px; font-weight: 700; padding: 4px 8px; border-radius: 9999px; text-transform: uppercase; letter-spacing: 0.5px;">⏳ Borrador</span>
                         <?php endif; ?>
+                    </div>
+                    <div class="inside" style="padding: 20px; margin: 0;">
+                        <!-- Live Stats Summary -->
+                        <?php if ( $has_scan ) : ?>
+                            <div style="display: flex; flex-direction: column; gap: 6px; margin-bottom: 20px; font-size: 12px; color: #64748b; background: #f8fafc; padding: 12px 15px; border-radius: 8px; border: 1px solid #e2e8f0;">
+                                <div style="display: flex; justify-content: space-between;">
+                                    <span>👥 Asistentes escaneados:</span>
+                                    <strong style="color: #334155;"><?php echo esc_html( $scan_count ); ?></strong>
+                                </div>
+                                <div style="display: flex; justify-content: space-between;">
+                                    <span>📦 Pedidos elegibles:</span>
+                                    <strong style="color: #334155;"><?php echo esc_html( $scan_pedidos_count ); ?></strong>
+                                </div>
+                                <div style="display: flex; justify-content: space-between;">
+                                    <span>🏷️ Grupos de mesa:</span>
+                                    <strong style="color: #334155;"><?php echo esc_html( $scan_grupos_count ); ?></strong>
+                                </div>
+                                <?php if ( $has_assignments ) : ?>
+                                    <div style="height: 1px; background: #cbd5e1; margin: 6px 0;"></div>
+                                    <div style="display: flex; justify-content: space-between; color: #059669; font-weight: 600;">
+                                        <span>🎯 Asientos asignados:</span>
+                                        <span><?php echo esc_html( $total_assigned_seats ); ?> (en <?php echo esc_html( $assignments_count ); ?> pedidos)</span>
+                                    </div>
+                                    <div style="display: flex; justify-content: space-between; color: #059669; font-weight: 600;">
+                                        <span>🏷️ Grupos asignados:</span>
+                                        <span><?php echo esc_html( $total_assigned_groups ); ?></span>
+                                    </div>
+                                <?php endif; ?>
+                                <div style="height: 1px; background: #e2e8f0; margin: 6px 0;"></div>
+                                <div style="display: flex; justify-content: space-between; font-size: 11px; color: #94a3b8;">
+                                    <span>📅 Último escaneo:</span>
+                                    <span><?php echo esc_html( $scan_date_formatted ); ?></span>
+                                </div>
+                            </div>
+                        <?php else : ?>
+                            <div style="font-size: 12px; color: #94a3b8; font-style: italic; background: #f8fafc; padding: 12px 15px; border-radius: 8px; border: 1px solid #e2e8f0; text-align: center; margin-bottom: 20px;">
+                                📭 Sin datos de escaneo. Escanea para activar la asignación.
+                            </div>
+                        <?php endif; ?>
+
+                        <!-- STAGE TIMELINE -->
+                        <div class="tbp-timeline" style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; background: #f8fafc; padding: 12px 10px; border-radius: 8px; border: 1px solid #e2e8f0;">
+                            <!-- Step 1: Configurar -->
+                            <div style="flex: 1; text-align: center;">
+                                <div style="width: 28px; height: 28px; border-radius: 50%; display: flex; align-items: center; justify-content: center; margin: 0 auto 4px; font-weight: 700; font-size: 12px;
+                                    <?php echo ($config_id > 0) ? 'background: #d1fae5; color: #065f46; border: 1px solid #a7f3d0;' : 'background: #dbeafe; color: #1e40af; border: 1px solid #bfdbfe;'; ?>">
+                                    <?php echo ($config_id > 0) ? '✓' : '1'; ?>
+                                </div>
+                                <div style="font-size: 11px; font-weight: 600; <?php echo ($config_id > 0) ? 'color: #065f46;' : 'color: #1e40af;'; ?>">Configurar</div>
+                            </div>
+                            
+                            <div style="flex: 0.3; height: 2px; background: <?php echo ($config_id > 0) ? '#a7f3d0' : '#e2e8f0'; ?>; margin-bottom: 14px;"></div>
+                            
+                            <!-- Step 2: Escanear -->
+                            <div style="flex: 1; text-align: center;">
+                                <div style="width: 28px; height: 28px; border-radius: 50%; display: flex; align-items: center; justify-content: center; margin: 0 auto 4px; font-weight: 700; font-size: 12px;
+                                    <?php if ($has_scan) {
+                                        echo 'background: #d1fae5; color: #065f46; border: 1px solid #a7f3d0;';
+                                    } elseif ($config_id > 0) {
+                                        echo 'background: #dbeafe; color: #1e40af; border: 1px solid #bfdbfe;';
+                                    } else {
+                                        echo 'background: #f1f5f9; color: #94a3b8; border: 1px solid #cbd5e1;';
+                                    } ?>">
+                                    <?php echo ($has_scan) ? '✓' : '2'; ?>
+                                </div>
+                                <div style="font-size: 11px; font-weight: 600; 
+                                    <?php if ($has_scan) {
+                                        echo 'color: #065f46;';
+                                    } elseif ($config_id > 0) {
+                                        echo 'color: #1e40af;';
+                                    } else {
+                                        echo 'color: #94a3b8;';
+                                    } ?>">Escanear</div>
+                            </div>
+                            
+                            <div style="flex: 0.3; height: 2px; background: <?php echo ($has_assignments) ? '#a7f3d0' : ($has_scan ? '#bfdbfe' : '#e2e8f0'); ?>; margin-bottom: 14px;"></div>
+                            
+                            <!-- Step 3: Asignar -->
+                            <div style="flex: 1; text-align: center;">
+                                <div style="width: 28px; height: 28px; border-radius: 50%; display: flex; align-items: center; justify-content: center; margin: 0 auto 4px; font-weight: 700; font-size: 12px;
+                                    <?php if ($has_assignments) {
+                                        echo 'background: #d1fae5; color: #065f46; border: 1px solid #a7f3d0;';
+                                    } elseif ($has_scan) {
+                                        echo 'background: #dbeafe; color: #1e40af; border: 1px solid #bfdbfe;';
+                                    } else {
+                                        echo 'background: #f1f5f9; color: #94a3b8; border: 1px solid #cbd5e1;';
+                                    } ?>">
+                                    <?php echo ($has_assignments) ? '✓' : '3'; ?>
+                                </div>
+                                <div style="font-size: 11px; font-weight: 600; 
+                                    <?php if ($has_assignments) {
+                                        echo 'color: #065f46;';
+                                    } elseif ($has_scan) {
+                                        echo 'color: #1e40af;';
+                                    } else {
+                                        echo 'color: #94a3b8;';
+                                    } ?>">Asignar</div>
+                            </div>
+                        </div>
+
+                        <!-- ACTION BUTTONS -->
+                        <div style="display: flex; flex-direction: column; gap: 12px; margin-bottom: 20px;">
+                            <!-- Save Button -->
+                            <button type="submit" class="button button-large" style="width: 100%; height: 42px; background: linear-gradient(135deg, #1e293b, #0f172a); color: #ffffff; border: none; border-radius: 8px; font-weight: 600; font-size: 13px; cursor: pointer; transition: all 0.2s; display: flex; align-items: center; justify-content: center; gap: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.1);">
+                                <span>💾</span> Guardar Configuración y Mesas
+                            </button>
+                            
+                            <?php if ( $config_id > 0 ) : ?>
+                                <!-- Scan Button -->
+                                <button type="button" id="btn_scan_event" class="button button-large" style="width: 100%; height: 42px; background: #ffffff; color: #2563eb; border: 2px solid #3b82f6; border-radius: 8px; font-weight: 600; font-size: 13px; cursor: pointer; transition: all 0.2s; display: flex; align-items: center; justify-content: center; gap: 8px;">
+                                    <span>🔍</span> 1. Escanear Asistentes
+                                </button>
+                            <?php endif; ?>
+                        </div>
+
+                        <!-- INTEGRATED LOG TERMINAL -->
+                        <div id="tbp-terminal-container" style="display: none; margin-bottom: 20px; border-radius: 8px; overflow: hidden; border: 1px solid #1e293b; box-shadow: 0 10px 15px -3px rgba(0,0,0,0.1);">
+                            <div style="background: #1e293b; padding: 8px 12px; display: flex; align-items: center; justify-content: space-between; font-family: monospace; font-size: 11px; color: #94a3b8;">
+                                <span>🤖 CONSOLA DE DIAGNÓSTICO</span>
+                                <span id="tbp-terminal-status" style="color: #10b981; font-weight: bold;">● EN LÍNEA</span>
+                            </div>
+                            <div id="tbp-terminal-logger" style="height: 180px; background: #0f172a; color: #38bdf8; padding: 12px; font-family: 'Courier New', Courier, monospace; font-size: 11px; line-height: 1.5; overflow-y: auto; overflow-x: hidden; white-space: pre-wrap; word-break: break-all;"></div>
+                        </div>
+
+                        <?php if ( $config_id > 0 ) : ?>
+                            <!-- ANTI-COLLAPSE SNAPSHOT CONTROL -->
+                            <div style="background: #fffdf5; border: 1px solid #fef08a; padding: 16px; border-radius: 8px; margin-bottom: 20px; display: flex; flex-direction: column; gap: 8px;">
+                                <div style="display: flex; align-items: center; gap: 8px;">
+                                    <span style="font-size: 16px;">🛡️</span>
+                                    <h4 style="margin: 0; font-size: 12px; font-weight: 700; color: #854d0e;">Consulta Pública (Anti-Colapso)</h4>
+                                </div>
+                                <p style="margin: 0; font-size: 11px; color: #713f12; line-height: 1.4;">
+                                    Genera el archivo JSON estático para evitar sobrecargar la base de datos durante las consultas masivas de los alumnos.
+                                </p>
+                                <button type="button" id="btn_regenerate_snapshot" class="button button-small" style="width: 100%; height: 32px; background: #ffffff; color: #854d0e; border: 1px solid #ca8a04; border-radius: 6px; font-weight: 600; font-size: 12px; cursor: pointer; transition: all 0.2s; display: flex; align-items: center; justify-content: center; gap: 6px;">
+                                    <span>🔄</span> Regenerar Snapshot Ahora
+                                </button>
+                            </div>
+
+                            <!-- DELETE CONFIGURATION CONTROL -->
+                            <div style="border-top: 1px solid #f1f5f9; padding-top: 16px; text-align: center;">
+                                <button type="button" id="btn_delete_config" style="color: #ef4444; background: none; border: none; font-size: 12px; font-weight: 600; cursor: pointer; text-decoration: underline; display: inline-flex; align-items: center; gap: 4px;">
+                                    🗑️ Eliminar Configuración
+                                </button>
+                            </div>
+                        <?php endif; ?>
+
+                        <!-- BLOQUE AISLADO DE JS PARA EL BOTÓN DE ESCANEAR Y ASIGNAR -->
+                        <script>
+                        (function() {
+                            function logToConsole(message, type) {
+                                var logger = document.getElementById("tbp-terminal-logger");
+                                var container = document.getElementById("tbp-terminal-container");
+                                if (!logger || !container) return;
+                                
+                                if (container.style.display === "none") {
+                                    container.style.display = "block";
+                                }
+                                
+                                var date = new Date();
+                                var timeStr = "[" + 
+                                    String(date.getHours()).padStart(2, '0') + ":" + 
+                                    String(date.getMinutes()).padStart(2, '0') + ":" + 
+                                    String(date.getSeconds()).padStart(2, '0') + 
+                                "] ";
+                                
+                                var color = "#38bdf8";
+                                var prefix = "";
+                                
+                                if (type === "success") {
+                                    color = "#4ade80";
+                                    prefix = "✔ ";
+                                } else if (type === "error") {
+                                    color = "#f87171";
+                                    prefix = "✖ ";
+                                } else if (type === "warning") {
+                                    color = "#fbbf24";
+                                    prefix = "⚠️ ";
+                                } else if (type === "header") {
+                                    color = "#a78bfa";
+                                    prefix = "⚡ ";
+                                }
+                                
+                                var lineSpan = document.createElement("span");
+                                lineSpan.style.color = color;
+                                lineSpan.textContent = timeStr + prefix + message + "\n";
+                                logger.appendChild(lineSpan);
+                                logger.scrollTop = logger.scrollHeight;
+                            }
+
+                            function registerTbpButtons() {
+                                var btnScan = document.getElementById("btn_scan_event");
+                                var btnPacking = document.getElementById("btn_run_packing");
+                                var btnSnapshot = document.getElementById("btn_regenerate_snapshot");
+                                var btnDelete = document.getElementById("btn_delete_config");
+                                var $ = window.jQuery;
+                                
+                                if (btnScan) {
+                                    btnScan.onclick = function(e) {
+                                        e.preventDefault();
+                                        if (!$) {
+                                            alert("Error: jQuery no está disponible.");
+                                            return;
+                                        }
+                                        
+                                        var configId = parseInt("<?php echo esc_js($config_id); ?>", 10) || 0;
+                                        var logger = document.getElementById("tbp-terminal-logger");
+                                        if (logger) logger.innerHTML = "";
+                                        
+                                        logToConsole("Iniciando escaneo de asistentes para la configuración #" + configId, "header");
+                                        btnScan.disabled = true;
+                                        if (btnPacking) btnPacking.disabled = true;
+                                        
+                                        logToConsole("Paso 1: Obteniendo lista de pedidos a escanear (tbp_asientos_scan_init)...", "info");
+                                        $.post(ajaxurl, {
+                                            action: 'tbp_asientos_scan_init',
+                                            config_id: configId,
+                                            nonce: '<?php echo wp_create_nonce("tbp_asientos_nonce"); ?>'
+                                        }, function(initRes) {
+                                            if (!initRes.success) {
+                                                logToConsole("Error inicial: " + (initRes.data.message || initRes.data), "error");
+                                                btnScan.disabled = false;
+                                                return;
+                                            }
+                                            
+                                            var orderIds = initRes.data.order_ids || [];
+                                            var totalOrders = orderIds.length;
+                                            logToConsole("Pedidos encontrados con boletos elegibles: " + totalOrders, "success");
+                                            
+                                            if (totalOrders === 0) {
+                                                logToConsole("No se encontraron pedidos para procesar.", "warning");
+                                                btnScan.disabled = false;
+                                                return;
+                                            }
+                                            
+                                            var batchSize = 50;
+                                            var currentIndex = 0;
+                                            var allResults = [];
+                                            
+                                            function processNextBatch() {
+                                                if (currentIndex >= totalOrders) {
+                                                    finishScan();
+                                                    return;
+                                                }
+                                                
+                                                var batch = orderIds.slice(currentIndex, currentIndex + batchSize);
+                                                var pct = Math.round((currentIndex / totalOrders) * 100);
+                                                logToConsole("Procesando lote (" + (currentIndex + 1) + " a " + Math.min(currentIndex + batchSize, totalOrders) + " de " + totalOrders + ") - " + pct + "%...", "info");
+                                                
+                                                $.post(ajaxurl, {
+                                                    action: 'tbp_asientos_scan_batch',
+                                                    config_id: configId,
+                                                    order_ids: batch,
+                                                    nonce: '<?php echo wp_create_nonce("tbp_asientos_nonce"); ?>'
+                                                }, function(batchRes) {
+                                                    if (batchRes.success) {
+                                                        allResults = allResults.concat(batchRes.data);
+                                                        currentIndex += batchSize;
+                                                        processNextBatch();
+                                                    } else {
+                                                        logToConsole("Error en lote: " + (batchRes.data.message || batchRes.data), "error");
+                                                        btnScan.disabled = false;
+                                                    }
+                                                }).fail(function(xhr) {
+                                                    logToConsole("Fallo de conexión AJAX en el lote. Código HTTP: " + xhr.status, "error");
+                                                    btnScan.disabled = false;
+                                                });
+                                            }
+                                            
+                                            function finishScan() {
+                                                logToConsole("Consolidando resultados en la base de datos...", "info");
+                                                $.post(ajaxurl, {
+                                                    action: 'tbp_asientos_scan_finish',
+                                                    config_id: configId,
+                                                    results: JSON.stringify(allResults),
+                                                    nonce: '<?php echo wp_create_nonce("tbp_asientos_nonce"); ?>'
+                                                }, function(finRes) {
+                                                    btnScan.disabled = false;
+                                                    
+                                                    if (finRes.success) {
+                                                        logToConsole("¡Escaneo finalizado con éxito!", "success");
+                                                        logToConsole("Resumen: " + finRes.data.asistentes + " asistentes, " + finRes.data.grupos + " grupos, " + finRes.data.pedidos + " pedidos.", "success");
+                                                        logToConsole("Recargando para reflejar el nuevo estado...", "info");
+                                                        setTimeout(function() {
+                                                            window.location.href = '?page=tbp-actividades-asientos&action=edit&id=' + configId + '&v=' + new Date().getTime();
+                                                        }, 1500);
+                                                    } else {
+                                                        logToConsole("Error al consolidar: " + (finRes.data.message || finRes.data), "error");
+                                                    }
+                                                }).fail(function(xhr) {
+                                                    logToConsole("Fallo de conexión AJAX al consolidar. Código HTTP: " + xhr.status, "error");
+                                                    btnScan.disabled = false;
+                                                });
+                                            }
+                                            
+                                            processNextBatch();
+                                            
+                                        }).fail(function(xhr) {
+                                            logToConsole("Fallo de conexión inicial. Código HTTP: " + xhr.status, "error");
+                                            btnScan.disabled = false;
+                                        });
+                                    };
+                                }
+                                
+                                var runPackingHandler = function(e) {
+                                    e.preventDefault();
+                                    if (!$) return;
+                                    
+                                    if (!confirm('¿Estás seguro? Esto calculará las asignaciones automáticas de mesas y sobrescribirá cualquier asignación manual previa.')) return;
+                                    
+                                    var configId = parseInt("<?php echo esc_js($config_id); ?>", 10) || 0;
+                                    var logger = document.getElementById("tbp-terminal-logger");
+                                    if (logger) logger.innerHTML = "";
+                                    
+                                    logToConsole("Iniciando algoritmo de asignación inteligente...", "header");
+                                    if (btnPacking) btnPacking.disabled = true;
+                                    var btnPacking2 = document.getElementById("btn_run_packing_v2");
+                                    if (btnPacking2) btnPacking2.disabled = true;
+                                    
+                                    $.post(ajaxurl, {
+                                        action: 'tbp_asientos_run_packing',
+                                        config_id: configId,
+                                        nonce: '<?php echo wp_create_nonce("tbp_asientos_nonce"); ?>'
+                                    }, function(response) {
+                                        if (btnPacking) btnPacking.disabled = false;
+                                        if (btnPacking2) btnPacking2.disabled = false;
+                                        
+                                        if (response.success) {
+                                            var stats = response.data.stats;
+                                            var debug = response.data.debug || {};
+                                            
+                                            logToConsole("Asignación inteligente completada con éxito.", "success");
+                                            logToConsole("Resultados de la corrida:", "header");
+                                            logToConsole("- Pedidos asignados: " + stats.total_asignados, "success");
+                                            logToConsole("- Asientos ocupados: " + (stats.total_lugares || 0), "success");
+                                            logToConsole("- Eficiencia de ocupación: " + stats.eficiencia_pct + "%", "success");
+                                            
+                                            if (stats.total_asignados === 0) {
+                                                logToConsole("Diagnóstico detallado (0 asignaciones):", "warning");
+                                                logToConsole("- Event ID: " + (debug.event_id || 'N/A'), "info");
+                                                logToConsole("- Proveedor ID: " + (debug.proveedor_id || 'N/A'), "info");
+                                                logToConsole("- Campo de Grupo: " + (debug.group_field || 'N/A'), "info");
+                                                logToConsole("- Fuente de pedidos: " + (debug.pedidos_source || 'N/A'), "info");
+                                                logToConsole("- Pedidos encontrados: " + (debug.pedidos_raw_count || 0), "info");
+                                                logToConsole("- Zonas configuradas: " + (debug.zonas_count || 0), "info");
+                                                logToConsole("- Nombres de zonas: " + (debug.zonas_nombres ? debug.zonas_nombres.join(', ') : 'N/A'), "info");
+                                                logToConsole("- Grupos encontrados: " + (debug.grupos_count || 0), "info");
+                                                logToConsole("💡 Si los pedidos encontrados son 0, verifica que existan pedidos completados o en procesamiento para este evento.", "warning");
+                                                logToConsole("💡 Si la capacidad de las mesas es 0, asegúrate de generar mesas en el plano visual (Etapa 2).", "warning");
+                                            } else {
+                                                logToConsole("Redireccionando al visor de resultados...", "info");
+                                                setTimeout(function() {
+                                                    window.location.href = '?page=tbp-actividades-asientos&action=view&id=' + configId + '&v=' + new Date().getTime();
+                                                }, 2000);
+                                            }
+                                        } else {
+                                            logToConsole("Error en asignación: " + (response.data.message || response.data), "error");
+                                        }
+                                    }).fail(function(xhr) {
+                                        if (btnPacking) btnPacking.disabled = false;
+                                        if (btnPacking2) btnPacking2.disabled = false;
+                                        logToConsole("Fallo de conexión AJAX al asignar. Código HTTP: " + xhr.status, "error");
+                                    });
+                                };
+                                
+                                if (btnPacking) btnPacking.onclick = runPackingHandler;
+                                
+                                window.tbp_start_packing = function(e) {
+                                    runPackingHandler(e);
+                                };
+                                
+                                if (btnSnapshot) {
+                                    btnSnapshot.onclick = function(e) {
+                                        e.preventDefault();
+                                        if (!$) return;
+                                        
+                                        var configId = parseInt("<?php echo esc_js($config_id); ?>", 10) || 0;
+                                        logToConsole("Regenerando snapshot JSON para consultas públicas...", "header");
+                                        btnSnapshot.disabled = true;
+                                        
+                                        $.post(ajaxurl, {
+                                            action: 'tbp_asientos_regenerate_snapshot',
+                                            config_id: configId,
+                                            nonce: '<?php echo wp_create_nonce("tbp_asientos_nonce"); ?>'
+                                        }, function(res) {
+                                            btnSnapshot.disabled = false;
+                                            if (res.success) {
+                                                logToConsole("¡Snapshot regenerado correctamente!", "success");
+                                                logToConsole("URL del archivo: " + res.data.file_url, "info");
+                                            } else {
+                                                logToConsole("Error al regenerar: " + (res.data.message || res.data), "error");
+                                            }
+                                        }).fail(function(xhr) {
+                                            btnSnapshot.disabled = false;
+                                            logToConsole("Fallo de conexión AJAX al regenerar snapshot. Código HTTP: " + xhr.status, "error");
+                                        });
+                                    };
+                                }
+                                
+                                if (btnDelete) {
+                                    btnDelete.onclick = function(e) {
+                                        e.preventDefault();
+                                        if (!confirm("⚠️ ¿ESTÁS COMPLETAMENTE SEGURO? ⚠️\n\nEsta acción eliminará de forma irreversible toda la configuración de este evento, incluyendo las mesas generadas, las asignaciones de asientos y los registros escaneados.\n\nEsta operación no se puede deshacer.")) {
+                                            return;
+                                        }
+                                        
+                                        var form = document.getElementById("tbp-asientos-form");
+                                        if (form) {
+                                            var actionInput = form.querySelector('input[name="tbp_asientos_action"]');
+                                            if (!actionInput) {
+                                                actionInput = document.createElement("input");
+                                                actionInput.type = "hidden";
+                                                actionInput.name = "tbp_asientos_action";
+                                                form.appendChild(actionInput);
+                                            }
+                                            actionInput.value = "delete_config";
+                                            
+                                            var nonceInput = document.createElement("input");
+                                            nonceInput.type = "hidden";
+                                            nonceInput.name = "_wpnonce";
+                                            nonceInput.value = "<?php echo wp_create_nonce('tbp_asientos_delete_config'); ?>";
+                                            form.appendChild(nonceInput);
+                                            
+                                            form.submit();
+                                        }
+                                    };
+                                }
+                            }
+                            
+                            if (document.readyState === "complete" || document.readyState === "interactive") {
+                                registerTbpButtons();
+                            } else {
+                                document.addEventListener("DOMContentLoaded", registerTbpButtons);
+                            }
+                        })();
+                        </script>
                     </div>
                 </div>
             </div>
@@ -284,7 +831,7 @@ function tbp_asientos_render_edit_view( $config_id = 0 ) {
                 </div>
             </div>
             <div style="display:flex; gap:10px; align-items:center;">
-                <button type="button" id="btn_run_packing_v2" class="button button-large" style="background:#fff; color:#1e3a5f; border:none; font-weight:700; padding:8px 20px; border-radius:6px; cursor:pointer;">▶ Ejecutar Asignación Inteligente</button>
+                <button type="button" id="btn_run_packing_v2" onclick="tbp_start_packing(event)" class="button button-large" style="background:#fff; color:#1e3a5f; border:none; font-weight:700; padding:8px 20px; border-radius:6px; cursor:pointer;">▶ Ejecutar Asignación Inteligente</button>
                 <a href="?page=tbp-actividades-asientos&action=view&id=<?php echo $config_id; ?>" class="button button-large" style="background:rgba(255,255,255,0.15); color:#fff; border:1px solid rgba(255,255,255,0.3); font-weight:600; padding:8px 20px; border-radius:6px;">👀 Panel de Control</a>
             </div>
         </div>
@@ -316,11 +863,32 @@ function tbp_asientos_render_edit_view( $config_id = 0 ) {
                 <strong style="font-size:13px; color:#334155;">Filtros</strong>
                 <button type="button" id="btn_clear_filters" class="button button-small" style="margin-left:auto; font-size:11px;">✕ Limpiar Filtros</button>
             </div>
-            <div style="display:grid; grid-template-columns: 1fr 1fr 1fr; gap:12px;">
+            <div style="display:grid; grid-template-columns: 1fr 1fr 1fr 1fr 1fr; gap:12px;">
+                <div>
+                    <label style="font-size:11px; font-weight:600; color:#64748b; text-transform:uppercase; letter-spacing:0.5px; display:block; margin-bottom:4px;">Estado</label>
+                    <select id="filter_estado" style="width:100%; padding:8px 10px; border:1px solid #cbd5e1; border-radius:6px; font-size:13px; background:#f8fafc;">
+                        <option value="">-- Todos --</option>
+                        <option value="asignado">Ya Asignados</option>
+                        <option value="no_asignado">Falta Asignar</option>
+                    </select>
+                </div>
                 <div>
                     <label style="font-size:11px; font-weight:600; color:#64748b; text-transform:uppercase; letter-spacing:0.5px; display:block; margin-bottom:4px;">Grupo</label>
                     <select id="filter_grupo" style="width:100%; padding:8px 10px; border:1px solid #cbd5e1; border-radius:6px; font-size:13px; background:#f8fafc;">
                         <option value="">-- Todos los Grupos --</option>
+                    </select>
+                </div>
+                <div>
+                    <label style="font-size:11px; font-weight:600; color:#64748b; text-transform:uppercase; letter-spacing:0.5px; display:block; margin-bottom:4px;">Cantidad</label>
+                    <select id="filter_cantidad" style="width:100%; padding:8px 10px; border:1px solid #cbd5e1; border-radius:6px; font-size:13px; background:#f8fafc;">
+                        <option value="">-- Cualquier cantidad --</option>
+                        <option value="1">1 Lugar</option>
+                        <option value="2">2 Lugares</option>
+                        <option value="3">3 Lugares</option>
+                        <option value="4">4 Lugares</option>
+                        <option value="5">5 Lugares</option>
+                        <option value="6">6 Lugares</option>
+                        <option value="7+">7+ Lugares</option>
                     </select>
                 </div>
                 <div>
@@ -400,7 +968,7 @@ function tbp_asientos_render_edit_view( $config_id = 0 ) {
                 <div style="display:flex; gap:8px; align-items:center;">
                     <button type="button" id="btn_assign_undo" class="button" style="background:rgba(255,255,255,0.15); color:#fff; border:1px solid rgba(255,255,255,0.3); font-size:12px;" disabled>🔄 Deshacer última mesa</button>
                     <button type="button" id="btn_assign_confirm" class="button" style="background:#16a34a; color:#fff; border:none; font-weight:700; font-size:13px; padding:6px 20px;" disabled>💾 Confirmar Asignación</button>
-                    <button type="button" id="btn_assign_cancel" class="button" style="background:#dc2626; color:#fff; border:none; font-size:12px; padding:6px 16px;">✕ Cancelar</button>
+                    <button type="button" id="btn_assign_cancel" class="button" style="background:#dc2626; color:#fff; border:none; font-size:12px; padding:6px 16px;">✕ Cerrar / Cambiar Grupo</button>
                 </div>
             </div>
 
@@ -461,6 +1029,61 @@ function tbp_asientos_render_edit_view( $config_id = 0 ) {
         </div>
     </div>
 
+    <!-- ============================================================= -->
+    <!-- MODAL: EDITAR MESA INDIVIDUAL (STAGES 3)                      -->
+    <!-- ============================================================= -->
+    <div id="tbp-edit-table-modal" style="display:none; position:fixed; top:0; left:0; width:100vw; height:100vh; z-index:1000000; background:rgba(15,23,42,0.7); backdrop-filter:blur(5px); align-items:center; justify-content:center;">
+        <div style="background:#fff; border-radius:12px; width:400px; box-shadow:0 20px 25px -5px rgba(0,0,0,0.1), 0 10px 10px -5px rgba(0,0,0,0.04); border:1px solid #e2e8f0; overflow:hidden; font-family:-apple-system,BlinkMacSystemFont,Segoe UI,Roboto,Helvetica,Arial,sans-serif;">
+            <!-- Header -->
+            <div style="background:linear-gradient(135deg, #1e3a5f 0%, #2271b1 100%); padding:16px 20px; color:#fff; display:flex; justify-content:space-between; align-items:center;">
+                <h3 style="margin:0; font-size:15px; font-weight:700; color:#fff; display:flex; align-items:center; gap:8px;">
+                    <span>🪑</span> Modificar Mesa <span id="edit_table_title_num"></span>
+                </h3>
+                <button type="button" class="btn_close_edit_table" style="background:none; border:none; color:#fff; font-size:18px; cursor:pointer; opacity:0.8; padding:0; outline:none; box-shadow:none;">✕</button>
+            </div>
+            
+            <!-- Body -->
+            <div style="padding:20px;">
+                <input type="hidden" id="edit_table_id" value="">
+                
+                <!-- Info Status -->
+                <div style="background:#f8fafc; border:1px solid #e2e8f0; border-radius:8px; padding:10px 12px; margin-bottom:16px; font-size:12px; color:#475569;">
+                    <div style="display:flex; justify-content:space-between; margin-bottom:4px;">
+                        <span>Zona:</span>
+                        <strong id="edit_table_zona" style="color:#1e293b;">—</strong>
+                    </div>
+                    <div style="display:flex; justify-content:space-between;">
+                        <span>Asientos actualmente ocupados:</span>
+                        <strong id="edit_table_used" style="color:#2563eb;">0 lugares</strong>
+                    </div>
+                </div>
+
+                <!-- Fields -->
+                <div style="margin-bottom:14px;">
+                    <label style="display:block; font-size:12px; font-weight:600; color:#334155; margin-bottom:6px;">Capacidad Total (PAX)</label>
+                    <input type="number" id="edit_table_capacity" min="1" max="100" class="regular-text" style="width:100%; padding:8px; border:1px solid #cbd5e1; border-radius:6px; box-sizing:border-box; font-size:13px;" required>
+                    <span style="font-size:10px; color:#64748b; margin-top:4px; display:block;">Debe ser igual o mayor que los lugares ocupados.</span>
+                </div>
+
+                <div style="margin-bottom:20px;">
+                    <label style="display:block; font-size:12px; font-weight:600; color:#334155; margin-bottom:6px;">Tipo de Mesa (Forma)</label>
+                    <select id="edit_table_shape" style="width:100%; padding:8px; border:1px solid #cbd5e1; border-radius:6px; font-size:13px; height:36px; box-sizing:border-box;">
+                        <option value="round">Banquete Redonda</option>
+                        <option value="square">Cuadrada</option>
+                        <option value="rectangular">Rectangular</option>
+                        <option value="bar">Mesa Bar / Coctel</option>
+                    </select>
+                </div>
+            </div>
+
+            <!-- Footer -->
+            <div style="background:#f8fafc; border-top:1px solid #e2e8f0; padding:12px 20px; display:flex; justify-content:end; gap:8px;">
+                <button type="button" class="btn_close_edit_table button" style="background:#fff; border:1px solid #cbd5e1; color:#475569; border-radius:6px; padding:6px 12px; font-size:12px; font-weight:600; cursor:pointer;">Cancelar</button>
+                <button type="button" id="btn_save_edit_table" class="button button-primary" style="background:#2271b1; border:none; color:#fff; border-radius:6px; padding:6px 16px; font-size:12px; font-weight:600; cursor:pointer;">💾 Guardar Cambios</button>
+            </div>
+        </div>
+    </div>
+
     <style>
         .tbp-zona-box { border: 1px solid #ccd0d4; background: #fff; padding: 15px; margin-bottom: 15px; position: relative; box-shadow: 0 1px 1px rgba(0,0,0,.04); }
         .tbp-zona-box h4 { margin-top: 0; padding-bottom: 10px; border-bottom: 1px solid #eee; display:flex; justify-content:space-between; }
@@ -471,11 +1094,19 @@ function tbp_asientos_render_edit_view( $config_id = 0 ) {
 
     <script>
     jQuery(document).ready(function($) {
-        // Navegación de Etapas
-        $('.stage-item').on('click', function() {
-            const stage = $(this).data('stage');
+        // Navegación de Etapas con validación estricta
+        $('.stage-item').on('click', function(e) {
+            var $this = $(this);
+            if ($this.attr('data-enabled') === '0') {
+                e.preventDefault();
+                e.stopImmediatePropagation();
+                alert('⚠️ Para acceder a la generación y asignación, primero debes escanear los asistentes (Etapa 1) y diseñar el plano con mesas (Etapa 2).');
+                return false;
+            }
+            
+            const stage = $this.data('stage');
             $('.stage-item').removeClass('active').css({background:'none', color:'#64748b', border:'none'});
-            $(this).addClass('active').css({background:'#f0f6fb', color:'#2271b1', border:'1px solid #2271b1'});
+            $this.addClass('active').css({background:'#f0f6fb', color:'#2271b1', border:'1px solid #2271b1'});
             
             $('.tbp-stage-content').hide();
             $('#tbp-stage-' + stage).show();
@@ -580,210 +1211,9 @@ function tbp_asientos_render_edit_view( $config_id = 0 ) {
         // Inicializar
         renderZonas();
 
-        // Escanear asistentes en lotes (Batching para evitar 504)
-        $('#btn_scan_event').on('click', function() {
-            const configId = <?php echo $config_id; ?>;
-            const $btn = $(this);
-            $btn.prop('disabled', true);
-            $('#btn_run_packing').prop('disabled', true);
-            $('#scan_results').hide();
-            $('#scan_loader').show().html('⏳ Iniciando escaneo...');
+        // Lógica de escaneo y packing ejecutada desde el script aislado
 
-            // Paso 1: Init (Obtener todos los IDs)
-            $.post(ajaxurl, {
-                action: 'tbp_asientos_scan_init',
-                config_id: configId,
-                nonce: '<?php echo wp_create_nonce("tbp_asientos_nonce"); ?>'
-            }, function(initRes) {
-                if (!initRes.success) {
-                    $('#scan_loader').hide();
-                    $btn.prop('disabled', false);
-                    alert('Error: ' + (initRes.data.message || initRes.data));
-                    return;
-                }
-
-                const orderIds = initRes.data.order_ids;
-                const totalOrders = orderIds.length;
-                if (totalOrders === 0) {
-                    $('#scan_loader').hide();
-                    $btn.prop('disabled', false);
-                    alert('No se encontraron pedidos con asientos para este evento.');
-                    return;
-                }
-
-                const batchSize = 50;
-                let currentIndex = 0;
-                let allResults = [];
-
-                function processNextBatch() {
-                    if (currentIndex >= totalOrders) {
-                        finishScan();
-                        return;
-                    }
-
-                    const batch = orderIds.slice(currentIndex, currentIndex + batchSize);
-                    const pct = Math.round((currentIndex / totalOrders) * 100);
-                    $('#scan_loader').html('⏳ Escaneando pedidos... ' + pct + '% (' + currentIndex + ' de ' + totalOrders + ')');
-
-                    $.post(ajaxurl, {
-                        action: 'tbp_asientos_scan_batch',
-                        config_id: configId,
-                        order_ids: batch,
-                        nonce: '<?php echo wp_create_nonce("tbp_asientos_nonce"); ?>'
-                    }, function(batchRes) {
-                        if (batchRes.success) {
-                            allResults = allResults.concat(batchRes.data);
-                            currentIndex += batchSize;
-                            processNextBatch();
-                        } else {
-                            $('#scan_loader').hide();
-                            $btn.prop('disabled', false);
-                            alert('Error en lote: ' + (batchRes.data.message || batchRes.data));
-                        }
-                    }).fail(function(xhr) {
-                        $('#scan_loader').hide();
-                        $btn.prop('disabled', false);
-                        alert('Error de conexión en lote. Servidor (' + xhr.status + ').');
-                    });
-                }
-
-                function finishScan() {
-                    $('#scan_loader').html('⏳ Consolidando resultados...');
-                    $.post(ajaxurl, {
-                        action: 'tbp_asientos_scan_finish',
-                        config_id: configId,
-                        results: allResults,
-                        nonce: '<?php echo wp_create_nonce("tbp_asientos_nonce"); ?>'
-                    }, function(finRes) {
-                        $('#scan_loader').hide();
-                        $btn.prop('disabled', false);
-                        
-                        if (finRes.success) {
-                            $('#scan_asistentes').text(finRes.data.asistentes);
-                            $('#scan_grupos').text(finRes.data.grupos);
-                            $('#scan_pedidos').text(finRes.data.pedidos);
-                            $('#scan_results').slideDown();
-                            
-                            if (finRes.data.pedidos > 0) {
-                                $('#btn_run_packing').prop('disabled', false);
-                            } else {
-                                alert('No se encontraron pedidos con lugares por asignar.');
-                            }
-                        } else {
-                            alert('Error al consolidar: ' + (finRes.data.message || finRes.data));
-                        }
-                    }).fail(function(xhr) {
-                        $('#scan_loader').hide();
-                        $btn.prop('disabled', false);
-                        alert('Error al guardar datos (' + xhr.status + ').');
-                    });
-                }
-
-                // Iniciar procesamiento en lotes
-                processNextBatch();
-
-            }).fail(function(xhr) {
-                $('#scan_loader').hide();
-                $btn.prop('disabled', false);
-                alert('Error de conexión inicial. Servidor (' + xhr.status + ').');
-            });
-        });
-
-        // Ejecutar algoritmo
-        $('#btn_run_packing, #btn_run_packing_v2').on('click', function() {
-            if(!confirm('¿Estás seguro? Esto calculará las asignaciones y sobrescribirá cualquier asignación manual previa.')) return;
-            
-            const configId = <?php echo $config_id; ?>;
-            const $btn = $(this);
-            const originalText = $btn.text();
-            
-            $('#btn_run_packing, #btn_run_packing_v2').prop('disabled', true);
-            $btn.text('⏳ Asignando...');
-            $('#packing_loader').show();
-
-            $.post(ajaxurl, {
-                action: 'tbp_asientos_run_packing',
-                config_id: configId,
-                nonce: '<?php echo wp_create_nonce("tbp_asientos_nonce"); ?>'
-            }, function(response) {
-                $('#packing_loader').hide();
-                $('#btn_run_packing, #btn_run_packing_v2').prop('disabled', false);
-                $btn.text(originalText);
-
-                if (response.success) {
-                    var stats = response.data.stats;
-                    var debug = response.data.debug || {};
-                    
-                    if (stats.total_asignados === 0) {
-                        // Mostrar diagnóstico detallado cuando hay 0 asignaciones
-                        var diagMsg = '⚠️ Asignación completada con 0 resultados.\n\n';
-                        diagMsg += '📊 DIAGNÓSTICO:\n';
-                        diagMsg += '• Event ID: ' + (debug.event_id || 'N/A') + '\n';
-                        diagMsg += '• Proveedor ID: ' + (debug.proveedor_id || 'N/A') + '\n';
-                        diagMsg += '• Campo de Grupo: ' + (debug.group_field || 'N/A') + '\n';
-                        diagMsg += '• Fuente de pedidos: ' + (debug.pedidos_source || 'N/A') + '\n';
-                        diagMsg += '• Pedidos encontrados: ' + (debug.pedidos_raw_count || 0) + '\n';
-                        diagMsg += '• Zonas configuradas: ' + (debug.zonas_count || 0) + '\n';
-                        diagMsg += '• Nombres de zonas: ' + (debug.zonas_nombres ? debug.zonas_nombres.join(', ') : 'N/A') + '\n';
-                        diagMsg += '• Grupos encontrados: ' + (debug.grupos_count || 0) + '\n';
-                        
-                        if (debug.mesas_por_zona) {
-                            diagMsg += '• Mesas por zona:\n';
-                            for (var z in debug.mesas_por_zona) {
-                                diagMsg += '    - ' + z + ': ' + debug.mesas_por_zona[z] + ' mesas\n';
-                            }
-                        }
-                        
-                        diagMsg += '\n💡 Si "Pedidos encontrados" es 0, verifica que el evento tenga pedidos completados/procesando.';
-                        diagMsg += '\nSi "Mesas por zona" muestra 0, regenera el plano visual.';
-                        
-                        alert(diagMsg);
-                    } else {
-                        alert('✅ Asignación completada.\n\nPedidos asignados: ' + stats.total_asignados + '\nLugares ocupados: ' + (stats.total_lugares || 0) + '\nEficiencia: ' + stats.eficiencia_pct + '%');
-                    }
-                    window.location.href = '?page=tbp-actividades-asientos&action=view&id=' + configId;
-                } else {
-                    alert('Error: ' + (response.data.message || response.data));
-                }
-            });
-        });
-
-        // Eliminar configuración
-        $('#btn_delete_config').on('click', function(e) {
-            e.preventDefault();
-            if(!confirm('⚠️ ¿ESTÁS SEGURO? Se eliminará la configuración, todas las mesas y todas las asignaciones generadas. Esto no se puede deshacer.')) return;
-            
-            // Cambiar la acción del formulario y hacer submit
-            $('#tbp-asientos-form').append('<input type="hidden" name="_wpnonce" value="<?php echo wp_create_nonce("tbp_asientos_delete_config"); ?>">');
-            $('input[name="tbp_asientos_action"]').val('delete_config');
-            $('#tbp-asientos-form').submit();
-        });
-
-        // Regenerar Snapshot Manualmente
-        $('#btn_regenerate_snapshot').on('click', function() {
-            const configId = <?php echo $config_id; ?>;
-            const $btn = $(this);
-            $btn.prop('disabled', true);
-            $('#snapshot_loader').show();
-
-            $.post(ajaxurl, {
-                action: 'tbp_asientos_regenerate_snapshot',
-                config_id: configId,
-                nonce: '<?php echo wp_create_nonce("tbp_asientos_nonce"); ?>'
-            }, function(response) {
-                $('#snapshot_loader').hide();
-                $btn.prop('disabled', false);
-                if (response.success) {
-                    alert('✅ ' + response.data);
-                } else {
-                    alert('❌ Error: ' + response.data);
-                }
-            }).fail(function() {
-                $('#snapshot_loader').hide();
-                $btn.prop('disabled', false);
-                alert('❌ Error de red al generar snapshot.');
-            });
-        });
+        // Eliminar configuración y regenerar snapshot vinculados desde el script aislado
         // Lógica de carga de campos de metadatos (Reutilizando AJAX de premiaciones)
         const currentGroupField = '<?php echo esc_js($group_field); ?>';
 
@@ -836,6 +1266,8 @@ function tbp_asientos_render_edit_view( $config_id = 0 ) {
         var scanSortField = 'order_id';
         var scanSortDir = 'asc';
         var scanGruposStats = {};
+        var scanAssignedMap = {};
+        var scanTableMap = {};
 
         // Cargar datos cuando se muestre la Etapa 3
         var stage3Loaded = false;
@@ -870,6 +1302,8 @@ function tbp_asientos_render_edit_view( $config_id = 0 ) {
 
                 scanAllData = response.data.pedidos || [];
                 scanGruposStats = response.data.grupos_stats || {};
+                scanAssignedMap = response.data.assigned_map || {};
+                scanTableMap = response.data.table_map || {};
 
                 // Poblar dropdown de grupos
                 var $gf = $('#filter_grupo');
@@ -889,12 +1323,27 @@ function tbp_asientos_render_edit_view( $config_id = 0 ) {
         }
 
         function applyFilters() {
+            var fEstado = $('#filter_estado').val();
             var fGrupo = $('#filter_grupo').val().toLowerCase();
+            var fCantidad = $('#filter_cantidad').val();
             var fPedido = $('#filter_pedido').val().trim();
             var fNombre = $('#filter_nombre').val().trim().toLowerCase();
 
             scanFilteredData = scanAllData.filter(function(p) {
+                if (fEstado) {
+                    var isAssigned = !!scanAssignedMap[p.order_id];
+                    if (fEstado === 'asignado' && !isAssigned) return false;
+                    if (fEstado === 'no_asignado' && isAssigned) return false;
+                }
                 if (fGrupo && (p.grupo || '').toLowerCase() !== fGrupo) return false;
+                if (fCantidad) {
+                    var c = parseInt(p.cantidad) || 0;
+                    if (fCantidad === '7+') {
+                        if (c < 7) return false;
+                    } else {
+                        if (c !== parseInt(fCantidad)) return false;
+                    }
+                }
                 if (fPedido && String(p.order_id).indexOf(fPedido) === -1) return false;
                 if (fNombre) {
                     var fullName = ((p.nombre || '') + ' ' + (p.apellidos || '')).toLowerCase();
@@ -976,10 +1425,17 @@ function tbp_asientos_render_edit_view( $config_id = 0 ) {
                 var rowBg = idx % 2 === 0 ? '#fff' : '#f8fafc';
                 var selectedBg = scanSelectedIds[p.order_id] ? '#eff6ff' : rowBg;
 
+                var assignedMesaId = scanAssignedMap[p.order_id];
+                var badgeAssigned = '';
+                if (assignedMesaId) {
+                    var mesaNum = scanTableMap[assignedMesaId] || assignedMesaId;
+                    badgeAssigned = ' <span style="background:#f59e0b; color:#fff; padding:3px 8px; border-radius:12px; font-size:9px; font-weight:700; margin-left:8px; display:inline-block; vertical-align:middle;">✅ Ya asignado (Mesa ' + escHtml(mesaNum.toString()) + ')</span>';
+                }
+
                 var row = '<tr data-order-id="' + p.order_id + '" style="border-bottom:1px solid #f1f5f9; background:' + selectedBg + '; transition:background 0.15s;">';
                 row += '<td style="padding:10px 16px; text-align:center;"><input type="checkbox" class="chk_row" value="' + p.order_id + '" ' + isChecked + ' style="width:15px; height:15px; cursor:pointer;"></td>';
-                row += '<td style="padding:10px 16px; font-weight:600; color:#1e40af;">#' + p.order_id + '</td>';
-                row += '<td style="padding:10px 16px; color:#334155;">' + escHtml(p.nombre || '') + ' ' + escHtml(p.apellidos || '') + '</td>';
+                row += '<td style="padding:10px 16px; font-weight:600; color:#1e40af; vertical-align:middle;">#' + p.order_id + badgeAssigned + '</td>';
+                row += '<td style="padding:10px 16px; color:#334155; vertical-align:middle;">' + escHtml(p.nombre || '') + ' ' + escHtml(p.apellidos || '') + '</td>';
                 row += '<td style="padding:10px 16px;"><span style="background:#e0e7ff; color:#3730a3; padding:3px 10px; border-radius:20px; font-size:11px; font-weight:600;">' + escHtml(p.grupo || 'Sin grupo') + '</span></td>';
                 row += '<td style="padding:10px 16px; text-align:right; font-weight:700; color:#334155;">' + parseInt(p.cantidad) + '</td>';
                 row += '</tr>';
@@ -1048,13 +1504,15 @@ function tbp_asientos_render_edit_view( $config_id = 0 ) {
 
         // Filters
         var filterTimeout;
-        $('#filter_grupo').on('change', function() { applyFilters(); });
+        $('#filter_estado, #filter_grupo, #filter_cantidad').on('change', function() { applyFilters(); });
         $('#filter_pedido, #filter_nombre').on('input', function() {
             clearTimeout(filterTimeout);
             filterTimeout = setTimeout(function() { applyFilters(); }, 250);
         });
         $('#btn_clear_filters').on('click', function() {
+            $('#filter_estado').val('');
             $('#filter_grupo').val('');
+            $('#filter_cantidad').val('');
             $('#filter_pedido').val('');
             $('#filter_nombre').val('');
             applyFilters();
@@ -1175,6 +1633,7 @@ function tbp_asientos_render_edit_view( $config_id = 0 ) {
         var assignTotalPiezas = 0;
         var assignDonePiezas = 0;
         var assignGroupName = '';
+        var selectedOrderIds = [];      // Selected order IDs for manual table assignment
 
         // Wire up the action button
         $('#btn_action_selected').on('click', function() {
@@ -1211,6 +1670,7 @@ function tbp_asientos_render_edit_view( $config_id = 0 ) {
             assignQueue = selectedOrders;
             assignDone = [];
             assignHistory = [];
+            selectedOrderIds = [];
             assignTotalPiezas = 0;
             assignDonePiezas = 0;
             assignQueue.forEach(function(o) { assignTotalPiezas += o.cantidad; });
@@ -1254,64 +1714,33 @@ function tbp_asientos_render_edit_view( $config_id = 0 ) {
 
         function renderAssignFloor() {
             var $canvas = $('#assign_canvas_items');
-            $canvas.empty();
+            
+            var html = '';
 
             // Render decorative elements first (lower z-index)
             assignFloorElements.forEach(function(el) {
                 var shapeClass = 'item-' + el.tipo;
-                var $elem = $('<div>').css({
-                    position: 'absolute',
-                    left: el.pos_x + 'px',
-                    top: el.pos_y + 'px',
-                    width: el.width + 'px',
-                    height: el.height + 'px',
-                    background: el.color || '#334155',
-                    borderRadius: el.tipo === 'area' ? '0' : '4px',
-                    opacity: el.tipo === 'area' ? 0.25 : 0.7,
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                    color: '#fff',
-                    fontSize: '9px',
-                    fontWeight: '700',
-                    zIndex: 1,
-                    pointerEvents: 'none'
-                }).addClass(shapeClass).text(el.label);
-                $canvas.append($elem);
+                var borderRadius = el.tipo === 'area' ? '0' : '4px';
+                var opacity = el.tipo === 'area' ? 0.25 : 0.7;
+                var color = el.color || '#334155';
+                
+                html += '<div class="' + shapeClass + '" style="position:absolute; left:' + el.pos_x + 'px; top:' + el.pos_y + 'px; width:' + el.width + 'px; height:' + el.height + 'px; background:' + color + '; border-radius:' + borderRadius + '; opacity:' + opacity + '; display:flex; align-items:center; justify-content:center; color:#fff; font-size:9px; font-weight:700; z-index:1; pointer-events:none;">' + escHtml(el.label) + '</div>';
             });
 
             // Render tables
             assignFloorTables.forEach(function(tbl) {
                 var color = getTableColor(tbl);
                 var borderRadius = (tbl.tipo === 'round' || tbl.tipo === 'bar') ? '50%' : '4px';
-                var cursor = tbl.libre > 0 ? 'pointer' : 'not-allowed';
+                var cursor = 'pointer';
                 var fontSize = tbl.width < 40 ? '7px' : '9px';
 
-                var $el = $('<div>').css({
-                    position: 'absolute',
-                    left: tbl.pos_x + 'px',
-                    top: tbl.pos_y + 'px',
-                    width: tbl.width + 'px',
-                    height: tbl.height + 'px',
-                    background: color,
-                    borderRadius: borderRadius,
-                    border: '2px solid ' + color,
-                    display: 'flex',
-                    flexDirection: 'column',
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                    cursor: cursor,
-                    userSelect: 'none',
-                    zIndex: 5,
-                    boxShadow: '0 2px 6px rgba(0,0,0,0.2)',
-                    transition: 'transform 0.15s, box-shadow 0.15s'
-                }).attr('data-table-id', tbl.id).addClass('assign-table-item');
-
-                $el.append($('<div>').css({ color: '#fff', fontWeight: '800', fontSize: fontSize, textAlign: 'center', lineHeight: '1.1' }).text(tbl.numero));
-                $el.append($('<div>').css({ color: 'rgba(255,255,255,0.8)', fontSize: '7px', fontWeight: '600' }).text(tbl.libre + '/' + tbl.capacidad));
-
-                $canvas.append($el);
+                html += '<div class="assign-table-item" data-table-id="' + tbl.id + '" style="position:absolute; left:' + tbl.pos_x + 'px; top:' + tbl.pos_y + 'px; width:' + tbl.width + 'px; height:' + tbl.height + 'px; background:' + color + '; border-radius:' + borderRadius + '; border:2px solid ' + color + '; display:flex; flex-direction:column; align-items:center; justify-content:center; cursor:' + cursor + '; user-select:none; z-index:5; box-shadow:0 2px 6px rgba(0,0,0,0.2); transition:transform 0.15s, box-shadow 0.15s;">' +
+                    '<div style="color:#fff; font-weight:800; font-size:' + fontSize + '; text-align:center; line-height:1.1;">' + escHtml(tbl.numero) + '</div>' +
+                    '<div style="color:rgba(255,255,255,0.8); font-size:7px; font-weight:600;">' + tbl.libre + '/' + tbl.capacidad + '</div>' +
+                '</div>';
             });
+
+            $canvas.html(html);
 
             // Apply zoom
             $canvas.css('transform', 'scale(' + assignZoom + ')');
@@ -1343,9 +1772,15 @@ function tbp_asientos_render_edit_view( $config_id = 0 ) {
             // Then show pending orders
             var pendingOrders = assignQueue.filter(function(o) { return o.status === 'pending'; });
             pendingOrders.forEach(function(o) {
+                var isChecked = selectedOrderIds.indexOf(o.order_id) !== -1;
+                var bg = isChecked ? '#eff6ff' : '#fff';
+                var border = isChecked ? '#bfdbfe' : '#e2e8f0';
                 $list.append(
-                    '<div style="padding:8px 10px; margin-bottom:4px; background:#fff; border:1px solid #e2e8f0; border-radius:6px; font-size:12px; display:flex; justify-content:space-between; align-items:center;">' +
-                        '<div><strong style="color:#ea580c;">⏳</strong> #' + o.order_id + ' <span style="color:#64748b;">' + escHtml(o.nombre) + ' ' + escHtml(o.apellidos) + '</span></div>' +
+                    '<div class="assign-order-row" data-order-id="' + o.order_id + '" style="padding:8px 10px; margin-bottom:4px; background:' + bg + '; border:1px solid ' + border + '; border-radius:6px; font-size:12px; display:flex; justify-content:space-between; align-items:center; cursor:pointer; transition: background-color 0.15s, border-color 0.15s;">' +
+                        '<div style="display:flex; align-items:center; gap:8px;">' +
+                            '<input type="checkbox" class="assign-select-order" style="cursor:pointer;" data-order-id="' + o.order_id + '"' + (isChecked ? ' checked' : '') + '>' +
+                            '<div><strong style="color:#ea580c;">⏳</strong> #' + o.order_id + ' <span style="color:#64748b;">' + escHtml(o.nombre) + ' ' + escHtml(o.apellidos) + '</span></div>' +
+                        '</div>' +
                         '<div style="font-weight:700; color:#334155;">' + o.cantidad + ' pzas</div>' +
                     '</div>'
                 );
@@ -1359,6 +1794,33 @@ function tbp_asientos_render_edit_view( $config_id = 0 ) {
                 );
             }
         }
+
+        // Selection event handlers
+        $(document).off('change', '.assign-select-order').on('change', '.assign-select-order', function(e) {
+            e.stopPropagation();
+            var orderId = parseInt($(this).data('order-id'));
+            var checked = $(this).prop('checked');
+            var idx = selectedOrderIds.indexOf(orderId);
+            if (checked) {
+                if (idx === -1) {
+                    selectedOrderIds.push(orderId);
+                }
+            } else {
+                if (idx !== -1) {
+                    selectedOrderIds.splice(idx, 1);
+                }
+            }
+            renderAssignQueue();
+        });
+
+        $(document).off('click', '.assign-order-row').on('click', '.assign-order-row', function(e) {
+            if ($(e.target).hasClass('assign-select-order') || $(e.target).closest('.assign-select-order').length) {
+                return;
+            }
+            var $chk = $(this).find('.assign-select-order');
+            var isChecked = $chk.prop('checked');
+            $chk.prop('checked', !isChecked).trigger('change');
+        });
 
         function findTable(id) {
             for (var i = 0; i < assignFloorTables.length; i++) {
@@ -1390,10 +1852,70 @@ function tbp_asientos_render_edit_view( $config_id = 0 ) {
         $(document).on('click', '.assign-table-item', function() {
             var tableId = parseInt($(this).data('table-id'));
             var tbl = findTable(tableId);
-            if (!tbl || tbl.libre <= 0) return;
+            if (!tbl) return;
 
             var pendingOrders = assignQueue.filter(function(o) { return o.status === 'pending'; });
             if (pendingOrders.length === 0) return;
+
+            // Check if we have manually selected orders
+            if (selectedOrderIds.length > 0) {
+                var selectedPending = pendingOrders.filter(function(o) {
+                    return selectedOrderIds.indexOf(o.order_id) !== -1;
+                });
+
+                if (selectedPending.length === 0) {
+                    selectedOrderIds = [];
+                    renderAssignQueue();
+                    return;
+                }
+
+                // Sum total required capacity
+                var totalRequired = 0;
+                selectedPending.forEach(function(o) { totalRequired += o.cantidad; });
+
+                if (totalRequired <= tbl.libre) {
+                    // All selected orders fit! Assign them
+                    var assignedInThisClick = [];
+                    selectedPending.forEach(function(order) {
+                        order.status = 'assigned';
+                        assignedInThisClick.push({ order: order, mesa_id: tableId });
+                        assignDone.push({ order: order, mesa_id: tableId });
+                    });
+
+                    // Update table availability
+                    tbl.used += totalRequired;
+                    tbl.libre = Math.max(0, tbl.capacidad - tbl.used);
+
+                    // Push to history for undo
+                    assignHistory.push({
+                        mesa_id: tableId,
+                        orders: assignedInThisClick,
+                        piecesAssigned: totalRequired
+                    });
+
+                    // Clear selection
+                    selectedOrderIds = [];
+
+                    // Re-render
+                    renderAssignFloor();
+                    renderAssignQueue();
+                    updateAssignStats();
+
+                    // Scroll order list to top
+                    var $list = $('#assign_order_list');
+                    $list.scrollTop(0);
+                } else {
+                    // They don't fit! Open edit capacity modal with these specific orders
+                    openEditTableModal(tableId, true, selectedPending);
+                }
+                return;
+            }
+
+            // If table is completely full, offer to expand capacity!
+            if (tbl.libre <= 0) {
+                openEditTableModal(tableId, true);
+                return;
+            }
 
             // Fill this table with orders from the queue
             var remaining = tbl.libre;
@@ -1411,9 +1933,8 @@ function tbp_asientos_render_edit_view( $config_id = 0 ) {
             }
 
             if (assignedInThisClick.length === 0) {
-                // Try the first pending order even if it's bigger (partial won't work with our model, so skip)
-                // Show a message
-                alert('⚠️ No hay pedidos pendientes que quepan en esta mesa (' + remaining + ' lugares libres). El pedido más pequeño pendiente necesita más espacio.');
+                // If nothing fits, open edit table modal with auto-assign suggestion
+                openEditTableModal(tableId, true);
                 return;
             }
 
@@ -1435,9 +1956,158 @@ function tbp_asientos_render_edit_view( $config_id = 0 ) {
             renderAssignQueue();
             updateAssignStats();
 
-            // Scroll order list to bottom
+            // Scroll order list to top
             var $list = $('#assign_order_list');
             $list.scrollTop(0);
+        });
+
+        // ---- DOUBLE CLICK: EDIT TABLE DIRECTLY ----
+        $(document).on('dblclick', '.assign-table-item', function(e) {
+            e.preventDefault();
+            var tableId = parseInt($(this).data('table-id'));
+            openEditTableModal(tableId, false); // false = manual edit, do not auto-assign
+        });
+
+        // ---- EDIT TABLE MODAL LOGIC ----
+        var editAutoAssign = false;
+
+        function openEditTableModal(tableId, autoAssign, specificOrders) {
+            var tbl = findTable(tableId);
+            if (!tbl) return;
+
+            editAutoAssign = autoAssign;
+            $('#edit_table_id').val(tbl.id);
+            $('#edit_table_title_num').text(tbl.numero);
+            $('#edit_table_zona').text(tbl.zona);
+            $('#edit_table_used').text(tbl.used + ' lugares');
+            $('#edit_table_capacity').val(tbl.capacidad);
+            $('#edit_table_capacity').attr('min', tbl.used);
+            $('#edit_table_shape').val(tbl.tipo);
+
+            // Suggested capacity if we want to auto-assign
+            if (autoAssign) {
+                var pendingOrders = [];
+                var msg = '';
+                var needed = tbl.used;
+                
+                if (specificOrders && specificOrders.length > 0) {
+                    pendingOrders = specificOrders;
+                    var qtySum = 0;
+                    pendingOrders.forEach(function(o) { qtySum += o.cantidad; });
+                    needed += qtySum;
+                    
+                    var desc = pendingOrders.map(function(o) { return '#' + o.order_id; }).join(', ');
+                    msg = '⚠️ Los pedidos seleccionados (' + desc + ') requieren ' + qtySum + ' lugares en total. ' +
+                          'Se sugiere aumentar la capacidad a ' + needed + ' PAX.';
+                } else {
+                    var allPending = assignQueue.filter(function(o) { return o.status === 'pending'; });
+                    if (allPending.length > 0) {
+                        pendingOrders = [allPending[0]];
+                        needed += pendingOrders[0].cantidad;
+                        msg = '⚠️ El grupo #' + pendingOrders[0].order_id + ' (' + pendingOrders[0].nombre + ') requiere ' + pendingOrders[0].cantidad + ' lugares. ' +
+                              'Se sugiere aumentar la capacidad a ' + needed + ' PAX.';
+                    }
+                }
+
+                if (pendingOrders.length > 0) {
+                    $('#edit_table_capacity').val(needed);
+
+                    if ($('#edit_table_suggestion').length === 0) {
+                        $('<div id="edit_table_suggestion" style="margin-top:8px; padding:8px 10px; background:#fff7ed; border:1px solid #ffedd5; border-radius:6px; color:#c2410c; font-size:11px; font-weight:600;"></div>')
+                            .insertAfter('#edit_table_capacity');
+                    }
+                    $('#edit_table_suggestion').text(msg).show();
+                } else {
+                    $('#edit_table_suggestion').hide();
+                }
+            } else {
+                $('#edit_table_suggestion').hide();
+            }
+
+            $('#tbp-edit-table-modal').css('display', 'flex');
+        }
+
+        $(document).on('click', '.btn_close_edit_table', function() {
+            $('#tbp-edit-table-modal').hide();
+        });
+
+        $('#btn_save_edit_table').on('click', function() {
+            var tableId = parseInt($('#edit_table_id').val());
+            var capacity = parseInt($('#edit_table_capacity').val());
+            var shape = $('#edit_table_shape').val();
+            var configId = <?php echo $config_id; ?>;
+
+            var tbl = findTable(tableId);
+            if (!tbl) return;
+
+            if (isNaN(capacity) || capacity < tbl.used) {
+                alert('La capacidad debe ser un número mayor o igual a los lugares ya ocupados (' + tbl.used + ').');
+                return;
+            }
+
+            // Calculate new dimensions if shape changes
+            var newWidth = tbl.width;
+            var newHeight = tbl.height;
+
+            if (shape !== tbl.tipo) {
+                if (shape === 'rectangular') {
+                    if (tbl.width === tbl.height || tbl.tipo === 'round' || tbl.tipo === 'bar' || tbl.tipo === 'square') {
+                        var baseSize = Math.max(tbl.width, tbl.height, 45);
+                        newWidth = Math.round(baseSize * 1.5);
+                        newHeight = baseSize;
+                    }
+                } else {
+                    if (tbl.tipo === 'rectangular' && tbl.width !== tbl.height) {
+                        newWidth = tbl.height;
+                    }
+                }
+            }
+
+            $('#btn_save_edit_table').prop('disabled', true).text('⏳ Guardando...');
+
+            $.post(ajaxurl, {
+                action: 'tbp_asientos_update_single_table',
+                config_id: configId,
+                table_id: tableId,
+                capacidad: capacity,
+                tipo: shape,
+                width: newWidth,
+                height: newHeight,
+                nonce: '<?php echo wp_create_nonce("tbp_asientos_nonce"); ?>'
+            }, function(res) {
+                $('#btn_save_edit_table').prop('disabled', false).html('💾 Guardar Cambios');
+                if (!res.success) {
+                    alert('❌ Error: ' + res.data);
+                    return;
+                }
+
+                // Update local table data
+                tbl.capacidad = res.data.capacidad;
+                tbl.tipo = res.data.tipo;
+                tbl.width = res.data.width;
+                tbl.height = res.data.height;
+                tbl.libre = Math.max(0, tbl.capacidad - tbl.used);
+
+                // Re-render layout
+                renderAssignFloor();
+                renderAssignQueue();
+                updateAssignStats();
+
+                $('#tbp-edit-table-modal').hide();
+
+                // If auto assigning, trigger assign flow
+                if (editAutoAssign) {
+                    editAutoAssign = false;
+                    setTimeout(function() {
+                        $('.assign-table-item[data-table-id="' + tableId + '"]').trigger('click');
+                    }, 100);
+                } else {
+                    alert('✅ Mesa modificada correctamente.');
+                }
+            }).fail(function() {
+                $('#btn_save_edit_table').prop('disabled', false).html('💾 Guardar Cambios');
+                alert('❌ Error de conexión al guardar cambios.');
+            });
         });
 
         // Hover effect on tables
@@ -1537,6 +2207,7 @@ function tbp_asientos_render_edit_view( $config_id = 0 ) {
             assignQueue = [];
             assignDone = [];
             assignHistory = [];
+            selectedOrderIds = [];
         }
 
         // ---- ZOOM ----
@@ -1600,7 +2271,7 @@ function tbp_asientos_handle_save_config() {
             tbp_asientos_generate_tables( $saved_id, $zonas_config );
         }
         
-        $url = admin_url( 'admin.php?page=tbp-actividades-asientos&action=edit&id=' . $saved_id . '&updated=1' );
+        $url = admin_url( 'admin.php?page=tbp-actividades-asientos&action=edit&id=' . $saved_id . '&updated=1&v=' . TBP_ACTIVIDADES_VERSION );
         wp_safe_redirect( $url );
         exit;
     } else {
@@ -1621,9 +2292,10 @@ function tbp_asientos_handle_delete_config() {
         $wpdb->delete( $wpdb->prefix . 'tbp_seat_tables', array( 'config_id' => $config_id ) );
         $wpdb->delete( $wpdb->prefix . 'tbp_seat_assignments', array( 'config_id' => $config_id ) );
         $wpdb->delete( $wpdb->prefix . 'tbp_seat_group_zones', array( 'config_id' => $config_id ) );
-        delete_transient( 'tbp_seat_scan_' . $config_id );
+        delete_option( 'tbp_seat_scan_' . $config_id );
+        delete_option( 'tbp_seat_scan_time_' . $config_id );
 
-        $url = admin_url( 'admin.php?page=tbp-actividades-asientos&deleted=1' );
+        $url = admin_url( 'admin.php?page=tbp-actividades-asientos&deleted=1&v=' . TBP_ACTIVIDADES_VERSION );
         wp_safe_redirect( $url );
         exit;
     }
@@ -1647,6 +2319,7 @@ function tbp_asientos_render_results_view( $config_id ) {
     
     // Botones de exportación
     echo '<div>';
+    echo '<a href="?page=tbp-actividades-asientos&action=visual_assign&id=' . $config_id . '" class="button button-primary" style="margin-right:10px;">👉 Asignación Visual en Plano</a>';
     echo '<a href="?page=tbp-actividades-asientos&tbp_export_asientos=asistentes&config_id=' . $config_id . '" class="button" style="margin-right:10px;">📊 Exportar Lista de Asistentes (CSV)</a>';
     echo '<a href="?page=tbp-actividades-asientos&tbp_export_asientos=mesas&config_id=' . $config_id . '" class="button">🪑 Exportar Estado de Mesas (CSV)</a>';
     echo '</div>';

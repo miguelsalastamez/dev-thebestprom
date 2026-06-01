@@ -1,18 +1,60 @@
-## [11.9.47] - 2026-05-29
-### Corregido
-- **Corrección en la obtención de mesas del motor de packing**: Ahora soporta mesas con forma personalizada 'round' o 'rectangular' guardadas desde el plano visual en lugar de requerir estrictamente tipo 'normal'.
+## [11.9.75] - 2026-06-01
+### Agregado
+- **Asignación Manual Selectiva mediante Casillas**: Se añadieron casillas de verificación (checkboxes) y selección interactiva en la lista de pedidos pendientes de la Etapa 3. Ahora los operadores pueden seleccionar uno o varios pedidos específicos haciendo clic en la fila o checkbox y luego hacer clic en una mesa para asignarlos. Si la capacidad restante de la mesa no es suficiente para la selección, se sugiere expandirla calculando el total requerido de PAX de los pedidos seleccionados.
 
-## [11.9.46] - 2026-05-29
-### Corregido
-- **Vinculación del botón Ejecutar Asignación Inteligente**: Enlace dinámico del click handler para el botón `btn_run_packing_v2` en la Etapa 3.
+## [11.9.74] - 2026-06-01
+### Optimizado
+- **Persistencia de Escaneo de Asistentes**: Se migraron los resultados del escaneo de asistentes desde transitorios temporales (`transients` de 12 horas) a opciones permanentes de la base de datos (`wp_options` sin autoload). Esto previene la expiración del caché del escaneo y soluciona el bloqueo automático de la Etapa 3 y la carga infinita de la tabla al recargar la página después de 12 horas.
 
-## [11.9.45] - 2026-05-29
-### Corregido
-- **Sincronización al borrar mesas en el plano visual**: Ahora las elimina correctamente de la base de datos y libera asignaciones asociadas.
+## [11.9.73] - 2026-05-31
+### Agregado
+- **Modificación Interactiva de Mesas en Asignaciones**: Añadida la posibilidad de editar la capacidad (PAX) y tipo de mesa (Redonda, Cuadrada, Rectangular o Bar) directamente desde la pantalla de Asignaciones (Etapa 3) mediante doble clic o de forma automática con sugerencias si un grupo no cabe.
 
-## [11.9.44] - 2026-05-29
+## [11.9.72] - 2026-05-30
+### Agregado
+- **Filtro de Estado en Stage 3**: Añadido menú desplegable "Estado" (`Ya Asignados` / `Falta Asignar` / `Todos`) para filtrar la cuadrícula en vivo de asistentes escaneados y visualizar con claridad el avance del plano.
+
+## [11.9.71] - 2026-05-30
 ### Corregido
-- **Corrección en la generación visual de mesas**: Lugares por mesa PAX y rutina de auto-reparación para mesas con capacidad 0.
+- **Fallo de Conexión AJAX (HTTP 403) en Consolidación masiva**: Se serializaron los resultados de escaneo (`allResults`) usando JSON en una única cadena, evitando superar el límite de variables en servidor (`max_input_vars` > 1000) en eventos masivos de más de 800 pedidos (como la Prepa 15).
+
+## [11.9.70] - 2026-05-30
+### Agregado
+- **Filtro "Cantidad" en Stage 3**: Añadido menú desplegable "Cantidad" (1 Lugar, 2 Lugares, etc.) para identificar con facilidad alumnos individuales o grupos de boletos específicos.
+
+## [11.9.69] - 2026-05-30
+### Agregado
+- **Herencia de Grupo por Correo y Nombre**: Implementada regla de herencia que permite a asistentes sin grupo asignado (como platillos/pases extra comprados por separado) heredar automáticamente el grupo del pedido principal de la misma persona.
+
+## [11.9.68] - 2026-05-30
+### Optimizado
+- **Rendimiento de Plano de Mesas**: Se rediseñó el renderizado del plano interactivo en Stage 3 para procesar todo en memoria usando HTML strings, disminuyendo drásticamente el tiempo de carga y previniendo bloqueos del navegador en eventos de 800+ asistentes.
+- **Badges "Ya Asignado"**: Agregado indicador visual en Stage 3.
+
+## [11.9.67] - 2026-05-30
+### Corregido
+- **Fatal Error ArgumentCountError**: Corregido error al regenerar el snapshot de consulta pública al guardar asignaciones manuales.
+
+## [11.9.66] - 2026-05-30
+### Corregido
+- **Endpoints AJAX Faltantes**: Se implementaron y registraron los endpoints `tbp_asientos_get_floor_data` y `tbp_asientos_manual_assign_batch` para solucionar la carga infinita y permitir asignación manual masiva.
+
+## [11.9.65] - 2026-05-30
+### Corregido
+- **Campo PAX en Stage 2**: Restaurado el input de lugares por mesa (PAX) en el formulario de la Etapa 2 para evitar mesas vacías o con capacidad 0.
+
+## [11.9.64] - 2026-05-30
+### Agregado
+- **Endpoint AJAX `tbp_asientos_get_scan_data`**: Implementado endpoint para traer los datos escaneados y pintarlos en la tabla de la Etapa 3.
+
+## [11.9.63] - 2026-05-30
+### Corregido
+- **Control de Excepciones de Terceros**: Captura e ignorado de excepciones de promesas rotas no relacionadas (como diálogos de Elementor).
+- **Asignación Inteligente**: Reubicado el botón a Stage 3 y bloqueo del paso 3 si no se han completado los pasos anteriores.
+
+## [11.9.62] - 2026-05-30
+### Agregado
+- **Rediseño del Metabox de Acciones**: Rediseño completo con timeline wizard dinámico, HSL buttons, estados leídos directamente del servidor (PHP) y terminal/consola de logs interactiva en tiempo real para visualizar lotes de escaneo y errores.
 
 ## [11.9.43] - 2026-05-26
 ### Agregado

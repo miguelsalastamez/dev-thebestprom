@@ -2,20 +2,25 @@
 /**
  * Plugin Name: The Best Prom - Actividades
  * Plugin URI: https://dev.thebestprom.com
- * Version: 11.9.52
+ * Version: 11.9.75
  * Author: Antigravity Team
  * Text Domain: tbp-actividades
  *
  * Changelog:
- * 11.9.52 - Fix: Corrección de un TypeError crítico en el inicializador de la Etapa 1. Si el arreglo de zonas JSON devuelto por la base de datos se parseaba como null, renderZonas() arrojaba una excepción que bloqueaba el ready handler de jQuery, impidiendo que el botón de Escanear Asistentes registrara su evento de click. Ahora la variable de zonas y la manipulación de campos están 100% protegidas y tipadas contra valores nulos o vacíos.
- * 11.9.51 - Feature: Asignación Manual por Grupo. Desde la Etapa 3, selecciona pedidos con checkboxes y haz clic en "🎯 Asignar a Mesas" para abrir un modal a pantalla completa con vista dividida: panel izquierdo con cola de pedidos y estadísticas en tiempo real, panel derecho con el plano visual interactivo. Al hacer clic en cada mesa, el sistema llena automáticamente con pedidos de la cola (ordenados de mayor a menor para óptimo empaquetado). Incluye Deshacer, Confirmar con guardado en BD, zoom con rueda del ratón, y barra de progreso animada.
- * 11.9.50 - Feature: Rediseño completo de la Etapa 3 (Generación y Asignación). Ahora incluye una tabla interactiva de pedidos escaneados con filtros por Grupo, # Pedido y Nombre, paginación, ordenamiento por columnas, checkboxes de selección individual y masiva, contadores dinámicos de piezas/plazas, y barra de acciones para seleccionados. Nuevo AJAX endpoint tbp_asientos_get_scan_data.
- * 11.9.49 - Fix: Modificada tbp_asientos_generate_tables() para realizar sincronización inteligente de mesas en la base de datos en lugar de eliminarlas y recrearlas. Esto evita que al hacer clic en "Guardar Cambios" en la Etapa 1 (Configuración de Metadatos) se pierdan las coordenadas, formas, colores y tamaños de las mesas diseñadas en la Etapa 2 (Procesamiento del Plano).
- * 11.9.48 - Critical Fix: Corregida la incompatibilidad con HPOS en tbp_asientos_get_orders_for_event() — la función consultaba wp_posts directamente (devolvía 0 pedidos con HPOS activo). Ahora delega a tbp_report_get_event_order_ids() (4 métodos de resolución HPOS-safe) y filtra estados con wc_get_order(). También se resetea capacidad_usada antes de re-asignar y se usa capacidad TOTAL en el algoritmo. Se añadió diagnóstico detallado cuando la asignación devuelve 0 resultados.
- * 11.9.47 - Fix: Corrección en la obtención de mesas del motor de packing (ahora soporta mesas con forma personalizada 'round' o 'rectangular' guardadas desde el plano visual en lugar de requerir estrictamente tipo 'normal').
- * 11.9.46 - Fix: Vinculación del evento click al botón "Ejecutar Asignación Inteligente" (btn_run_packing_v2) en la Etapa 3.
- * 11.9.45 - Fix: Sincronización al borrar mesas en el plano visual (ahora las elimina correctamente de la base de datos y libera asignaciones).
- * 11.9.44 - Fix: Corrección en la generación visual de mesas (lugares por mesa PAX) y rutina de auto-reparación para mesas con capacidad 0.
+ * 11.9.75 - Feature: Added selective manual seat assignment in Stage 3 using checkboxes to allow operators to choose specific orders and click a table to assign them.
+ * 11.9.74 - Enhancement: Swapped temporary transients for persistent DB options (with no-autoload) for storing scanned attendee lists to prevent scan cache expiration and page reload blockages after 12 hours.
+ * 11.9.73 - Feature: Added table edit option (capacity & type/shape) during Stage 3 seat assignment, triggered on double-click or automatically if a pending group doesn't fit in the remaining space of the clicked table.
+ * 11.9.72 - Feature: Added an "Estado" dropdown filter to the Stage 3 scanned orders table to easily distinguish between assigned and unassigned attendees.
+ * 11.9.71 - Bugfix: Fixed HTTP 403 Forbidden error during scan consolidation caused by `max_input_vars` limits on large events. The data is now sent as a compressed JSON string.
+ * 11.9.70 - Feature: Added a "Cantidad" dropdown filter to the Stage 3 scanned orders table to easily find attendees with 1, 2, 3... etc tickets.
+ * 11.9.69 - Enhancement: Added group inheritance logic during scan. Extra plates (or orders without a group) will now automatically inherit the group from another order with the same billing email or full name.
+ * 11.9.68 - Enhancement: Optimized stage 3 floor plan rendering for large events using HTML strings. Added "Ya asignado" visual indicators in Stage 3 to show if attendees are already seated, and improved the "Cambiar Grupo" button label.
+ * 11.9.67 - Bugfix: Fixed Fatal Error (ArgumentCountError) during public snapshot regeneration when saving manual seat assignments by correctly passing WooCommerce order objects.
+ * 11.9.66 - Bugfix: Implemented missing tbp_asientos_get_floor_data and tbp_asientos_manual_assign_batch AJAX endpoints to resolve infinite loading of the floor plan in manual assignments.
+ * 11.9.65 - Bugfix: Restored the missing "Lugares por Mesa (PAX)" capacity input field in Stage 2 floor-plan generator form to prevent 0 PAX/NaN capacities.
+ * 11.9.64 - Bugfix: Implemented missing tbp_asientos_get_scan_data AJAX endpoint to fetch and display the consolidated scan result in the Stage 3 table.
+ * 11.9.63 - Fix: Filtered out third-party JS promise rejections (like Elementor's Angie install components dialog) to prevent crashing the seat administration page. Relocated the "Asignación Inteligente" button to Stage 3 and locked access to Stage 3 if there is no floor plan designed or no assistants scanned.
+ * 11.9.62 - Redesign: Completely redesigned the Acciones metabox panel from scratch, implementing server-side scan checks, step timeline wizard, flat HSL modern buttons, and real-time integrated diagnostic logger console.
  * 11.9.43 - Feature: Segregación estricta de paquetes físicos y boletos de rifa en el reporte general y exportación CSV según filtro activo.
  * 11.9.42 - Feature: Base report package delivery status on WooCommerce order metadata to prevent ghost pending orders. Implement fallback rule matching by product ID during QR ticket check-ins on non-rule dates.
  * 11.9.41 - Feature: Base report package delivery status on WooCommerce order metadata to prevent ghost pending orders. Implement fallback rule matching by product ID during QR ticket check-ins on non-rule dates.
@@ -98,7 +103,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 }
 
 // Define constants
-define( 'TBP_ACTIVIDADES_VERSION', '11.9.52' );
+define( 'TBP_ACTIVIDADES_VERSION', '11.9.64' );
 define( 'TBP_ACTIVIDADES_PATH', plugin_dir_path( __FILE__ ) );
 define( 'TBP_ACTIVIDADES_URL', plugin_dir_url( __FILE__ ) );
 
@@ -220,49 +225,6 @@ function tbp_actividades_repair_ghost_deliveries_v4() {
     }
 }
 add_action('admin_init', 'tbp_actividades_repair_ghost_deliveries_v4');
-
-function tbp_asientos_repair_zero_capacity_tables() {
-    global $wpdb;
-    $table_configs = $wpdb->prefix . 'tbp_seat_configurations';
-    $table_seats   = $wpdb->prefix . 'tbp_seat_tables';
-
-    if ( $wpdb->get_var("SHOW TABLES LIKE '$table_configs'") !== $table_configs || $wpdb->get_var("SHOW TABLES LIKE '$table_seats'") !== $table_seats ) {
-        return;
-    }
-
-    $zero_cap_count = $wpdb->get_var("SELECT COUNT(*) FROM {$table_seats} WHERE capacidad = 0");
-    if ( ! $zero_cap_count ) {
-        return;
-    }
-
-    $configs = $wpdb->get_results("SELECT id, zonas_config FROM {$table_configs}");
-    foreach ( $configs as $config ) {
-        $zonas = json_decode($config->zonas_config, true);
-        if ( ! is_array($zonas) ) {
-            continue;
-        }
-
-        foreach ( $zonas as $zona ) {
-            $zona_nombre = sanitize_text_field( $zona['nombre'] ?? '' );
-            $capacidad   = intval( $zona['capacidad'] ?? 10 );
-            if ( $capacidad <= 0 ) {
-                $capacidad = 10;
-            }
-
-            if ( ! empty($zona_nombre) ) {
-                $wpdb->query( $wpdb->prepare(
-                    "UPDATE {$table_seats} 
-                     SET capacidad = %d 
-                     WHERE config_id = %d AND zona = %s AND capacidad = 0",
-                    $capacidad,
-                    $config->id,
-                    $zona_nombre
-                ) );
-            }
-        }
-    }
-}
-add_action('admin_init', 'tbp_asientos_repair_zero_capacity_tables');
 
 function tbp_actividades_migrate_legacy_phases_v1() {
     if (get_option('tbp_legacy_phases_migrated_v1')) return;
@@ -536,3 +498,27 @@ add_action( 'admin_init', function() {
         });
     }
 });
+
+/**
+ * Clear OPcache and WP caches to prevent stale script execution.
+ */
+function tbp_actividades_clear_caches() {
+    if ( function_exists( 'opcache_reset' ) ) {
+        @opcache_reset();
+    }
+    if ( class_exists( 'LiteSpeed_Cache_API' ) && method_exists( 'LiteSpeed_Cache_API', 'purge_all' ) ) {
+        @LiteSpeed_Cache_API::purge_all();
+    }
+    if ( function_exists( 'w3tc_pgcache_flush' ) ) {
+        @w3tc_pgcache_flush();
+    }
+    if ( function_exists( 'wp_cache_clear_cache' ) ) {
+        @wp_cache_clear_cache();
+    }
+    if ( function_exists( 'sg_cachepress_purge_cache' ) ) {
+        @sg_cachepress_purge_cache();
+    }
+}
+add_action( 'admin_init', 'tbp_actividades_clear_caches' );
+register_activation_hook( __FILE__, 'tbp_actividades_clear_caches' );
+

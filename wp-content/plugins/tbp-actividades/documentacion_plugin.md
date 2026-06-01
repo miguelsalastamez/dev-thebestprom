@@ -1,6 +1,6 @@
-# Documentación Técnica Completa: TBP - Actividades (v11.9.52)
+# Documentación Técnica Completa: TBP - Actividades (v11.9.75)
 
-Este documento sirve como memoria técnica, mapa arquitectónico y manual de operaciones del plugin **The Best Prom - Actividades**. Su propósito es resumir todas las funcionalidades, flujos de datos críticos, integraciones con *Event Tickets Plus* y ganchos de WooCommerce para guiar futuras iteraciones sin pérdida de contexto.
+Este documento sirve como memoria técnica, mapa arquitectónico y manual de operaciones del plugin **The Best Prom - Actividades**. Su propósito es resumir todas las funcionalidades, flujos de datos críticos, integraciones con *Event Tickets Plus*, ganchos de WooCommerce y el nuevo módulo de **Asignación de Asientos** para guiar futuras iteraciones sin pérdida de contexto.
 
 ---
 
@@ -18,140 +18,126 @@ graph TD
     A --> G[includes/physical-delivery.php]
 ```
 
-*   **`tbp-actividades.php`**: Inicialización del plugin, carga de dependencias, hooks generales de WordPress y rutinas de reparación/migración de la base de datos.
-*   **`includes/database.php`**: Declaración de la estructura de tablas para el registro de entregas y transacciones locales.
-*   **`includes/admin-reports.php`**: Motor del reporte administrativo general del lado del servidor (DataTables AJAX) y motor de exportación en CSV.
-*   **`includes/event-delivery-rules.php`**: Gestión de reglas de entrega de paquetes por fechas e IDs de producto, incluyendo el control y validación de check-ins mediante QR.
-*   **`includes/cpt-rifas.php` y `cpt-premiaciones.php`**: Definición de Custom Post Types y metadatos para administrar sorteos, asignación de boletos a la tómbola y premiaciones estudiantiles.
-*   **`includes/asientos/`**: Motor avanzado de asignación grupal de asientos (Fase 2) basado en algoritmos de empaquetado (Bin-Packing) para organizar mesas.
-*   **`includes/physical-delivery.php` y `physical-management.php`**: Shortcodes e interfaces front-end para que los operadores entreguen paquetes y los alumnos consulten su historial en *My Account*.
+*   **`tbp-actividades.php`**: Inicialización del plugin, carga de dependencias, definición del changelog en comentarios de cabecera, hooks generales de WordPress y rutinas de migración.
+*   **`includes/database.php`**: Estructura de tablas de la base de datos (logs de entregas locales).
+*   **`includes/admin-reports.php`**: Reporte administrativo general en WP-Admin optimizado para HPOS usando DataTables (Server-Side) y exportación a XLSX/CSV.
+*   **`includes/event-delivery-rules.php`**: Gestión de reglas de entrega física por fechas y productos (sincronización con QR de Event Tickets).
+*   **`includes/cpt-rifas.php` y `cpt-premiaciones.php`**: Custom Post Types para sorteos, tómbolas y premiaciones.
+*   **`includes/asientos/`**: Módulo avanzado de asignación de asientos y planos interactivos por lotes y grupos.
+*   **`includes/physical-delivery.php` y `physical-management.php`**: Front-end y shortcodes para la gestión e historial del cliente.
 
 ---
 
-## 2. Reporte General de Actividades (Server-Side)
+## 2. Módulo: Asignación de Asientos (Asientos-Engine)
 
-El reporte administrativo (`admin-reports.php`) está optimizado para tiendas con alto volumen de pedidos (+13,000 registros).
+Este módulo (ubicado en `includes/asientos/`) permite diseñar planos interactivos de mesas y asignar asientos a los asistentes de un evento agrupándolos de forma automática o manual.
 
-### 2.1 Paginación Rápida e Integración con HPOS
-WooCommerce utiliza HPOS (High-Performance Order Storage). Para evitar que consultas pesadas a través de `wc_get_orders()` generen tiempos de espera (Gateway Timeout 504), se implementó una arquitectura híbrida:
-1. **Filtro Rápido a Nivel SQL**: Se consultan únicamente los IDs de pedidos relevantes mediante consultas directas y ligeras a la base de datos.
-2. **Paginación en PHP**: Se realiza una segmentación del arreglo de IDs (`array_slice()`) en PHP según los parámetros `start` y `length` enviados por DataTables.
-3. **Carga Individual**: Solo se instancian como objetos (`wc_get_order()`) los pedidos que se mostrarán en la página actual (normalmente 25 o 50 registros), garantizando compatibilidad absoluta con HPOS y un rendimiento ultrarrápido.
+### 2.1 Flujo UX en 3 Etapas (Wizard)
+El panel de administración se divide en tres pestañas que guían al usuario en el proceso:
 
-### 2.2 Filtro Defensivo de Desplazamiento (Paginación Vacía)
-DataTables en el navegador a veces guarda en memoria la página seleccionada (por ejemplo, página 120). Si el administrador aplica un filtro restrictivo (como "Pendientes de Entrega"), el total de filas se reduce drásticamente.
-*   **Solución**: El backend intercepta el parámetro `start` (offset). Si `start` supera el total de registros filtrados, el servidor restablece automáticamente `start = 0` (página 1), evitando que la tabla se muestre completamente vacía.
-
-### 2.3 Segregación de Paquetes vs. Rifas (v11.9.43)
-Para evitar que se mezclen registros en los listados:
-*   **Solo Paquetes**: Excluye los pedidos que solo contienen boletos de rifa pura (identificados mediante relaciones en `tbp_rifas` y exclusiones SQL).
-*   **Solo Rifa**: Excluye los pedidos de paquetes puros.
-*   **Renderizado Dinámico**: Las columnas de cantidad (`$qty_val`) e insignias de tipo (`PAQUETE` / `RIFA`) se calculan y muestran respondiendo dinámicamente al filtro de tipo activo (`$f_type`), tanto en la pantalla del administrador como en la exportación a CSV.
+1.  **Etapa 1: Configuración de Metadatos**: Selección del evento, proveedor de mesas (ej. Cintermex), clave de metadatos que define los grupos (ej. `Grupo` o `Talla`) y filtrado de cantidades.
+2.  **Etapa 2: Procesamiento del Plano**: Diseño del plano interactivo del salón (filas, columnas, zonas, mesas, y capacidad PAX).
+    *   *Corrección Clave (v11.9.65)*: Se restauró el campo de **"Lugares por Mesa (PAX)"** en el generador automático de planos para prevenir que las mesas se crearan con capacidad 0 o NaN (lo que causaba asignaciones erróneas de "PAX 0").
+3.  **Etapa 3: Generación y Asignación (Mesa y Plano)**: Visualización del listado de asistentes escaneados y el mapa de mesas para la asignación manual y automatizada.
 
 ---
 
-## 3. Flujo del Escáner QR e Integración con Event Tickets
+### 2.2 Optimizaciones y Soluciones Críticas del Módulo de Asientos
 
-El plugin intercepta el flujo de registro de la App oficial de *Event Tickets* (Tribe) para adaptarlo a las reglas de negocio de la preparatoria/evento.
+#### A. Resolución de Carga Lenta del Plano en Eventos Masivos (v11.9.68)
+*   **Problema**: Al cargar eventos masivos (como la Prepa 15 con más de 800 asistentes y docenas de mesas), el plano interactivo de Stage 3 se congelaba o tardaba mucho en renderizar debido a la manipulación masiva del DOM elemento por elemento en JS.
+*   **Solución**: Se optimizó la renderización en JS generando **cadenas de HTML completas (HTML strings)** en memoria y realizando una sola inserción masiva en el DOM en lugar de múltiples llamadas `appendChild()`. Esto redujo el tiempo de carga del plano de varios segundos a milisegundos.
 
-```
-[Escaneo QR con App] ──> [rest_api_init] ──> (Inyección wc-processing)
-                                 │
-                                 ▼
-                     [CheckIn_Stati.php Hook] ──> (Permitir check-in de processing)
-                                 │
-                                 ▼
-                     [Attendee Check-in Hook] ──> (Detección de Reglas y Fallbacks)
-                                 │
-                                 ▼
-                    [Control de Unidades QR] ──> (Si restan: Revertir check-in en ET+)
-```
+#### B. Evitar Errores 403 Forbidden al Consolidar Escaneos (v11.9.71)
+*   **Problema**: Al escanear eventos con grandes volúmenes de datos (ej. 838 pedidos), la petición AJAX `tbp_asientos_scan_finish` fallaba arrojando un código de error HTTP **403 Forbidden**. Esto ocurría porque el servidor superaba el límite de `max_input_vars` (configurado por seguridad a 1000 variables) al enviar los datos estructurados en formato de lista.
+*   **Solución**: Se modificó el JS para serializar los datos usando `JSON.stringify(allResults)` y enviarlos como un solo parámetro de texto plano. En el backend PHP, se decodifica mediante `json_decode()`. De esta forma, sin importar si hay 800 o 5,000 registros, el servidor solo recibe 1 variable de entrada, evadiendo las limitaciones de `max_input_vars`.
+
+#### C. Regla de Herencia de Grupos (v11.9.69)
+*   **Problema**: Los asistentes que compraron platillos extra o artículos individuales no venían vinculados a ningún grupo en Event Tickets, apareciendo "sin grupo" en el listado y quedando dispersos.
+*   **Solución**: Se implementó una regla de coincidencia: si un asistente no tiene grupo registrado, el escáner busca otros pedidos en el mismo evento que coincidan exactamente con su **mismo correo electrónico de facturación** o **nombre completo** y que sí tengan grupo. Al detectarlo, el asistente "sin grupo" hereda automáticamente el grupo del pedido principal, unificando a las familias y acompañantes en las mismas mesas.
+
+#### D. Filtros de Alta Precisión en Stage 3
+*   **Filtro "Cantidad" (v11.9.70)**: Permite segmentar asistentes por número de lugares comprados (1 Lugar, 2 Lugares, etc.). Esto ayuda a ubicar a los alumnos que asisten solos (1 lugar) para agruparlos juntos en mesas exclusivas para estudiantes individuales.
+*   **Filtro "Estado" (v11.9.72)**: Permite segmentar el listado por `-- Todos --`, `Ya Asignados` (asistentes con mesa y etiqueta amarilla) y `Falta Asignar` (asistentes pendientes). Facilita limpiar la vista conforme se avanza en el montaje.
+*   **Combinación de Filtros**: Los filtros de Cantidad, Estado, Grupo y texto libre son 100% combinables y acumulativos en tiempo real.
+
+#### E. Asignación Manual Selectiva mediante Casillas de Verificación (v11.9.75)
+*   **Problema**: Anteriormente, al hacer clic en una mesa, el sistema realizaba una asignación automática secuencial rellenándola con los primeros pedidos pendientes del grupo. El operador no podía elegir de forma individual qué pedidos específicos ubicar en una mesa determinada.
+*   **Solución**: Se agregaron casillas de verificación (checkboxes) y control de selección en las filas de pedidos pendientes en la Etapa 3. Al marcar una o varias casillas y hacer clic en una mesa, únicamente los pedidos seleccionados se asignan a esa mesa. Si la capacidad restante de la mesa es insuficiente para acomodar a todos los pedidos seleccionados, se despliega el modal de edición sugiriendo de forma inteligente la capacidad total requerida acumulando los lugares de la selección.
+
+#### F. Robustez e Integridad de AJAX Endpoints (v11.9.66, v11.9.67)
+*   Se corrigieron errores fatales de php (`ArgumentCountError`) y endpoints AJAX ausentes:
+    *   `tbp_asientos_get_floor_data`: Carga los datos guardados del plano.
+    *   `tbp_asientos_manual_assign_batch`: Procesa la asignación masiva de múltiples asistentes a una mesa.
+    *   `tbp_asientos_get_scan_data`: Consulta los datos escaneados consolidados.
+*   *Resiliencia JS (v11.9.63)*: Se encapsularon e ignoraron las promesas rotas ajenas al plugin (como los avisos de Elementor en el panel de control) que detenían la ejecución de Javascript e impedían interactuar con la pantalla de asientos.
+
+---
+
+### 2.3 Panel de Acciones y Consola de Diagnóstico (v11.9.62)
+
+El metabox derecho de **Acciones** fue rediseñado por completo bajo un paradigma reactivo y de estados guardados en servidor:
+
+*   **Timeline Wizard Visual**: Muestra el progreso actual (Step 1, Step 2, Step 3) usando colores planos y estados dinámicos.
+*   **Activación por Estado de Servidor (PHP)**: El botón "Ejecutar Asignación" ya no se bloquea al recargar la página. PHP verifica directamente en la base de datos si ya existen datos consolidados de escaneo para el evento. Si existen, el botón se renderiza habilitado nativamente.
+*   **Consola de Log en Tiempo Real**: Incorpora una terminal visual oscura (estilo consola de desarrollo) que muestra paso a paso el progreso del escáner en lotes de 50 pedidos, indicando progreso en porcentaje y arrojando errores explícitos detallados con códigos de error si algo falla (ej. pérdida de conexión AJAX o fallas de SQL), permitiendo una depuración inmediata sin abrir la consola del navegador.
+
+---
+
+## 3. Integración QR y Flujo de Entregas Generales
 
 ### 3.1 Intercepción Temprana de la API REST (wc-processing)
-La aplicación móvil oficial de *Event Tickets* exige de forma predeterminada que los asistentes tengan pedidos en estado `wc-completed`.
-*   **El Problema**: Los pedidos pagados con tarjeta de crédito en la plataforma entran en estado `wc-processing` (etiquetado internamente como `[Pagado con Tarjeta]`), por lo que no se listaban ni se podían escanear en la app.
-*   **La Solución**: En `tbp-actividades.php`, se intercepta la petición REST (`rest_api_init`). Si la App solicita asistentes con `order_status=wc-completed`, el plugin reescribe el parámetro global `$_GET['order_status']` inyectando forzosamente `wc-processing`. Esto engaña a la aplicación móvil y hace que cargue todos los boletos pagados en línea.
+*   La aplicación móvil de Event Tickets exige que los pedidos estén en estado `wc-completed`.
+*   Para permitir el check-in de boletos pagados en línea (estado `wc-processing` / `[Pagado con Tarjeta]`), se intercepta la llamada REST en `tbp-actividades.php` durante `rest_api_init` y se inyecta dinámicamente `wc-processing` en la petición de la app, permitiendo descargar los asistentes sin forzar el cambio de estado de compra en la tienda.
 
-### 3.2 Habilitación de Check-in en Estado Procesando
-Event Tickets Plus valida el estado del pedido al momento del escaneo dentro de `CheckIn_Stati.php` (restringido nativamente a `completed`).
-*   **Solución**: Se utiliza el filtro `event_tickets_attendees_woo_checkin_stati` para añadir `processing` a los estados autorizados de check-in, permitiendo que la lectura del QR sea exitosa para pedidos procesando y bloqueándola para pedidos con saldo pendiente (`wc-p-pagado`).
+### 3.2 Control de Unidades Múltiples (Entregas Parciales)
+*   Cuando un boleto tiene múltiples unidades, el escáner QR realiza entregas de `1 en 1`.
+*   Para lograrlo, tras registrar cada unidad parcial en la tabla `tbp_entregas_fisicas`, el plugin ejecuta `$attendee->uncheckin()` en Event Tickets Plus. Esto mantiene el código QR activo en la app del operador. Solo cuando se alcanza la última unidad, se deja el check-in activo de forma definitiva.
 
-### 3.3 Regla de Respaldo por ID de Producto
-Las entregas se rigen por "Reglas de Entrega" configuradas para fechas específicas. Si no hay una regla configurada para el día del evento:
-*   **Solución**: Al escanear un boleto, el sistema extrae el ID de producto. Si hoy no coincide con ninguna fecha de regla, busca la regla correspondiente por la asociación del ID del producto y registra la entrega bajo esa regla de respaldo. Esto evita el mensaje de "Ignorado: No hay regla activa para hoy" durante los días de entrega real.
-
-### 3.4 Control de Escaneos Múltiples (Entregas Parciales)
-Si un alumno compra múltiples boletos/paquetes en una sola línea del pedido (ej. "3 pases de acompañante"):
-*   **Solución**:
-    1. Al escanear el QR, el sistema registra la entrega de exactamente `1` unidad.
-    2. Se inserta un log en la base de datos y una nota en el pedido de WooCommerce (ej. "Escaneo 1 de 3").
-    3. Si el total de unidades entregadas es menor al total comprado, el plugin **anula y revierte inmediatamente el check-in en Event Tickets**. Esto reactiva el código QR para que la app móvil pueda escanearlo nuevamente para los siguientes acompañantes.
-    4. Cuando se escanea la última unidad (ej. "3 de 3"), el check-in no se revierte y el boleto se bloquea de manera definitiva.
+### 3.3 Sincronización Bidireccional
+*   Si el operador presiona "Undo Check-In" en la app o en el listado de asistentes, el hook `tec_tickets_attendee_checkin` elimina el log correspondiente de entregas en WooCommerce.
+*   Si se borra el log en el metabox de WooCommerce mediante la papelera 🗑️, el sistema desmarca al asistente en Event Tickets Plus, reactivando su pase.
 
 ---
 
-## 4. Estructura de Datos Personalizada (Base de Datos)
+## 4. Estructura de la Base de Datos Relacionada con Asientos
 
-El plugin registra y audita todas las entregas físicas en tablas dedicadas:
+El sistema utiliza las tablas nativas de WordPress y dos tablas específicas:
 
-### 4.1 Tabla `tbp_entregas_fisicas`
-| Campo | Tipo | Descripción |
-| :--- | :--- | :--- |
-| `id` | BIGINT | Clave primaria autoincrementable. |
-| `order_id` | BIGINT | ID del pedido de WooCommerce. |
-| `item_id` | BIGINT | ID del ítem de la orden (para diferenciar productos del mismo pedido). |
-| `product_id` | BIGINT | ID del producto entregado. |
-| `delivery_type` | VARCHAR | Tipo de registro (`delivery_items`, `qr_delivery`, `raffle`, `tombola`). |
-| `qty` | INT | Cantidad entregada en la transacción. |
-| `staff_id` | BIGINT | ID del operador (o ID del asistente/ticket CPT en registros QR). |
-| `rule_id` | VARCHAR | ID de la regla de entrega bajo la cual se registró. |
-| `created_at` | DATETIME | Marca de tiempo del registro. |
+### 4.1 Tabla `tbp_seat_assignments` (Asignación de Asientos)
+Almacena las relaciones físicas entre los pases y las mesas del plano diseñado:
+*   `id`: Clave primaria.
+*   `config_id`: ID del post de configuración del plano (`tbp_asiento_config` CPT).
+*   `order_id`: ID del pedido de WooCommerce.
+*   `attendee_id`: ID del asistente (`tribe_wcb_attendee` CPT).
+*   `table_id`: ID/Nombre de la mesa asignada (ej. `Mesa 1`).
+*   `seat_number`: Número del asiento dentro de la mesa (opcional).
+*   `assigned_at`: Timestamp de la asignación.
 
 ---
 
-## 5. Sincronización Bidireccional de Check-Ins y Logs
+## 5. Historial de Versiones Recientes (Resumen Rápido)
 
-Para asegurar la integridad de los datos entre WooCommerce y Event Tickets:
-*   **Anulación en Event Tickets**: Si un administrador cancela el registro (Undo Check-In) desde el backend de asistentes de Event Tickets o la App móvil, se dispara el gancho de sincronización que localiza y borra el log de entrega física correspondiente en WooCommerce, deduciendo la cantidad entregada.
-*   **Borrado en WooCommerce**: Si un administrador borra un log de entrega QR en el metabox del pedido de WooCommerce (icono de papelera 🗑️), el plugin utiliza las clases de Tribe para cambiar el estado del asistente correspondiente a "no registrado", reactivando su código QR.
+*   **v11.9.75**: Asignación manual selectiva mediante casillas en la lista de pedidos de la Etapa 3. Permite elegir de forma precisa qué pedidos colocar en cada mesa y calcula sugerencias inteligentes de capacidad acumuladas.
+*   **v11.9.74**: Persistencia permanente del listado de escaneo de asistentes migrando de transitorios a opciones (`wp_options` sin autoload). Evita el bloqueo automático de Stage 3 y carga infinita de la tabla por expiración temporal.
+*   **v11.9.73**: Modificación interactiva de mesas (capacidad PAX y tipo/forma) en Stage 3 mediante doble clic o auto-ajuste con sugerencias si un grupo no cabe.
+*   **v11.9.72**: Filtro de "Estado" (Ya asignados / Falta asignar) en la lista de Stage 3.
+*   **v11.9.71**: Serialización JSON en peticiones AJAX para solucionar el error HTTP 403 por `max_input_vars`.
+*   **v11.9.70**: Filtro por "Cantidad" de boletos en la lista de Stage 3 para ubicar alumnos solos.
+*   **v11.9.69**: Herencia de grupo inteligente basada en correo y nombre para pases extras "sin grupo".
+*   **v11.9.68**: Renderizado rápido del plano mediante cadenas de HTML y badges de "Ya asignado" en Stage 3.
+*   **v11.9.67**: Corrección de error de parámetros en la regeneración de archivos estáticos de consulta pública.
+*   **v11.9.66**: Restauración de endpoints AJAX para carga de planos y asignación manual masiva.
+*   **v11.9.65**: Corrección del selector de PAX por mesa en el formulario de la Etapa 2.
+*   **v11.9.64**: Integración de consulta AJAX de datos de escaneo consolidados.
+*   **v11.9.63**: Control de promesas rotas de terceros y reubicación del botón "Asignación Inteligente".
+*   **v11.9.62**: Rediseño completo del metabox de Acciones con Timeline y Consola de Log en tiempo real.
 
 ---
 
-## 6. Historial de Reparaciones (Scripts de Migración de Datos)
-
-El plugin incluye rutinas automáticas (`admin_init`) para migrar y reparar metadatos dañados en la base de datos:
-*   **v1 y v2**: Migración de logs antiguos de fases a la nueva estructura de la base de datos.
-*   **v3**: Depuración de desfases de stock y estados fantasmas.
-*   **v4**: Escanea logs de tipo manual (`delivery_items`) y QR (`qr_delivery`) para restaurar de forma masiva los metadatos `_tbp_entrega_paquetes = '1'` y `_tbp_delivery_rule_id` de los pedidos entregados históricamente.
+## 6. Guía de Depuración para Nuevas Sesiones
 
 > [!IMPORTANT]
-> Estas rutinas se ejecutan en lotes indexados utilizando `LEFT JOIN` para evitar la sobrecarga y el agotamiento de memoria del servidor PHP (White Screen of Death).
-
----
-
-## 7. Consejos para el Desarrollo Futuro
-
-> [!TIP]
-> * **HPOS**: Nunca consultes metadatos de pedidos utilizando consultas SQL directas a `wp_postmeta` sin contemplar la tabla de pedidos HPOS de WooCommerce (`wp_wc_orders_meta`). Prioriza el uso de las APIs oficiales de WooCommerce (`$order->get_meta()`, `$order->update_meta_data()`) para garantizar que la base de datos se mantenga íntegra.
-> * **Timezones**: Al depurar reglas por fecha, recuerda que WordPress maneja la hora local mediante la configuración del sitio, mientras que la base de datos y ciertos servidores usan UTC. Utiliza la lógica de matriz de zona horaria implementada en `event-delivery-rules.php` para evitar falsos negativos por desfases horarios.
-
----
-
-## 8. Módulo de Asignación de Asientos (Mesas y Planos)
-
-Este módulo gestiona la asignación y distribución de asientos físicos para eventos mediante un plano visual interactivo y algoritmos de empaquetado.
-
-### 8.1 Tablas de Base de Datos
-*   **`tbp_seat_configurations`**: Almacena las configuraciones de asignación por evento, incluyendo el campo que agrupa asistentes (`group_field`) y la configuración serializada de zonas.
-*   **`tbp_seat_tables`**: Representa las mesas del evento. Almacena su zona, número, capacidad total y usada, tipo geométrico (`round`, `rectangular`, etc.), coordenadas visuales (`pos_x`, `pos_y`), dimensiones y color.
-*   **`tbp_seat_assignments`**: Registra qué pedidos de WooCommerce están asignados a qué mesas, con la cantidad de plazas reservadas y el nombre del comprador.
-*   **`tbp_seat_group_zones`**: Permite anular zonas y forzar la asignación de grupos específicos a zonas particulares.
-*   **`tbp_seat_elements`**: Almacena elementos decorativos del plano visual (Escenario, Pista de baile, Baños, Salidas de emergencia, etc.) con sus coordenadas y dimensiones.
-
-### 8.2 Interfaz de Administración y Flujo en 3 Etapas
-1.  **Etapa 1: Configuración de Metadatos**: El administrador define qué campo del boleto agrupa a los asistentes (ej. "Carrera" o "Grupo") y puede configurar zonas con prioridades y reglas de tamaño de grupo.
-2.  **Etapa 2: Procesamiento del Plano (Visual)**: Editor interactivo basado en Canvas HTML5 que permite arrastrar, soltar, redimensionar y configurar formas/bloqueos de mesas y elementos decorativos en tiempo real.
-3.  **Etapa 3: Generación y Asignación**:
-    *   **Escaneo de Asistentes**: Extrae en lotes los pedidos activos y calcula la cantidad de asientos/platillos requeridos de forma eficiente mediante transients de caché, previniendo cuellos de botella y errores 504.
-    *   **Asignación Inteligente (Automática)**: Algoritmo de empaquetado unidimensional (First Fit Decreasing) que acomoda automáticamente a los grupos en las mesas correspondientes a su zona respetando bloqueos y capacidades.
-    *   **Asignación Manual**: Modal interactivo a pantalla completa con vista dividida: un panel izquierdo con la cola de pedidos pendientes de acomodo (con barra de progreso animada) y un panel derecho con el plano visual interactivo. Al hacer clic en una mesa, el sistema la llena automáticamente con los pedidos seleccionados de la cola. Soporta deselección masiva, pila de deshacer de asignaciones previas, zoom interactivo y persistencia segura en base de datos.
+> 1. **End-points AJAX**: Todos los endpoints de asientos usan el prefijo `tbp_asientos_`. Asegurar que están registrados tanto en `wp_ajax_` como en `wp_ajax_nopriv_` si corresponde.
+> 2. **Transients y Caché**: La consulta pública utiliza snapshots JSON guardados físicamente para evitar colapsar la base de datos al ser consultada por miles de usuarios simultáneamente. Al guardar asignaciones manuales o masivas, se regenera este archivo automáticamente.
+> 3. **max_input_vars**: Al agregar nuevos campos en lotes masivos, pasarlos siempre codificados como JSON en una única variable para evitar bloqueos del firewall/servidor (HTTP 403).

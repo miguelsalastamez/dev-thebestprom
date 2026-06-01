@@ -575,7 +575,7 @@ function tbp_asientos_render_visual_editor( $config_id ) {
             const zone = $('#mass_zone_name').val() || 'Sin Zona';
             const rows = parseInt($('#mass_rows').val());
             const cols = parseInt($('#mass_cols').val());
-            const pax  = parseInt($('#mass_pax').val());
+            const pax  = parseInt($('#mass_pax').val()) || 10;
             const size = parseInt($('#mass_size').val());
             const spacing = parseInt($('#mass_spacing').val());
             const shape = $('#mass_shape').val();
