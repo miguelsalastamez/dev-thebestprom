@@ -103,7 +103,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 }
 
 // Define constants
-define( 'TBP_ACTIVIDADES_VERSION', '11.9.64' );
+define( 'TBP_ACTIVIDADES_VERSION', '11.9.75' );
 define( 'TBP_ACTIVIDADES_PATH', plugin_dir_path( __FILE__ ) );
 define( 'TBP_ACTIVIDADES_URL', plugin_dir_url( __FILE__ ) );
 
