@@ -1,3 +1,7 @@
+## [11.9.84] - 2026-06-02
+### Optimizado
+- **Asistente de Depuración del Upgrade (Asientos en BD)**: Ampliado el módulo de depuración para listar todas las configuraciones de asientos activas en la base de datos, facilitando contrastar los ID de eventos registrados.
+
 ## [11.9.83] - 2026-06-02
 ### Optimizado
 - **Asistente de Depuración del Upgrade**: Añadida una sección de depuración (`tbp_asientos_upgrade_debug_output`) en el footer de la página, visible para administradores o al agregar el parámetro de URL `?debug_upgrade=1`. Esta imprime los metadatos relevantes de WooCommerce y The Events Calendar para el pedido #36200, facilitando el diagnóstico visual.

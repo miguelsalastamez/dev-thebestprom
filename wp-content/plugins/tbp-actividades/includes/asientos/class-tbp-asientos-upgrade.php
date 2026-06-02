@@ -250,6 +250,9 @@ function tbp_asientos_upgrade_debug_output() {
     $event_id = tbp_asientos_get_order_event_id( $order_id );
     $config_id = tbp_get_order_event_config_id( $order_id );
 
+    global $wpdb;
+    $all_configs = $wpdb->get_results( "SELECT id, event_id, nombre, status FROM {$wpdb->prefix}tbp_seat_configurations" );
+
     $items_info = array();
     foreach ( $order->get_items() as $item ) {
         $p_id = $item->get_product_id();
@@ -276,6 +279,8 @@ function tbp_asientos_upgrade_debug_output() {
     echo '<p><strong>Estado WooCommerce:</strong> ' . esc_html( $status ) . '</p>';
     echo '<p><strong>Event ID detectado:</strong> ' . esc_html( $event_id ) . '</p>';
     echo '<p><strong>Config ID detectado:</strong> ' . esc_html( $config_id ) . '</p>';
+    echo '<h4>Configuraciones de Asientos en BD:</h4>';
+    echo '<pre>' . esc_html( print_r( $all_configs, true ) ) . '</pre>';
     echo '<h4>Items del Pedido:</h4>';
     echo '<pre>' . esc_html( print_r( $items_info, true ) ) . '</pre>';
     echo '</div>';
