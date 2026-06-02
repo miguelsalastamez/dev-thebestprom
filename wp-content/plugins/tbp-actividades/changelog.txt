@@ -1,3 +1,7 @@
+## [11.9.80] - 2026-06-02
+### Agregado
+- **Consolidación de Pedidos del Mismo Cliente**: Implementada la consolidación automática en el lado del cliente (JS) para agrupar pedidos pertenecientes al mismo comprador (por correo electrónico de facturación, o nombre si no hay correo). Ahora, múltiples pedidos (como la compra de entradas adicionales por separado) de un mismo cliente se muestran como una sola fila consolidada en la cuadrícula de la Etapa 3 y en el modal de asignación (ej. `#29680 + #36029`), permitiendo asignar todas sus piezas a la vez en la misma mesa. En la base de datos se guarda cada registro de forma independiente y respetando la relación directa con su pedido original en WooCommerce.
+
 ## [11.9.79] - 2026-06-02
 ### Agregado
 - **Colores de Mesas por Capacidad y Estado**: Redefinido el esquema de colores para las mesas en el plano interactivo de la Etapa 3. Ahora las mesas con capacidad mayor a 10 ocupadas se muestran en Rojo, las mesas llenas con capacidad de 10 o menos en Verde (eliminando la redundancia de tener verde y rojo para el mismo estado de llenado), las mesas parcialmente llenas de 10 o menos en Azul, y las mesas vacías/disponibles de cualquier tamaño en Gris. Se actualizó la leyenda en la interfaz de administración para reflejar con precisión este nuevo sistema de estados.

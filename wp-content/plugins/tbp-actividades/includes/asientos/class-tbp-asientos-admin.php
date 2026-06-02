@@ -1308,7 +1308,60 @@ function tbp_asientos_render_edit_view( $config_id = 0 ) {
                     return;
                 }
 
-                scanAllData = response.data.pedidos || [];
+                var rawPedidos = response.data.pedidos || [];
+                var consolidated = [];
+                var consolidatedMap = {};
+                
+                rawPedidos.forEach(function(p) {
+                    var email = (p.email || '').toLowerCase().trim();
+                    var nombre = (p.nombre || '').toLowerCase().trim();
+                    var apellidos = (p.apellidos || '').toLowerCase().trim();
+                    var key = '';
+                    
+                    if (email) {
+                        key = 'email:' + email;
+                    } else {
+                        key = 'name:' + nombre + ' ' + apellidos;
+                    }
+                    
+                    if (consolidatedMap[key] !== undefined) {
+                        var existing = consolidated[consolidatedMap[key]];
+                        existing.cantidad = (parseInt(existing.cantidad) || 0) + (parseInt(p.cantidad) || 0);
+                        if (existing.order_ids.indexOf(parseInt(p.order_id)) === -1) {
+                            existing.order_ids.push(parseInt(p.order_id));
+                            existing.orders_detail.push({
+                                order_id: parseInt(p.order_id),
+                                cantidad: parseInt(p.cantidad)
+                            });
+                            existing.display_order_id += ' + #' + p.order_id;
+                            
+                            // If name is different, append it in apellidos
+                            var newFullName = (p.nombre || '') + ' ' + (p.apellidos || '');
+                            var existingFullName = existing.nombre + ' ' + existing.apellidos;
+                            if (newFullName.trim().toLowerCase() !== existingFullName.trim().toLowerCase()) {
+                                existing.apellidos += ' / ' + newFullName;
+                            }
+                        }
+                    } else {
+                        var item = {
+                            order_id: parseInt(p.order_id),
+                            display_order_id: '#' + p.order_id,
+                            nombre: p.nombre || '',
+                            apellidos: p.apellidos || '',
+                            email: p.email || '',
+                            grupo: p.grupo || 'Sin grupo',
+                            cantidad: parseInt(p.cantidad) || 0,
+                            order_ids: [parseInt(p.order_id)],
+                            orders_detail: [{
+                                order_id: parseInt(p.order_id),
+                                cantidad: parseInt(p.cantidad)
+                            }]
+                        };
+                        consolidated.push(item);
+                        consolidatedMap[key] = consolidated.length - 1;
+                    }
+                });
+                scanAllData = consolidated;
                 scanGruposStats = response.data.grupos_stats || {};
                 scanAssignedMap = response.data.assigned_map || {};
                 scanTableMap = response.data.table_map || {};
@@ -1339,7 +1392,14 @@ function tbp_asientos_render_edit_view( $config_id = 0 ) {
 
             scanFilteredData = scanAllData.filter(function(p) {
                 if (fEstado) {
-                    var isAssigned = !!scanAssignedMap[p.order_id];
+                    var isAssigned = false;
+                    if (p.order_ids) {
+                        p.order_ids.forEach(function(oid) {
+                            if (scanAssignedMap[oid]) isAssigned = true;
+                        });
+                    } else {
+                        isAssigned = !!scanAssignedMap[p.order_id];
+                    }
                     if (fEstado === 'asignado' && !isAssigned) return false;
                     if (fEstado === 'no_asignado' && isAssigned) return false;
                 }
@@ -1352,7 +1412,17 @@ function tbp_asientos_render_edit_view( $config_id = 0 ) {
                         if (c !== parseInt(fCantidad)) return false;
                     }
                 }
-                if (fPedido && String(p.order_id).indexOf(fPedido) === -1) return false;
+                if (fPedido) {
+                    var foundPedido = false;
+                    if (p.order_ids) {
+                        p.order_ids.forEach(function(oid) {
+                            if (String(oid).indexOf(fPedido) !== -1) foundPedido = true;
+                        });
+                    } else if (String(p.order_id).indexOf(fPedido) !== -1) {
+                        foundPedido = true;
+                    }
+                    if (!foundPedido) return false;
+                }
                 if (fNombre) {
                     var fullName = ((p.nombre || '') + ' ' + (p.apellidos || '')).toLowerCase();
                     if (fullName.indexOf(fNombre) === -1) return false;
@@ -1433,16 +1503,33 @@ function tbp_asientos_render_edit_view( $config_id = 0 ) {
                 var rowBg = idx % 2 === 0 ? '#fff' : '#f8fafc';
                 var selectedBg = scanSelectedIds[p.order_id] ? '#eff6ff' : rowBg;
 
-                var assignedMesaId = scanAssignedMap[p.order_id];
+                var assignedMesas = [];
+                var assignedMesaMap = {};
+                if (p.order_ids) {
+                    p.order_ids.forEach(function(oid) {
+                        var mesaId = scanAssignedMap[oid];
+                        if (mesaId) {
+                            var mesaNum = scanTableMap[mesaId] || mesaId;
+                            if (!assignedMesaMap[mesaNum]) {
+                                assignedMesaMap[mesaNum] = true;
+                                assignedMesas.push(mesaNum);
+                            }
+                        }
+                    });
+                } else {
+                    var assignedMesaId = scanAssignedMap[p.order_id];
+                    if (assignedMesaId) {
+                        assignedMesas.push(scanTableMap[assignedMesaId] || assignedMesaId);
+                    }
+                }
                 var badgeAssigned = '';
-                if (assignedMesaId) {
-                    var mesaNum = scanTableMap[assignedMesaId] || assignedMesaId;
-                    badgeAssigned = ' <span style="background:#f59e0b; color:#fff; padding:3px 8px; border-radius:12px; font-size:9px; font-weight:700; margin-left:8px; display:inline-block; vertical-align:middle;">✅ Ya asignado (Mesa ' + escHtml(mesaNum.toString()) + ')</span>';
+                if (assignedMesas.length > 0) {
+                    badgeAssigned = ' <span style="background:#f59e0b; color:#fff; padding:3px 8px; border-radius:12px; font-size:9px; font-weight:700; margin-left:8px; display:inline-block; vertical-align:middle;">✅ Ya asignado (Mesa ' + escHtml(assignedMesas.join(', ')) + ')</span>';
                 }
 
                 var row = '<tr data-order-id="' + p.order_id + '" style="border-bottom:1px solid #f1f5f9; background:' + selectedBg + '; transition:background 0.15s;">';
                 row += '<td style="padding:10px 16px; text-align:center;"><input type="checkbox" class="chk_row" value="' + p.order_id + '" ' + isChecked + ' style="width:15px; height:15px; cursor:pointer;"></td>';
-                row += '<td style="padding:10px 16px; font-weight:600; color:#1e40af; vertical-align:middle;">#' + p.order_id + badgeAssigned + '</td>';
+                row += '<td style="padding:10px 16px; font-weight:600; color:#1e40af; vertical-align:middle;">' + (p.display_order_id || ('#' + p.order_id)) + badgeAssigned + '</td>';
                 row += '<td style="padding:10px 16px; color:#334155; vertical-align:middle;">' + escHtml(p.nombre || '') + ' ' + escHtml(p.apellidos || '') + '</td>';
                 row += '<td style="padding:10px 16px;"><span style="background:#e0e7ff; color:#3730a3; padding:3px 10px; border-radius:20px; font-size:11px; font-weight:600;">' + escHtml(p.grupo || 'Sin grupo') + '</span></td>';
                 row += '<td style="padding:10px 16px; text-align:right; font-weight:700; color:#334155;">' + parseInt(p.cantidad) + '</td>';
@@ -1657,11 +1744,14 @@ function tbp_asientos_render_edit_view( $config_id = 0 ) {
                 if (scanSelectedIds[p.order_id]) {
                     selectedOrders.push({
                         order_id: parseInt(p.order_id),
+                        display_order_id: p.display_order_id || ('#' + p.order_id),
                         nombre: p.nombre || '',
                         apellidos: p.apellidos || '',
                         grupo: p.grupo || 'Sin grupo',
                         cantidad: parseInt(p.cantidad) || 0,
-                        status: 'pending' // pending | assigned
+                        status: 'pending', // pending | assigned
+                        order_ids: p.order_ids,
+                        orders_detail: p.orders_detail
                     });
                     grupos[p.grupo || 'Sin grupo'] = true;
                 }
@@ -1774,7 +1864,7 @@ function tbp_asientos_render_edit_view( $config_id = 0 ) {
                 var mesaLabel = mesa ? mesa.numero : '?';
                 $list.append(
                     '<div style="padding:8px 10px; margin-bottom:4px; background:#f0fdf4; border:1px solid #bbf7d0; border-radius:6px; font-size:12px; display:flex; justify-content:space-between; align-items:center;">' +
-                        '<div><strong style="color:#16a34a;">✅</strong> #' + o.order_id + ' <span style="color:#64748b;">' + escHtml(o.nombre) + ' ' + escHtml(o.apellidos) + '</span></div>' +
+                        '<div><strong style="color:#16a34a;">✅</strong> ' + (o.display_order_id || ('#' + o.order_id)) + ' <span style="color:#64748b;">' + escHtml(o.nombre) + ' ' + escHtml(o.apellidos) + '</span></div>' +
                         '<div style="display:flex; align-items:center; gap:6px;"><span style="background:#dcfce7; color:#166534; padding:2px 8px; border-radius:10px; font-size:10px; font-weight:700;">Mesa ' + escHtml(mesaLabel) + '</span><span style="font-weight:700;">' + o.cantidad + ' pzas</span></div>' +
                     '</div>'
                 );
@@ -1790,7 +1880,7 @@ function tbp_asientos_render_edit_view( $config_id = 0 ) {
                     '<div class="assign-order-row" data-order-id="' + o.order_id + '" style="padding:8px 10px; margin-bottom:4px; background:' + bg + '; border:1px solid ' + border + '; border-radius:6px; font-size:12px; display:flex; justify-content:space-between; align-items:center; cursor:pointer; transition: background-color 0.15s, border-color 0.15s;">' +
                         '<div style="display:flex; align-items:center; gap:8px;">' +
                             '<input type="checkbox" class="assign-select-order" style="cursor:pointer;" data-order-id="' + o.order_id + '"' + (isChecked ? ' checked' : '') + '>' +
-                            '<div><strong style="color:#ea580c;">⏳</strong> #' + o.order_id + ' <span style="color:#64748b;">' + escHtml(o.nombre) + ' ' + escHtml(o.apellidos) + '</span></div>' +
+                            '<div><strong style="color:#ea580c;">⏳</strong> ' + (o.display_order_id || ('#' + o.order_id)) + ' <span style="color:#64748b;">' + escHtml(o.nombre) + ' ' + escHtml(o.apellidos) + '</span></div>' +
                         '</div>' +
                         '<div style="font-weight:700; color:#334155;">' + o.cantidad + ' pzas</div>' +
                     '</div>'
@@ -2136,21 +2226,29 @@ function tbp_asientos_render_edit_view( $config_id = 0 ) {
                 });
 
                 // Find the original scanned order to add to queue if possible
-                var scanOrder = scanAllData.find(function(p) { return parseInt(p.order_id) === orderId; });
+                var scanOrder = scanAllData.find(function(p) {
+                    if (p.order_ids) {
+                        return p.order_ids.indexOf(orderId) !== -1;
+                    }
+                    return parseInt(p.order_id) === orderId;
+                });
                 if (scanOrder) {
                     // Check if it's already in assignQueue, if not, add it
-                    var inQueue = assignQueue.some(function(o) { return o.order_id === orderId; });
+                    var inQueue = assignQueue.some(function(o) { return o.order_id === scanOrder.order_id; });
                     if (!inQueue) {
                         assignQueue.push({
-                            order_id: orderId,
+                            order_id: scanOrder.order_id,
+                            display_order_id: scanOrder.display_order_id || ('#' + scanOrder.order_id),
                             nombre: scanOrder.nombre || '',
                             apellidos: scanOrder.apellidos || '',
                             grupo: scanOrder.grupo || 'Sin grupo',
                             cantidad: parseInt(scanOrder.cantidad) || cantidad,
-                            status: 'pending'
+                            status: 'pending',
+                            order_ids: scanOrder.order_ids,
+                            orders_detail: scanOrder.orders_detail
                         });
                     } else {
-                        var qItem = assignQueue.find(function(o) { return o.order_id === orderId; });
+                        var qItem = assignQueue.find(function(o) { return o.order_id === scanOrder.order_id; });
                         if (qItem) qItem.status = 'pending';
                     }
                 }
@@ -2307,15 +2405,29 @@ function tbp_asientos_render_edit_view( $config_id = 0 ) {
             if (!confirm('¿Confirmar la asignación de ' + assignDone.length + ' pedidos a mesas?\n\nEsto guardará las asignaciones en la base de datos.')) return;
 
             var configId = <?php echo $config_id; ?>;
-            var payload = assignDone.map(function(item) {
-                return {
-                    order_id: item.order.order_id,
-                    mesa_id: item.mesa_id,
-                    grupo: item.order.grupo,
-                    cantidad: item.order.cantidad,
-                    nombre: item.order.nombre,
-                    apellidos: item.order.apellidos
-                };
+            var payload = [];
+            assignDone.forEach(function(item) {
+                if (item.order.orders_detail && item.order.orders_detail.length > 0) {
+                    item.order.orders_detail.forEach(function(sub) {
+                        payload.push({
+                            order_id: sub.order_id,
+                            mesa_id: item.mesa_id,
+                            grupo: item.order.grupo,
+                            cantidad: sub.cantidad,
+                            nombre: item.order.nombre,
+                            apellidos: item.order.apellidos
+                        });
+                    });
+                } else {
+                    payload.push({
+                        order_id: item.order.order_id,
+                        mesa_id: item.mesa_id,
+                        grupo: item.order.grupo,
+                        cantidad: item.order.cantidad,
+                        nombre: item.order.nombre,
+                        apellidos: item.order.apellidos
+                    });
+                }
             });
 
             var $btn = $('#btn_assign_confirm');

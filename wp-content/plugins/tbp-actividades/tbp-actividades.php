@@ -2,11 +2,12 @@
 /**
  * Plugin Name: The Best Prom - Actividades
  * Plugin URI: https://dev.thebestprom.com
- * Version: 11.9.79
+ * Version: 11.9.80
  * Author: Antigravity Team
  * Text Domain: tbp-actividades
  *
  * Changelog:
+ * 11.9.80 - Feature: Implemented front-end order consolidation. Multiple orders belonging to the same client (same billing email, or same billing name if email is empty) are now grouped and displayed as a single record in the Stage 3 manual assignment queue, allowing operators to assign all their seats to a table together while preserving WooCommerce order database integrity on confirm.
  * 11.9.79 - Feature: Redefined floor plan table color rules in Stage 3: occupied tables with capacity > 10 are Red, full tables with capacity <= 10 are Green, partially filled tables with capacity <= 10 are Blue, and empty tables are Gray.
  * 11.9.78 - Bugfix: Removed automatic fallback sequential assignment when clicking on a table with no checked checkboxes selected. Clicking a table now does nothing if selectedOrderIds is empty.
  * 11.9.77 - Bugfix: Fixed PHP 8.x compatibility issue with current() function during public snapshot regeneration. Verified and completed unassign validation marking orders as unassigned.
