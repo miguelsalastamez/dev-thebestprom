@@ -410,7 +410,7 @@ function tbp_asientos_upgrade_modal_html() {
             $('#tbp-upgrade-modal').css('display', 'flex');
             $('body').css('overflow', 'hidden');
 
-            $.post(ajaxurl || '/wp-admin/admin-ajax.php', {
+            $.post('<?php echo esc_url( admin_url( 'admin-ajax.php' ) ); ?>', {
                 action: 'tbp_asientos_load_upgrade_options',
                 order_id: orderId,
                 nonce: '<?php echo wp_create_nonce("tbp_asientos_nonce"); ?>'
@@ -513,7 +513,7 @@ function tbp_asientos_upgrade_modal_html() {
             var hasAnyQty = false;
             $('.tbp-upgrade-extra-qty').each(function() {
                 var qty = parseInt($(this).val()) || 0;
-                var price = parseFloat($(data-price)) || parseFloat($(this).data('price'));
+                var price = parseFloat($(this).data('price')) || 0;
                 if (qty > 0) {
                     extrasTotal += qty * price;
                     hasAnyQty = true;
@@ -563,7 +563,7 @@ function tbp_asientos_upgrade_modal_html() {
             var $btn = $(this);
             $btn.prop('disabled', true).text('⏳ Preparando pago...');
 
-            $.post(ajaxurl || '/wp-admin/admin-ajax.php', {
+            $.post('<?php echo esc_url( admin_url( 'admin-ajax.php' ) ); ?>', {
                 action: 'tbp_asientos_prepare_order_upgrade',
                 order_id: orderId,
                 new_package_id: newPackageId,

@@ -1,3 +1,9 @@
+## [11.9.86] - 2026-06-02
+### Corregido
+- **Fallo al Cargar Opciones de Upgrade en Modal**:
+  - Se corrigió un error de sintaxis/runtime en Javascript (`$(data-price)` en lugar de `$(this).data('price')`) que causaba un bloqueo silencioso e impedía la carga final de las opciones e importes.
+  - Se solucionó el error de URL AJAX en instalaciones bajo subdirectorios (como `/dev/`). En lugar de utilizar una ruta estática `/wp-admin/admin-ajax.php` que fallaba con 404, ahora el código JS inyecta dinámicamente el URL correcto usando la función `admin_url('admin-ajax.php')` de WordPress.
+
 ## [11.9.85] - 2026-06-02
 ### Corregido
 - **Filtro de Visibilidad del Botón de Upgrade**: Se modificó la validación para habilitar el botón de upgrades de modo que dependa únicamente de que el pedido esté asociado a un evento (ID de evento válido), en lugar de exigir obligatoriamente un plano de asientos configurado. Esto permite que los clientes mejoren sus paquetes o compren extras incluso si el plano de mesas no ha sido generado aún.

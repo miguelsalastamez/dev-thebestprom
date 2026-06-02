@@ -2,11 +2,12 @@
 /**
  * Plugin Name: The Best Prom - Actividades
  * Plugin URI: https://dev.thebestprom.com
- * Version: 11.9.85
+ * Version: 11.9.86
  * Author: Antigravity Team
  * Text Domain: tbp-actividades
  *
  * Changelog:
+ * 11.9.86 - Bugfix: Fixed JS runtime crash in the upgrade modal calculations caused by an invalid `$(data-price)` reference, and resolved frontend AJAX 404/redirect issues on subdirectory WordPress installations by dynamically outputting the correct `admin-ajax.php` URL using PHP.
  * 11.9.85 - Bugfix: Modified the Order Upgrade button action visibility filter to check for event ID presence instead of requiring a seat configuration ID, allowing upgrades for events that do not have a seat map configuration yet.
  * 11.9.84 - Enhancement: Expanded the public debug tool in My Account to print all active seat configurations in the database to identify event ID mapping mismatches.
  * 11.9.83 - Enhancement: Added a public debug helper to inspect WooCommerce order item metadata and event config associations by appending '?debug_upgrade=1' to the page URL.
