@@ -1,3 +1,9 @@
+## [11.9.88] - 2026-06-02
+### Corregido
+- **Limpieza de Asignaciones Huérfanas de Asientos**:
+  - Se implementó la función envolvente `tbp_asientos_get_clean_order_assignment()` para validar las asignaciones en el frontend contra la base de datos de asientos. Si la configuración o la mesa asociada al pedido ya fue borrada (por ejemplo, después de borrar planos de prueba), se descarta y se elimina el caché `_tbp_seat_assignment` del pedido de WooCommerce en tiempo real, evitando que se muestre información obsoleta de pruebas eliminadas.
+  - Se modificó `tbp_asientos_handle_delete_config()` para obtener y limpiar el caché de metadatos `_tbp_seat_assignment` de todos los pedidos asociados cuando el administrador elimina una configuración de mesas completa.
+
 ## [11.9.87] - 2026-06-02
 ### Optimizado
 - **Rendimiento al Cargar Opciones de Upgrade en Modal**:

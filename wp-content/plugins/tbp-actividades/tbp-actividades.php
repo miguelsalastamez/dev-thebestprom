@@ -2,11 +2,12 @@
 /**
  * Plugin Name: The Best Prom - Actividades
  * Plugin URI: https://dev.thebestprom.com
- * Version: 11.9.87
+ * Version: 11.9.88
  * Author: Antigravity Team
  * Text Domain: tbp-actividades
  *
  * Changelog:
+ * 11.9.88 - Bugfix: Implemented a verification wrapper `tbp_asientos_get_clean_order_assignment()` to sanitize cached order postmeta against the active DB seating assignments, automatically purging deleted/orphaned test assignments. Also added metabox cleanups on config deletion.
  * 11.9.87 - Performance: Optimized event ticket queries by joining the `wp_posts` table and filtering for `post_type = 'product'`. This prevents the query from scanning/loading thousands of attendee posts, resolving the loading hang/timeout in the upgrade modal. Also added safety checks for wc_get_product calls.
  * 11.9.86 - Bugfix: Fixed JS runtime crash in the upgrade modal calculations caused by an invalid `$(data-price)` reference, and resolved frontend AJAX 404/redirect issues on subdirectory WordPress installations by dynamically outputting the correct `admin-ajax.php` URL using PHP.
  * 11.9.85 - Bugfix: Modified the Order Upgrade button action visibility filter to check for event ID presence instead of requiring a seat configuration ID, allowing upgrades for events that do not have a seat map configuration yet.

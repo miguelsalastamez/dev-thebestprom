@@ -220,6 +220,41 @@ function tbp_asientos_get_orders_for_event( $event_id ) {
 // =====================================================================
 
 /**
+ * Obtiene la asignación de un pedido, validando con la base de datos de asientos
+ * para limpiar y descartar asignaciones huérfanas si la configuración o la mesa
+ * fueron eliminadas de la base de datos.
+ *
+ * @param int $order_id ID del pedido WooCommerce.
+ * @return array|false Datos de la asignación o false si no está asignado o está huérfano.
+ */
+function tbp_asientos_get_clean_order_assignment( $order_id ) {
+    $order_id = (int) $order_id;
+    if ( ! $order_id ) {
+        return false;
+    }
+
+    $assignment = get_post_meta( $order_id, '_tbp_seat_assignment', true );
+    if ( empty( $assignment ) || ! is_array( $assignment ) || ( $assignment['status'] ?? '' ) !== 'assigned' ) {
+        return false;
+    }
+
+    // Validar si la asignación realmente existe en la base de datos de asientos
+    global $wpdb;
+    $db_assignment = $wpdb->get_row( $wpdb->prepare(
+        "SELECT * FROM {$wpdb->prefix}tbp_seat_assignments WHERE order_id = %d LIMIT 1",
+        $order_id
+    ) );
+
+    if ( ! $db_assignment ) {
+        // La asignación fue eliminada o la configuración borrada. Limpiamos el caché meta.
+        delete_post_meta( $order_id, '_tbp_seat_assignment' );
+        return false;
+    }
+
+    return $assignment;
+}
+
+/**
  * 1. Mostrar mesa en "Mi Cuenta" > Ver Pedido
  */
 add_action( 'woocommerce_order_details_after_order_table', 'tbp_asientos_show_seat_in_account', 10 );
@@ -227,8 +262,8 @@ function tbp_asientos_show_seat_in_account( $order = null ) {
     if ( ! is_a( $order, 'WC_Order' ) ) {
         return;
     }
-    $assignment = get_post_meta( $order->get_id(), '_tbp_seat_assignment', true );
-    if ( empty( $assignment ) || $assignment['status'] !== 'assigned' ) {
+    $assignment = tbp_asientos_get_clean_order_assignment( $order->get_id() );
+    if ( ! $assignment ) {
         return;
     }
 
@@ -262,8 +297,8 @@ function tbp_asientos_email_seat_info( $order = null, $sent_to_admin = false, $p
         return; // Solo al cliente
     }
 
-    $assignment = get_post_meta( $order->get_id(), '_tbp_seat_assignment', true );
-    if ( empty( $assignment ) || $assignment['status'] !== 'assigned' ) {
+    $assignment = tbp_asientos_get_clean_order_assignment( $order->get_id() );
+    if ( ! $assignment ) {
         return;
     }
 
@@ -297,8 +332,8 @@ function tbp_asientos_add_seat_to_ticket( $meta, $attendee ) {
         return $meta;
     }
 
-    $assignment = get_post_meta( $attendee['order_id'], '_tbp_seat_assignment', true );
-    if ( ! empty( $assignment ) && $assignment['status'] === 'assigned' ) {
+    $assignment = tbp_asientos_get_clean_order_assignment( $attendee['order_id'] );
+    if ( $assignment ) {
         $meta[] = array(
             'label' => __( '🪑 Mesa Asignada', 'tbp-actividades' ),
             'value' => $assignment['mesa_numero'] . ' (' . $assignment['zona'] . ')',

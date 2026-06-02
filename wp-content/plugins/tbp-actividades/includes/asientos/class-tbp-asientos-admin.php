@@ -2554,12 +2554,27 @@ function tbp_asientos_handle_delete_config() {
     $config_id = isset( $_POST['config_id'] ) ? (int) $_POST['config_id'] : 0;
     if ( $config_id ) {
         global $wpdb;
+
+        // 1. Obtener los order_ids afectados por esta configuración para limpiar su caché meta
+        $order_ids = $wpdb->get_col( $wpdb->prepare(
+            "SELECT DISTINCT order_id FROM {$wpdb->prefix}tbp_seat_assignments WHERE config_id = %d",
+            $config_id
+        ) );
+
+        // 2. Borrar registros de la base de datos
         $wpdb->delete( $wpdb->prefix . 'tbp_seat_configurations', array( 'id' => $config_id ) );
         $wpdb->delete( $wpdb->prefix . 'tbp_seat_tables', array( 'config_id' => $config_id ) );
         $wpdb->delete( $wpdb->prefix . 'tbp_seat_assignments', array( 'config_id' => $config_id ) );
         $wpdb->delete( $wpdb->prefix . 'tbp_seat_group_zones', array( 'config_id' => $config_id ) );
         delete_option( 'tbp_seat_scan_' . $config_id );
         delete_option( 'tbp_seat_scan_time_' . $config_id );
+
+        // 3. Limpiar el metadato caché de todos los pedidos de WooCommerce afectados
+        if ( ! empty( $order_ids ) ) {
+            foreach ( $order_ids as $oid ) {
+                delete_post_meta( (int) $oid, '_tbp_seat_assignment' );
+            }
+        }
 
         $url = admin_url( 'admin.php?page=tbp-actividades-asientos&deleted=1&v=' . TBP_ACTIVIDADES_VERSION );
         wp_safe_redirect( $url );

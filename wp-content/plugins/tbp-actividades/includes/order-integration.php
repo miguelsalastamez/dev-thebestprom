@@ -277,7 +277,7 @@ function tbp_actividades_order_meta_box_html( $post_or_order ) {
         <div class="tbp-order-section">
             <h3><span>🪑</span> <?php _e( 'Asignación de Asientos', 'tbp-actividades' ); ?></h3>
             <?php
-            $assignment = get_post_meta( $order_id, '_tbp_seat_assignment', true );
+            $assignment = function_exists( 'tbp_asientos_get_clean_order_assignment' ) ? tbp_asientos_get_clean_order_assignment( $order_id ) : get_post_meta( $order_id, '_tbp_seat_assignment', true );
             if ( ! empty( $assignment ) && isset( $assignment['status'] ) && $assignment['status'] === 'assigned' ) {
                 echo '<div style="background:#e8f5e9; border:1px solid #4caf50; padding:10px; border-radius:4px;">';
                 echo '<p style="margin:0 0 5px 0;"><strong>✅ Mesa Asignada: ' . esc_html( $assignment['mesa_numero'] ) . '</strong></p>';
