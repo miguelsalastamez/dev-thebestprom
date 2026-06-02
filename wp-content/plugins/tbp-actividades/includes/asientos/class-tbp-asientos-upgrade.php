@@ -781,6 +781,12 @@ function tbp_asientos_ajax_prepare_order_upgrade() {
     update_post_meta( $order_id, '_tbp_pre_upgrade_backup', $backup_data );
 
     // 3. Modificar ítems del pedido
+    // Remover todos los cargos/fees existentes (como la expedición de tickets previa)
+    // para evitar duplicidades al recalcular o durante la pasarela de pago.
+    foreach ( $order->get_fees() as $item_id => $fee ) {
+        $order->remove_item( $item_id );
+    }
+
     // Si hay upgrade de paquete, removemos el ítem original y añadimos el nuevo
     $pkg_id_to_charge = $original_product_id;
     if ( $new_package_id > 0 && $new_package_id !== $original_product_id ) {
@@ -871,7 +877,18 @@ function tbp_asientos_complete_upgrade_process( $order_id ) {
         }
     }
 
-    // 2. Recalcular totales para reflejar el costo total completo del nuevo paquete
+    // 2. Saneamiento de tarifas duplicadas (ej: "Expedición de Tickets")
+    $seen_fees = array();
+    foreach ( $order->get_fees() as $item_id => $fee ) {
+        $fee_slug = sanitize_title( $fee->get_name() );
+        if ( in_array( $fee_slug, $seen_fees ) ) {
+            $order->remove_item( $item_id );
+        } else {
+            $seen_fees[] = $fee_slug;
+        }
+    }
+
+    // 3. Recalcular totales para reflejar el costo total completo del nuevo paquete
     $order->calculate_totals();
     
     // Obtener total final del pedido y la diferencia pagada en esta transacción

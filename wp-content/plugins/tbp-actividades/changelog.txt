@@ -1,3 +1,9 @@
+## [11.9.89] - 2026-06-02
+### Corregido
+- **Cobro Duplicado de Tarifa de Expedición de Tickets en Upgrades**:
+  - Se previno el cobro duplicado de la tarifa de "Expedición de Tickets" (u otros recargos/cargos de checkout) durante el proceso de mejora de pedidos. Ahora, el sistema elimina los fees antiguos del pedido en la etapa de preparación (`tbp_asientos_ajax_prepare_order_upgrade`) antes de que el motor de WooCommerce calcule los nuevos totales para el checkout.
+  - Se agregó una lógica de desduplicación de tarifas en el hook post-pago (`tbp_asientos_complete_upgrade_process`) que detecta y remueve cargos duplicados con el mismo nombre (slug sanitizado), garantizando que el total acumulado consolidado final sea correcto.
+
 ## [11.9.88] - 2026-06-02
 ### Corregido
 - **Limpieza de Asignaciones Huérfanas de Asientos**:
