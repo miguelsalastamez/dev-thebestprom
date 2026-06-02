@@ -1,3 +1,7 @@
+## [11.9.78] - 2026-06-02
+### Corregido
+- **Asignación Fallback en Clic de Mesa**: Se eliminó la asignación automática por defecto (el siguiente pedido en cola) cuando se hace clic en una mesa sin tener casillas seleccionadas. Ahora, al hacer clic en una mesa con la selección vacía (`selectedOrderIds.length === 0`), no ocurre ninguna acción ni se abre el modal con sugerencias de aumento de PAX, manteniendo el comportamiento limpio y reservando la apertura manual del editor de mesa al doble clic.
+
 ## [11.9.77] - 2026-06-02
 ### Corregido
 - **Fallo al Guardar Cambios en Mesas**: Corregido error fatal PHP 8.x (`Only variables should be passed by reference` debido al uso de `current()` con llamadas de métodos directamente) en la regeneración de snapshots públicos de asignaciones que interrumpía la respuesta AJAX de actualización de mesa.

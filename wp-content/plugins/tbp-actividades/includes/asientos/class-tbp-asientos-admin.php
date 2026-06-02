@@ -1864,111 +1864,63 @@ function tbp_asientos_render_edit_view( $config_id = 0 ) {
             var tbl = findTable(tableId);
             if (!tbl) return;
 
+            // If no orders are selected, do absolutely nothing
+            if (selectedOrderIds.length === 0) {
+                return;
+            }
+
             var pendingOrders = assignQueue.filter(function(o) { return o.status === 'pending'; });
             if (pendingOrders.length === 0) return;
 
-            // Check if we have manually selected orders
-            if (selectedOrderIds.length > 0) {
-                var selectedPending = pendingOrders.filter(function(o) {
-                    return selectedOrderIds.indexOf(o.order_id) !== -1;
-                });
-
-                if (selectedPending.length === 0) {
-                    selectedOrderIds = [];
-                    renderAssignQueue();
-                    return;
-                }
-
-                // Sum total required capacity
-                var totalRequired = 0;
-                selectedPending.forEach(function(o) { totalRequired += o.cantidad; });
-
-                if (totalRequired <= tbl.libre) {
-                    // All selected orders fit! Assign them
-                    var assignedInThisClick = [];
-                    selectedPending.forEach(function(order) {
-                        order.status = 'assigned';
-                        assignedInThisClick.push({ order: order, mesa_id: tableId });
-                        assignDone.push({ order: order, mesa_id: tableId });
-                    });
-
-                    // Update table availability
-                    tbl.used += totalRequired;
-                    tbl.libre = Math.max(0, tbl.capacidad - tbl.used);
-
-                    // Push to history for undo
-                    assignHistory.push({
-                        mesa_id: tableId,
-                        orders: assignedInThisClick,
-                        piecesAssigned: totalRequired
-                    });
-
-                    // Clear selection
-                    selectedOrderIds = [];
-
-                    // Re-render
-                    renderAssignFloor();
-                    renderAssignQueue();
-                    updateAssignStats();
-
-                    // Scroll order list to top
-                    var $list = $('#assign_order_list');
-                    $list.scrollTop(0);
-                } else {
-                    // They don't fit! Open edit capacity modal with these specific orders
-                    openEditTableModal(tableId, true, selectedPending);
-                }
-                return;
-            }
-
-            // If table is completely full, offer to expand capacity!
-            if (tbl.libre <= 0) {
-                openEditTableModal(tableId, true);
-                return;
-            }
-
-            // Fill this table with orders from the queue
-            var remaining = tbl.libre;
-            var assignedInThisClick = [];
-
-            for (var i = 0; i < pendingOrders.length && remaining > 0; i++) {
-                var order = pendingOrders[i];
-                if (order.cantidad <= remaining) {
-                    // Whole order fits
-                    order.status = 'assigned';
-                    remaining -= order.cantidad;
-                    assignedInThisClick.push({ order: order, mesa_id: tableId });
-                    assignDone.push({ order: order, mesa_id: tableId });
-                }
-            }
-
-            if (assignedInThisClick.length === 0) {
-                // If nothing fits, open edit table modal with auto-assign suggestion
-                openEditTableModal(tableId, true);
-                return;
-            }
-
-            // Update table availability
-            var piecesAssigned = 0;
-            assignedInThisClick.forEach(function(a) { piecesAssigned += a.order.cantidad; });
-            tbl.used += piecesAssigned;
-            tbl.libre = Math.max(0, tbl.capacidad - tbl.used);
-
-            // Push to history for undo
-            assignHistory.push({
-                mesa_id: tableId,
-                orders: assignedInThisClick,
-                piecesAssigned: piecesAssigned
+            var selectedPending = pendingOrders.filter(function(o) {
+                return selectedOrderIds.indexOf(o.order_id) !== -1;
             });
 
-            // Re-render
-            renderAssignFloor();
-            renderAssignQueue();
-            updateAssignStats();
+            if (selectedPending.length === 0) {
+                selectedOrderIds = [];
+                renderAssignQueue();
+                return;
+            }
 
-            // Scroll order list to top
-            var $list = $('#assign_order_list');
-            $list.scrollTop(0);
+            // Sum total required capacity
+            var totalRequired = 0;
+            selectedPending.forEach(function(o) { totalRequired += o.cantidad; });
+
+            if (totalRequired <= tbl.libre) {
+                // All selected orders fit! Assign them
+                var assignedInThisClick = [];
+                selectedPending.forEach(function(order) {
+                    order.status = 'assigned';
+                    assignedInThisClick.push({ order: order, mesa_id: tableId });
+                    assignDone.push({ order: order, mesa_id: tableId });
+                });
+
+                // Update table availability
+                tbl.used += totalRequired;
+                tbl.libre = Math.max(0, tbl.capacidad - tbl.used);
+
+                // Push to history for undo
+                assignHistory.push({
+                    mesa_id: tableId,
+                    orders: assignedInThisClick,
+                    piecesAssigned: totalRequired
+                });
+
+                // Clear selection
+                selectedOrderIds = [];
+
+                // Re-render
+                renderAssignFloor();
+                renderAssignQueue();
+                updateAssignStats();
+
+                // Scroll order list to top
+                var $list = $('#assign_order_list');
+                $list.scrollTop(0);
+            } else {
+                // They don't fit! Open edit capacity modal with these specific orders
+                openEditTableModal(tableId, true, selectedPending);
+            }
         });
 
         // ---- DOUBLE CLICK: EDIT TABLE DIRECTLY ----

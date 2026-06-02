@@ -2,11 +2,12 @@
 /**
  * Plugin Name: The Best Prom - Actividades
  * Plugin URI: https://dev.thebestprom.com
- * Version: 11.9.77
+ * Version: 11.9.78
  * Author: Antigravity Team
  * Text Domain: tbp-actividades
  *
  * Changelog:
+ * 11.9.78 - Bugfix: Removed automatic fallback sequential assignment when clicking on a table with no checked checkboxes selected. Clicking a table now does nothing if selectedOrderIds is empty.
  * 11.9.77 - Bugfix: Fixed PHP 8.x compatibility issue with current() function during public snapshot regeneration. Verified and completed unassign validation marking orders as unassigned.
  * 11.9.76 - Feature: Added list of assigned WooCommerce orders inside the Edit Table modal during manual seat assignments (Stage 3), with capability to unassign orders from session or database dynamically.
  * 11.9.75 - Feature: Added selective manual seat assignment in Stage 3 using checkboxes to allow operators to choose specific orders and click a table to assign them.
