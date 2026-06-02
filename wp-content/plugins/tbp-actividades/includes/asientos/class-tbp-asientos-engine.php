@@ -1126,12 +1126,16 @@ function tbp_asientos_generate_public_snapshot( $config_id ) {
             $qty = tbp_get_order_seat_qty($oid, $config->proveedor_id);
             if ($qty <= 0) continue;
 
+            $items = $order->get_items();
+            $first_item = ! empty( $items ) ? reset( $items ) : null;
+            $producto_nombre = $first_item ? $first_item->get_name() : 'Ticket';
+
             $partial_rows[] = [
                 'order_id'     => $oid,
                 'status'       => 'p-pagado',
                 'status_label' => 'Pago Parcial',
                 'titular'      => trim($order->get_billing_first_name() . ' ' . $order->get_billing_last_name()),
-                'producto'     => $order->get_items() ? current($order->get_items())->get_name() : 'Ticket',
+                'producto'     => $producto_nombre,
                 'cantidad'     => $qty,
                 'details'      => tbp_report_format_details(tbp_actividades_get_order_attendees_meta($oid, $order))
             ];

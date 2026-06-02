@@ -1,3 +1,8 @@
+## [11.9.77] - 2026-06-02
+### Corregido
+- **Fallo al Guardar Cambios en Mesas**: Corregido error fatal PHP 8.x (`Only variables should be passed by reference` debido al uso de `current()` con llamadas de métodos directamente) en la regeneración de snapshots públicos de asignaciones que interrumpía la respuesta AJAX de actualización de mesa.
+- **Validación de Pedidos Desasignados**: Verificada e implementada la eliminación de caché en metadatos y limpieza instantánea del mapa de asignados (`scanAssignedMap`) para que los pedidos removidos de mesas se visualicen correctamente como "sin asignar" en la cuadrícula y filtros en Stage 3.
+
 ## [11.9.76] - 2026-06-01
 ### Agregado
 - **Visualización y Remoción de Pedidos en Mesas**: Añadida una lista interactiva de pedidos asignados (tanto guardados en base de datos como de la sesión activa de asignación) dentro del modal de edición de cada mesa. Se incorporaron botones para remover y desasignar individualmente los pedidos de la mesa seleccionada, actualizando las capacidades en base de datos (vía AJAX) o localmente de inmediato y devolviendo el pedido a la cola de pendientes.

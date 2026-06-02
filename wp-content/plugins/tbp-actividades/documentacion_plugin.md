@@ -1,4 +1,4 @@
-# Documentación Técnica Completa: TBP - Actividades (v11.9.76)
+# Documentación Técnica Completa: TBP - Actividades (v11.9.77)
 
 Este documento sirve como memoria técnica, mapa arquitectónico y manual de operaciones del plugin **The Best Prom - Actividades**. Su propósito es resumir todas las funcionalidades, flujos de datos críticos, integraciones con *Event Tickets Plus*, ganchos de WooCommerce y el nuevo módulo de **Asignación de Asientos** para guiar futuras iteraciones sin pérdida de contexto.
 
