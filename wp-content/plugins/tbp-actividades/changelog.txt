@@ -1,3 +1,7 @@
+## [11.9.83] - 2026-06-02
+### Optimizado
+- **Asistente de Depuración del Upgrade**: Añadida una sección de depuración (`tbp_asientos_upgrade_debug_output`) en el footer de la página, visible para administradores o al agregar el parámetro de URL `?debug_upgrade=1`. Esta imprime los metadatos relevantes de WooCommerce y The Events Calendar para el pedido #36200, facilitando el diagnóstico visual.
+
 ## [11.9.82] - 2026-06-02
 ### Corregido
 - **Resolución de ID de Evento**: Corregido problema donde el botón de "Mejorar Boletos" y el banner del evento no aparecían debido a diferencias en los nombres de metadatos de WooCommerce y The Events Calendar (como `_tribe_wooticket_event`). Se implementó un detector de ID de evento con 7 capas de resolución robusta tanto para metadatos del pedido, ítems del pedido, como de los productos correspondientes.

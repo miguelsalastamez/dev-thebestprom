@@ -231,6 +231,58 @@ function tbp_get_order_event_config_id( $order_id ) {
 
 
 // =====================================================================
+// DEBUG INTEGRATION
+// =====================================================================
+add_action( 'wp_footer', 'tbp_asientos_upgrade_debug_output' );
+function tbp_asientos_upgrade_debug_output() {
+    if ( empty( $_GET['debug_upgrade'] ) ) {
+        return;
+    }
+
+    $order_id = 36200; // Pedido de la captura
+    $order = wc_get_order( $order_id );
+    if ( ! $order ) {
+        echo '<div style="background:#fff; color:#000; padding:20px; border:2px solid red; z-index:999999; position:relative;">No order found for ID 36200</div>';
+        return;
+    }
+
+    $status = $order->get_status();
+    $event_id = tbp_asientos_get_order_event_id( $order_id );
+    $config_id = tbp_get_order_event_config_id( $order_id );
+
+    $items_info = array();
+    foreach ( $order->get_items() as $item ) {
+        $p_id = $item->get_product_id();
+        $product = wc_get_product( $p_id );
+        
+        $meta = array();
+        $raw_meta = get_post_meta( $p_id );
+        foreach ( $raw_meta as $k => $v ) {
+            if ( strpos($k, 'ticket') !== false || strpos($k, 'event') !== false || strpos($k, 'tribe') !== false ) {
+                $meta[$k] = $v;
+            }
+        }
+
+        $items_info[] = array(
+            'product_id' => $p_id,
+            'name'       => $item->get_name(),
+            'price'      => $product ? $product->get_price() : 'N/A',
+            'filtered_meta' => $meta
+        );
+    }
+
+    echo '<div style="background:#fff; color:#000; padding:20px; border:3px solid blue; z-index:999999; position:relative; margin-top:50px; font-family:monospace; font-size:12px;">';
+    echo '<h3>DEBUG UPGRADE: Pedido #' . $order_id . '</h3>';
+    echo '<p><strong>Estado WooCommerce:</strong> ' . esc_html( $status ) . '</p>';
+    echo '<p><strong>Event ID detectado:</strong> ' . esc_html( $event_id ) . '</p>';
+    echo '<p><strong>Config ID detectado:</strong> ' . esc_html( $config_id ) . '</p>';
+    echo '<h4>Items del Pedido:</h4>';
+    echo '<pre>' . esc_html( print_r( $items_info, true ) ) . '</pre>';
+    echo '</div>';
+}
+
+
+// =====================================================================
 // RENDERIZADO DEL MODAL EN EL PIE DE PÁGINA
 // =====================================================================
 

@@ -2,11 +2,12 @@
 /**
  * Plugin Name: The Best Prom - Actividades
  * Plugin URI: https://dev.thebestprom.com
- * Version: 11.9.82
+ * Version: 11.9.83
  * Author: Antigravity Team
  * Text Domain: tbp-actividades
  *
  * Changelog:
+ * 11.9.83 - Enhancement: Added a public debug helper to inspect WooCommerce order item metadata and event config associations by appending '?debug_upgrade=1' to the page URL.
  * 11.9.82 - Bugfix: Fixed Order Upgrade button and banner not displaying on orders using the '_tribe_wooticket_event' meta key or storing event IDs in different metadata layers by implementing a robust 7-layer event ID detector.
  * 11.9.81 - Feature: Implemented Order Upgrade and Add-ons system allowing ticket holders to upgrade to higher-priced packages or purchase extras/add-ons directly from My Account page or Event page while preserving original WooCommerce Order ID. Integrated automated seat quantity incrementing on existing table assignments with maximum capacity warnings (email alerts and order notes if occupancy exceeds 12 or table capacity).
  * 11.9.80 - Feature: Implemented front-end order consolidation. Multiple orders belonging to the same client (same billing email, or same billing name if email is empty) are now grouped and displayed as a single record in the Stage 3 manual assignment queue, allowing operators to assign all their seats to a table together while preserving WooCommerce order database integrity on confirm.
