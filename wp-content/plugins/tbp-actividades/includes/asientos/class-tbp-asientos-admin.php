@@ -1020,9 +1020,9 @@ function tbp_asientos_render_edit_view( $config_id = 0 ) {
                     <!-- Legend -->
                     <div style="position:absolute; top:16px; right:16px; background:rgba(255,255,255,0.95); border-radius:8px; padding:10px 14px; box-shadow:0 2px 10px rgba(0,0,0,0.15); font-size:10px; z-index:10;">
                         <div style="margin-bottom:4px;"><span style="display:inline-block; width:12px; height:12px; border-radius:50%; background:#94a3b8; vertical-align:middle;"></span> Disponible</div>
-                        <div style="margin-bottom:4px;"><span style="display:inline-block; width:12px; height:12px; border-radius:50%; background:#3b82f6; vertical-align:middle;"></span> Parcial</div>
+                        <div style="margin-bottom:4px;"><span style="display:inline-block; width:12px; height:12px; border-radius:50%; background:#3b82f6; vertical-align:middle;"></span> Parcial (10 o menos)</div>
                         <div style="margin-bottom:4px;"><span style="display:inline-block; width:12px; height:12px; border-radius:50%; background:#22c55e; vertical-align:middle;"></span> Llena</div>
-                        <div><span style="display:inline-block; width:12px; height:12px; border-radius:50%; background:#ef4444; vertical-align:middle;"></span> Sin espacio</div>
+                        <div><span style="display:inline-block; width:12px; height:12px; border-radius:50%; background:#ef4444; vertical-align:middle;"></span> Más de 10 lugares</div>
                     </div>
                 </div>
             </div>
@@ -1757,9 +1757,10 @@ function tbp_asientos_render_edit_view( $config_id = 0 ) {
         }
 
         function getTableColor(tbl) {
-            if (tbl.libre <= 0) return '#ef4444';       // Full / no space - red
-            if (tbl.used > 0) return '#3b82f6';          // Partially filled - blue
-            return '#94a3b8';                             // Empty / available - gray
+            if (tbl.used === 0) return '#94a3b8';          // Empty / available - gray
+            if (tbl.capacidad > 10) return '#ef4444';      // More than 10 seats, occupied - red
+            if (tbl.libre <= 0) return '#22c55e';          // Capacity <= 10, full - green
+            return '#3b82f6';                              // Capacity <= 10, partially filled - blue
         }
 
         function renderAssignQueue() {

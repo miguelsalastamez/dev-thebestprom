@@ -1,3 +1,7 @@
+## [11.9.79] - 2026-06-02
+### Agregado
+- **Colores de Mesas por Capacidad y Estado**: Redefinido el esquema de colores para las mesas en el plano interactivo de la Etapa 3. Ahora las mesas con capacidad mayor a 10 ocupadas se muestran en Rojo, las mesas llenas con capacidad de 10 o menos en Verde (eliminando la redundancia de tener verde y rojo para el mismo estado de llenado), las mesas parcialmente llenas de 10 o menos en Azul, y las mesas vacías/disponibles de cualquier tamaño en Gris. Se actualizó la leyenda en la interfaz de administración para reflejar con precisión este nuevo sistema de estados.
+
 ## [11.9.78] - 2026-06-02
 ### Corregido
 - **Asignación Fallback en Clic de Mesa**: Se eliminó la asignación automática por defecto (el siguiente pedido en cola) cuando se hace clic en una mesa sin tener casillas seleccionadas. Ahora, al hacer clic en una mesa con la selección vacía (`selectedOrderIds.length === 0`), no ocurre ninguna acción ni se abre el modal con sugerencias de aumento de PAX, manteniendo el comportamiento limpio y reservando la apertura manual del editor de mesa al doble clic.
