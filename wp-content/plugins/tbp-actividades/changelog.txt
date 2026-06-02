@@ -1,3 +1,7 @@
+## [11.9.85] - 2026-06-02
+### Corregido
+- **Filtro de Visibilidad del Botón de Upgrade**: Se modificó la validación para habilitar el botón de upgrades de modo que dependa únicamente de que el pedido esté asociado a un evento (ID de evento válido), en lugar de exigir obligatoriamente un plano de asientos configurado. Esto permite que los clientes mejoren sus paquetes o compren extras incluso si el plano de mesas no ha sido generado aún.
+
 ## [11.9.84] - 2026-06-02
 ### Optimizado
 - **Asistente de Depuración del Upgrade (Asientos en BD)**: Ampliado el módulo de depuración para listar todas las configuraciones de asientos activas en la base de datos, facilitando contrastar los ID de eventos registrados.

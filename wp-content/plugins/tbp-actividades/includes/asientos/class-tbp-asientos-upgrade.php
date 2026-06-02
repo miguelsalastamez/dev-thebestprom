@@ -25,8 +25,8 @@ function tbp_asientos_upgrade_orders_actions( $actions, $order ) {
         return $actions;
     }
 
-    $config_id = tbp_get_order_event_config_id( $order->get_id() );
-    if ( ! $config_id ) {
+    $event_id = tbp_asientos_get_order_event_id( $order->get_id() );
+    if ( ! $event_id ) {
         return $actions;
     }
 
