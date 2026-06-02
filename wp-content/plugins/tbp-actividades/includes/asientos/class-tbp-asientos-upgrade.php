@@ -182,9 +182,12 @@ function tbp_asientos_get_user_orders_for_event( $user_id, $event_id ) {
 
     // Obtener los ticket IDs (productos) vinculados al evento
     $ticket_ids = $wpdb->get_col( $wpdb->prepare( "
-        SELECT post_id FROM {$wpdb->postmeta} 
-        WHERE (meta_value = %d OR meta_value = %s)
-        AND meta_key IN ('_tribe_tickets_event', '_tribe_wooticket_for_event', '_tribe_wooticket_event', '_event_id', 'event_id')
+        SELECT DISTINCT pm.post_id 
+        FROM {$wpdb->postmeta} pm
+        INNER JOIN {$wpdb->posts} p ON pm.post_id = p.ID
+        WHERE pm.meta_key IN ('_tribe_tickets_event', '_tribe_wooticket_for_event', '_tribe_wooticket_event', '_event_id', 'event_id')
+        AND (pm.meta_value = %d OR pm.meta_value = %s)
+        AND p.post_type = 'product'
     ", $event_id, (string)$event_id ) );
 
     if ( empty( $ticket_ids ) ) {
@@ -634,14 +637,17 @@ function tbp_asientos_ajax_load_upgrade_options() {
         ", $pid, $event_id ) );
 
         if ( $is_ticket ) {
-            $current_item = array(
-                'id'           => $pid,
-                'product_name' => $item->get_name(),
-                'price'        => (float) wc_get_product( $pid )->get_price(),
-                'quantity'     => (int) $item->get_quantity(),
-                'event_id'     => $event_id,
-            );
-            break; // Tomamos el primer boleto del evento principal
+            $product = wc_get_product( $pid );
+            if ( $product ) {
+                $current_item = array(
+                    'id'           => $pid,
+                    'product_name' => $item->get_name(),
+                    'price'        => (float) $product->get_price(),
+                    'quantity'     => (int) $item->get_quantity(),
+                    'event_id'     => $event_id,
+                );
+                break; // Tomamos el primer boleto del evento principal
+            }
         }
     }
 
@@ -651,9 +657,12 @@ function tbp_asientos_ajax_load_upgrade_options() {
 
     // Obtener todos los productos (tickets) asociados al mismo evento
     $event_tickets = $wpdb->get_results( $wpdb->prepare( "
-        SELECT post_id FROM {$wpdb->postmeta}
-        WHERE (meta_value = %d OR meta_value = %s)
-        AND meta_key IN ('_tribe_tickets_event', '_tribe_wooticket_for_event', '_tribe_wooticket_event', '_event_id', 'event_id')
+        SELECT DISTINCT pm.post_id 
+        FROM {$wpdb->postmeta} pm
+        INNER JOIN {$wpdb->posts} p ON pm.post_id = p.ID
+        WHERE pm.meta_key IN ('_tribe_tickets_event', '_tribe_wooticket_for_event', '_tribe_wooticket_event', '_event_id', 'event_id')
+        AND (pm.meta_value = %d OR pm.meta_value = %s)
+        AND p.post_type = 'product'
     ", $event_id, (string)$event_id ) );
 
     $upgrades = array();
@@ -748,11 +757,14 @@ function tbp_asientos_ajax_prepare_order_upgrade() {
         ", $pid, $event_id ) );
 
         if ( $is_ticket ) {
-            $original_item_id = $item_id;
-            $original_product_id = $pid;
-            $original_qty = (int) $item->get_quantity();
-            $original_price = (float) wc_get_product( $pid )->get_price();
-            break;
+            $product = wc_get_product( $pid );
+            if ( $product ) {
+                $original_item_id = $item_id;
+                $original_product_id = $pid;
+                $original_qty = (int) $item->get_quantity();
+                $original_price = (float) $product->get_price();
+                break;
+            }
         }
     }
 

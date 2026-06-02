@@ -1,3 +1,9 @@
+## [11.9.87] - 2026-06-02
+### Optimizado
+- **Rendimiento al Cargar Opciones de Upgrade en Modal**:
+  - Se optimizaron las consultas SQL de tickets del evento uniendo la tabla `wp_posts` y filtrando por `post_type = 'product'`. Esto evita que la base de datos devuelva miles de registros de asistentes (attendees) en lugar de solo los productos de boletos, previniendo el bucle pesado N+1 de carga de productos y el consecuente bloqueo/timeout del servidor.
+  - Se añadieron validaciones de seguridad a las llamadas `wc_get_product` para prevenir errores fatales en caso de que un boleto o variación no se cargue correctamente.
+
 ## [11.9.86] - 2026-06-02
 ### Corregido
 - **Fallo al Cargar Opciones de Upgrade en Modal**:

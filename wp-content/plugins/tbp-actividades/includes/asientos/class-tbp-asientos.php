@@ -183,9 +183,12 @@ function tbp_asientos_get_orders_for_event( $event_id ) {
 
     // Obtener los ticket IDs (productos) vinculados al evento de forma agresiva (7 capas)
     $ticket_ids = $wpdb->get_col( $wpdb->prepare( "
-        SELECT post_id FROM {$wpdb->postmeta} 
-        WHERE (meta_value = %d OR meta_value = %s)
-        AND meta_key IN ('_tribe_tickets_event', '_tribe_wooticket_for_event', '_tribe_wooticket_event', '_event_id', 'event_id')
+        SELECT DISTINCT pm.post_id 
+        FROM {$wpdb->postmeta} pm
+        INNER JOIN {$wpdb->posts} p ON pm.post_id = p.ID
+        WHERE pm.meta_key IN ('_tribe_tickets_event', '_tribe_wooticket_for_event', '_tribe_wooticket_event', '_event_id', 'event_id')
+        AND (pm.meta_value = %d OR pm.meta_value = %s)
+        AND p.post_type = 'product'
     ", $event_id, (string)$event_id ) );
 
     if ( empty( $ticket_ids ) ) {
