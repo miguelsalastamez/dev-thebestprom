@@ -1,3 +1,7 @@
+## [11.9.82] - 2026-06-02
+### Corregido
+- **Resolución de ID de Evento**: Corregido problema donde el botón de "Mejorar Boletos" y el banner del evento no aparecían debido a diferencias en los nombres de metadatos de WooCommerce y The Events Calendar (como `_tribe_wooticket_event`). Se implementó un detector de ID de evento con 7 capas de resolución robusta tanto para metadatos del pedido, ítems del pedido, como de los productos correspondientes.
+
 ## [11.9.81] - 2026-06-02
 ### Agregado
 - **Módulo de Upgrade de Pedidos y Extras (Add-ons)**: Implementado el sistema completo para que los clientes del evento realicen mejoras de boletos (Upgrades de paquetes como Básico a VIP) y agreguen extras (Add-ons como platillos extras, bebidas, etc.) desde la sección de Mi Cuenta o directamente desde el post del evento. El proceso conserva el mismo ID de pedido de WooCommerce utilizando el flujo Order Pay.

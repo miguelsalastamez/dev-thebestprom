@@ -185,7 +185,7 @@ function tbp_asientos_get_orders_for_event( $event_id ) {
     $ticket_ids = $wpdb->get_col( $wpdb->prepare( "
         SELECT post_id FROM {$wpdb->postmeta} 
         WHERE (meta_value = %d OR meta_value = %s)
-        AND meta_key IN ('_tribe_tickets_event', '_tribe_wooticket_for_event', '_event_id', 'event_id')
+        AND meta_key IN ('_tribe_tickets_event', '_tribe_wooticket_for_event', '_tribe_wooticket_event', '_event_id', 'event_id')
     ", $event_id, (string)$event_id ) );
 
     if ( empty( $ticket_ids ) ) {

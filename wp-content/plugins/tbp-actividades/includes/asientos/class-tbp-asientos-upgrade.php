@@ -94,6 +94,87 @@ function tbp_asientos_event_upgrade_banner( $content ) {
 }
 
 /**
+ * Obtiene el ID del evento asociado a un pedido (7 capas de detección).
+ */
+function tbp_asientos_get_order_event_id( $order_id ) {
+    $order = wc_get_order( $order_id );
+    if ( ! $order ) {
+        return 0;
+    }
+
+    // 1. Verificar metadata directa del pedido
+    $event_id = (int) get_post_meta( $order_id, '_tribe_tickets_event', true );
+    if ( ! $event_id ) {
+        $event_id = (int) get_post_meta( $order_id, '_tribe_wooticket_event', true );
+    }
+    if ( ! $event_id ) {
+        $event_id = (int) get_post_meta( $order_id, '_event_id', true );
+    }
+    if ( ! $event_id ) {
+        $event_id = (int) get_post_meta( $order_id, 'event_id', true );
+    }
+
+    // 2. Verificar metadata en los order items
+    if ( ! $event_id ) {
+        foreach ( $order->get_items() as $item_id => $item ) {
+            $event_id = (int) wc_get_order_item_meta( $item_id, '_tribe_tickets_event', true );
+            if ( ! $event_id ) {
+                $event_id = (int) wc_get_order_item_meta( $item_id, '_tribe_wooticket_event', true );
+            }
+            if ( ! $event_id ) {
+                $event_id = (int) wc_get_order_item_meta( $item_id, '_event_id', true );
+            }
+            if ( $event_id ) {
+                break;
+            }
+        }
+    }
+
+    // 3. Verificar metadata en los productos del pedido
+    if ( ! $event_id ) {
+        foreach ( $order->get_items() as $item ) {
+            $p_id = $item->get_product_id();
+            $event_id = (int) get_post_meta( $p_id, '_tribe_tickets_event', true );
+            if ( ! $event_id ) {
+                $event_id = (int) get_post_meta( $p_id, '_tribe_wooticket_event', true );
+            }
+            if ( ! $event_id ) {
+                $event_id = (int) get_post_meta( $p_id, '_tribe_wooticket_for_event', true );
+            }
+            if ( ! $event_id ) {
+                $event_id = (int) get_post_meta( $p_id, '_event_id', true );
+            }
+            if ( ! $event_id ) {
+                $event_id = (int) get_post_meta( $p_id, 'event_id', true );
+            }
+            if ( $event_id ) {
+                break;
+            }
+        }
+    }
+
+    // 4. Búsqueda inversa en postmeta de productos del pedido vinculados a tribe_events
+    if ( ! $event_id ) {
+        global $wpdb;
+        $product_ids = array();
+        foreach ( $order->get_items() as $item ) {
+            $product_ids[] = (int) $item->get_product_id();
+        }
+        if ( ! empty( $product_ids ) ) {
+            $placeholders = implode( ',', array_fill( 0, count( $product_ids ), '%d' ) );
+            $event_id = (int) $wpdb->get_var( $wpdb->prepare( "
+                SELECT DISTINCT meta_value FROM {$wpdb->postmeta}
+                WHERE post_id IN ($placeholders)
+                AND meta_key IN ('_tribe_tickets_event', '_tribe_wooticket_for_event', '_tribe_wooticket_event', '_event_id', 'event_id')
+                LIMIT 1
+            ", ...$product_ids ) );
+        }
+    }
+
+    return $event_id;
+}
+
+/**
  * Obtiene los pedidos válidos del usuario asociados a un evento específico.
  */
 function tbp_asientos_get_user_orders_for_event( $user_id, $event_id ) {
@@ -103,7 +184,7 @@ function tbp_asientos_get_user_orders_for_event( $user_id, $event_id ) {
     $ticket_ids = $wpdb->get_col( $wpdb->prepare( "
         SELECT post_id FROM {$wpdb->postmeta} 
         WHERE (meta_value = %d OR meta_value = %s)
-        AND meta_key IN ('_tribe_tickets_event', '_tribe_wooticket_for_event', '_event_id', 'event_id')
+        AND meta_key IN ('_tribe_tickets_event', '_tribe_wooticket_for_event', '_tribe_wooticket_event', '_event_id', 'event_id')
     ", $event_id, (string)$event_id ) );
 
     if ( empty( $ticket_ids ) ) {
@@ -134,35 +215,12 @@ function tbp_asientos_get_user_orders_for_event( $user_id, $event_id ) {
  * Devuelve el config_id de asientos para un pedido WooCommerce.
  */
 function tbp_get_order_event_config_id( $order_id ) {
-    $order = wc_get_order( $order_id );
-    if ( ! $order ) {
+    $event_id = tbp_asientos_get_order_event_id( $order_id );
+    if ( ! $event_id ) {
         return 0;
     }
 
     global $wpdb;
-
-    $product_ids = array();
-    foreach ( $order->get_items() as $item ) {
-        $product_ids[] = (int) $item->get_product_id();
-    }
-
-    if ( empty( $product_ids ) ) {
-        return 0;
-    }
-
-    $placeholders = implode( ',', array_fill( 0, count( $product_ids ), '%d' ) );
-    $event_ids = $wpdb->get_col( $wpdb->prepare( "
-        SELECT DISTINCT meta_value FROM {$wpdb->postmeta}
-        WHERE post_id IN ($placeholders)
-        AND meta_key IN ('_tribe_tickets_event', '_tribe_wooticket_for_event', '_event_id', 'event_id')
-    ", ...$product_ids ) );
-
-    if ( empty( $event_ids ) ) {
-        return 0;
-    }
-
-    $event_id = (int) $event_ids[0];
-
     $config_id = $wpdb->get_var( $wpdb->prepare(
         "SELECT id FROM {$wpdb->prefix}tbp_seat_configurations WHERE event_id = %d LIMIT 1",
         $event_id
@@ -500,27 +558,31 @@ function tbp_asientos_ajax_load_upgrade_options() {
     }
 
     // Obtener los productos en el pedido vinculados a un evento
+    $event_id = tbp_asientos_get_order_event_id( $order_id );
+    if ( ! $event_id ) {
+        wp_send_json_error( 'Este pedido no está asociado a ningún evento.' );
+    }
+
     global $wpdb;
-    $product_ids = array();
     $current_item = null;
 
     foreach ( $order->get_items() as $item ) {
         $pid = (int) $item->get_product_id();
-        // Verificar si este producto está vinculado a un evento
-        $event_id = $wpdb->get_var( $wpdb->prepare( "
-            SELECT meta_value FROM {$wpdb->postmeta}
+        // Verificar si este producto está vinculado al evento detectado
+        $is_ticket = $wpdb->get_var( $wpdb->prepare( "
+            SELECT COUNT(*) FROM {$wpdb->postmeta}
             WHERE post_id = %d
-            AND meta_key IN ('_tribe_tickets_event', '_tribe_wooticket_for_event', '_event_id', 'event_id')
-            LIMIT 1
-        ", $pid ) );
+            AND meta_value = %d
+            AND meta_key IN ('_tribe_tickets_event', '_tribe_wooticket_for_event', '_tribe_wooticket_event', '_event_id', 'event_id')
+        ", $pid, $event_id ) );
 
-        if ( $event_id ) {
+        if ( $is_ticket ) {
             $current_item = array(
                 'id'           => $pid,
                 'product_name' => $item->get_name(),
                 'price'        => (float) wc_get_product( $pid )->get_price(),
                 'quantity'     => (int) $item->get_quantity(),
-                'event_id'     => (int) $event_id,
+                'event_id'     => $event_id,
             );
             break; // Tomamos el primer boleto del evento principal
         }
@@ -534,8 +596,8 @@ function tbp_asientos_ajax_load_upgrade_options() {
     $event_tickets = $wpdb->get_results( $wpdb->prepare( "
         SELECT post_id FROM {$wpdb->postmeta}
         WHERE (meta_value = %d OR meta_value = %s)
-        AND meta_key IN ('_tribe_tickets_event', '_tribe_wooticket_for_event', '_event_id', 'event_id')
-    ", $current_item['event_id'], (string)$current_item['event_id'] ) );
+        AND meta_key IN ('_tribe_tickets_event', '_tribe_wooticket_for_event', '_tribe_wooticket_event', '_event_id', 'event_id')
+    ", $event_id, (string)$event_id ) );
 
     $upgrades = array();
     $extras = array();
@@ -608,34 +670,33 @@ function tbp_asientos_ajax_prepare_order_upgrade() {
     }
 
     // 1. Encontrar el producto original del evento en el pedido
+    $event_id = tbp_asientos_get_order_event_id( $order_id );
+    if ( ! $event_id ) {
+        wp_send_json_error( 'Este pedido no está asociado a ningún evento.' );
+    }
+
     global $wpdb;
     $original_item_id = 0;
     $original_product_id = 0;
     $original_qty = 0;
     $original_price = 0.0;
-    $event_id = 0;
 
     foreach ( $order->get_items() as $item_id => $item ) {
         $pid = (int) $item->get_product_id();
-        $ev_id = $wpdb->get_var( $wpdb->prepare( "
-            SELECT meta_value FROM {$wpdb->postmeta}
+        $is_ticket = $wpdb->get_var( $wpdb->prepare( "
+            SELECT COUNT(*) FROM {$wpdb->postmeta}
             WHERE post_id = %d
-            AND meta_key IN ('_tribe_tickets_event', '_tribe_wooticket_for_event', '_event_id', 'event_id')
-            LIMIT 1
-        ", $pid ) );
+            AND meta_value = %d
+            AND meta_key IN ('_tribe_tickets_event', '_tribe_wooticket_for_event', '_tribe_wooticket_event', '_event_id', 'event_id')
+        ", $pid, $event_id ) );
 
-        if ( $ev_id ) {
+        if ( $is_ticket ) {
             $original_item_id = $item_id;
             $original_product_id = $pid;
             $original_qty = (int) $item->get_quantity();
             $original_price = (float) wc_get_product( $pid )->get_price();
-            $event_id = (int) $ev_id;
             break;
         }
-    }
-
-    if ( ! $original_product_id ) {
-        wp_send_json_error( 'No se encontró un boleto de evento válido en este pedido.' );
     }
 
     // 2. Realizar copia de seguridad de los ítems del pedido original por seguridad
