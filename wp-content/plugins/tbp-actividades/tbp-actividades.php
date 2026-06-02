@@ -2,11 +2,12 @@
 /**
  * Plugin Name: The Best Prom - Actividades
  * Plugin URI: https://dev.thebestprom.com
- * Version: 11.9.80
+ * Version: 11.9.81
  * Author: Antigravity Team
  * Text Domain: tbp-actividades
  *
  * Changelog:
+ * 11.9.81 - Feature: Implemented Order Upgrade and Add-ons system allowing ticket holders to upgrade to higher-priced packages or purchase extras/add-ons directly from My Account page or Event page while preserving original WooCommerce Order ID. Integrated automated seat quantity incrementing on existing table assignments with maximum capacity warnings (email alerts and order notes if occupancy exceeds 12 or table capacity).
  * 11.9.80 - Feature: Implemented front-end order consolidation. Multiple orders belonging to the same client (same billing email, or same billing name if email is empty) are now grouped and displayed as a single record in the Stage 3 manual assignment queue, allowing operators to assign all their seats to a table together while preserving WooCommerce order database integrity on confirm.
  * 11.9.79 - Feature: Redefined floor plan table color rules in Stage 3: occupied tables with capacity > 10 are Red, full tables with capacity <= 10 are Green, partially filled tables with capacity <= 10 are Blue, and empty tables are Gray.
  * 11.9.78 - Bugfix: Removed automatic fallback sequential assignment when clicking on a table with no checked checkboxes selected. Clicking a table now does nothing if selectedOrderIds is empty.

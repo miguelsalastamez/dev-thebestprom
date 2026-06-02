@@ -18,6 +18,7 @@ require_once __DIR__ . '/class-tbp-asientos-db.php';
 require_once __DIR__ . '/class-tbp-asientos-engine.php';
 require_once __DIR__ . '/class-tbp-asientos-admin.php';
 require_once __DIR__ . '/class-tbp-asientos-export.php';
+require_once __DIR__ . '/class-tbp-asientos-upgrade.php';
 
 /**
  * Devuelve la cantidad de lugares para un pedido según el egreso marcado

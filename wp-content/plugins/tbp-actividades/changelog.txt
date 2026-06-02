@@ -1,3 +1,8 @@
+## [11.9.81] - 2026-06-02
+### Agregado
+- **Módulo de Upgrade de Pedidos y Extras (Add-ons)**: Implementado el sistema completo para que los clientes del evento realicen mejoras de boletos (Upgrades de paquetes como Básico a VIP) y agreguen extras (Add-ons como platillos extras, bebidas, etc.) desde la sección de Mi Cuenta o directamente desde el post del evento. El proceso conserva el mismo ID de pedido de WooCommerce utilizando el flujo Order Pay.
+- **Incremento y Alertas Automáticas de Mesa**: Añadida la lógica post-pago para actualizar automáticamente el número de lugares de un pedido asignado a una mesa en la base de datos de asientos. Si la nueva ocupación supera la capacidad o el límite de 12 personas, se inyectan advertencias (warnings) en las notas del pedido y se envía una notificación por correo electrónico al organizador.
+
 ## [11.9.80] - 2026-06-02
 ### Agregado
 - **Consolidación de Pedidos del Mismo Cliente**: Implementada la consolidación automática en el lado del cliente (JS) para agrupar pedidos pertenecientes al mismo comprador (por correo electrónico de facturación, o nombre si no hay correo). Ahora, múltiples pedidos (como la compra de entradas adicionales por separado) de un mismo cliente se muestran como una sola fila consolidada en la cuadrícula de la Etapa 3 y en el modal de asignación (ej. `#29680 + #36029`), permitiendo asignar todas sus piezas a la vez en la misma mesa. En la base de datos se guarda cada registro de forma independiente y respetando la relación directa con su pedido original en WooCommerce.
